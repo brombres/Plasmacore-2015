@@ -1,6 +1,23 @@
-Bootstrap()
+local args = System.command_line_arguments
+if (args.is_empty)
+  Bootstrap.install
+else
+  local cmd = args.join( " " )
+  if (cmd == "install update")
+    # Current folder is /ProjectName/
+    # This is being run from /ProjectName/Build/Update/Plasmacore/
+    Bootstrap.sync( "*", @["LICENSE","README.md"], &keep_unused )
+    Bootstrap.sync( "Libraries/Box2D/**" )
+    Bootstrap.sync( "Libraries/ImageIO/**" )
+    Bootstrap.sync( "Libraries/Plasmacore/**" )
+    Bootstrap.sync( "Libraries/Rogue/Plasmacore/**" )
+  else
+    println "Invalid option: " + cmd
+    System.exit 1
+  endIf
+endIf
 
-class Bootstrap
+class Bootstrap [singleton]
   PROPERTIES
     REPO   = "https://github.com/AbePralle/Plasmacore.git"
     BRANCH = "master"
@@ -8,7 +25,6 @@ class Bootstrap
   METHODS
     method init
       configure
-      run
 
     method configure
       # Read override values from Local.mk
@@ -31,7 +47,7 @@ class Bootstrap
         endForEach
       endIf
 
-    method run
+    method install
       # Don't overwrite existing installation
       if (File.exists("Source") or File.exists("Platforms"))
         println "Plasmacore is already installed. Use 'rogo update' to update it."
@@ -50,6 +66,20 @@ class Bootstrap
       File.sync_from( files, ".", &keep_unused, &verbose )
 
       System.run @|rogo version Installed
+
+    method sync( pattern:String, exclude=UndefinedValue:Value, &keep_unused )
+      local source_folder = "Build/Update/Plasmacore/"
+      local dest_folder = "."
+      if (pattern != "*")
+        dest_folder = pattern.before_last( '/' )
+        source_folder += dest_folder
+        pattern = pattern.after_last( '/' )
+      endIf
+      local files = Files( source_folder, pattern )
+      if (exclude.count)
+        files.remove( "Build/Update/Plasmacore/" + (forEach in exclude) )
+      endIf
+      File.sync_from( files, dest_folder, &=keep_unused, &verbose )
 endClass
 
 routine run( cmd:String, &silent )

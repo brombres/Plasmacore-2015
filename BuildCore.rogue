@@ -39,6 +39,32 @@ routine rogo_version( text="Updated to":String )
   print( text ).print( " Plasmacore v" ).println( PLASMACORE_VERSION )
 endRoutine
 
+routine rogo_update
+  println "Checking for Plasmacore update"
+  Build.git_pull
+  local update_version = PLASMACORE_VERSION
+  contingent
+    local filepath = "Build/Update/Plasmacore/BuildCore.rogue"
+    necessary (File.exists(filepath))
+    local def = "$define PLASMACORE_VERSION"
+    forEach (line in LineReader(File(filepath)))
+      if (line.contains(def))
+        update_version = line.after_first(def).trimmed.rightmost(-1).leftmost(-1)
+        sufficient (update_version != PLASMACORE_VERSION)
+        necessary (false)
+      endIf
+    endForEach
+
+  satisfied
+    println "Plasmacore updating..."
+    run File.fix_slashes( "rogo --build=Build/Update/Plasmacore/Bootstrap install update" )
+    println "Updated to Plasmacore v" + update_version
+
+  unsatisfied
+    println "No Plasmacore update available. Current version is v$." (PLASMACORE_VERSION)
+
+  endContingent
+endRoutine
 
 routine rogo_web
   Build.build( "Web" )
