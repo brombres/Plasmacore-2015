@@ -1,8 +1,13 @@
 # Plasmacore
 
+## NOTICE
+
+Plasmacore is being revamped to use the Rogo build system. It is nearing completion but is not quite ready to use at this time.
+
+
 About     | Current Release
 ----------|-----------------------
-Version   | v0.9.0
+Version   | v0.9.0 (In Development)
 Date      | May 13, 2018
 Platforms | macOS
 Targets   | macOS, iOS, Linux, Web

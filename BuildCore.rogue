@@ -1,4 +1,4 @@
-$define PLASMACORE_VERSION "0.9.0"
+$define PLASMACORE_VERSION "0.9.0 (1)"
 
 #$ ROGUEC(macOS)    = Programs/RogueC-macOS
 #$ ROGUEC(Linux)    = roguec
@@ -33,6 +33,13 @@ endRoutine
 routine rogo_linux
   Build.build( "Linux" )
   run @|make -C Platforms/Linux
+endRoutine
+
+routine rogo_clean
+  println "Deleting Build/"
+  File.delete( "Build" )
+  println "Deleting .rogo/"
+  File.delete( ".rogo" )
 endRoutine
 
 routine rogo_version( text="Updated to":String )
