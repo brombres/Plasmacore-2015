@@ -18,7 +18,7 @@ Targets   | macOS, iOS, Linux, Web
 
 To bootstrap a new Plasmacore-based project, open a Terminal in your new project folder and copy and paste the following command:
 
-    curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/Bootstrap.rogue && rogo --build=Bootstrap.rogue
+    curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/Bootstrap.rogue && rogo --build=Bootstrap
 
 The command will fetch a bootstrap makefile which in turn will `git clone` the latest Plasmacore repo in a temporary folder and copy all the files into the current folder.
 
