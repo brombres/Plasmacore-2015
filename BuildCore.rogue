@@ -38,6 +38,10 @@ endRoutine
 routine rogo_clean
   println "Deleting Build/"
   File.delete( "Build" )
+endRoutine
+
+routine rogo_xclean
+  rogo_clean
   println "Deleting .rogo/"
   File.delete( ".rogo" )
 endRoutine
@@ -212,7 +216,7 @@ class Build [essential singleton]
       if (not needs_compile(platform,output_folder)) return
 
       local target = platform + ",C++"
-      which (target)
+      which (platform)
         case "macOS", "iOS": target += ",ObjC"
         case "Linux":        target += ",SDL"
         case "Web":          target += ",SDL,emscripten"

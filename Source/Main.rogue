@@ -1,24 +1,23 @@
 uses Plasmacore
-uses Box2D
 
 Display( "Main" ).screen = MainScreen
-
-#Plasmacore.show_fps = true
 
 class MainScreen : Screen [singleton]
   PROPERTIES
 
   METHODS
     method on_start
-
+      trace
       change_state( InitialState() )
 
     method on( e:PointerEvent )
 
     method on_draw
+      Display.clear( Color.BLUE )
 
     method on_resize
       # Called when the Display.size changes
+      trace
 
     method on_update
       # Called 60 times a second
@@ -48,19 +47,9 @@ class InitialState : State<<MainScreen>>
 
     method on_draw
       # This happens before the current screen's on_draw()
-      Display.clear( Color.BLUE )
-      Image( (DefaultFont.data as DefaultFontData).sheet_builder.texture ).draw( Display.center )
-      DefaultFont.anchor = Anchor.CENTER
-      #DefaultFont.draw( "Hello World", Display.center )
-      DefaultFont.draw( "Hello", Display.at(0.5,0.5) )
-      DefaultFont.draw( "Hello", Display.at(0.5,0.55), &max_width=70 )
-      DefaultFont.draw( "Hello W", Display.at(0.5,0.6), &max_width=70 )
-      DefaultFont.draw( "Hello Wo", Display.at(0.5,0.65), &max_width=70 )
-      DefaultFont.draw( "Hello Wor", Display.at(0.5,0.7), &max_width=70 )
-      DefaultFont.draw( "Hello Worl", Display.at(0.5,0.75), &max_width=70 )
-      DefaultFont.draw( "Hello World", Display.at(0.5,0.8), &max_width=70 )
 
     method on_resize
+      trace
       # Called when the Display.size changes
 
     method on_update
