@@ -36,7 +36,7 @@ routine rogo_linux
 endRoutine
 
 routine rogo_version( text="Updated to":String )
-  print( text ).print( " Plasmacore v" ).println( version )
+  print( text ).print( " Plasmacore v" ).println( PLASMACORE_VERSION )
 endRoutine
 
 
