@@ -9,7 +9,8 @@ $define PLASMACORE_VERSION "0.9.0 (1)"
 
 #$ LIBRARIES(Linux) = libsdl2-dev libsdl2-mixer-dev
 #$ LIBRARIES(Linux) = libfreetype6-dev( header:ft2build.h library:libfreetype.a )
-#$ LIBRARIES(Linux) = libpng-dev libjpeg-dev
+#$ LIBRARIES(Linux) = libpng12-dev libjpeg-dev
+
 #$ LINK             = -lpng -ljpeg -lfreetype
 
 $include "Plasmacore" [optional]

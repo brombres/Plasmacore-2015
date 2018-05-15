@@ -166,7 +166,7 @@ class JPEGEncoder
               |RogueByte* buffer = new RogueByte[ $width*3 ];
               |row_pointer = buffer;
               |
-              |while ($this->jpeg_info.next_scanline < $height)
+              |while ($this->jpeg_info.next_scanline < (unsigned int) $height)
               |{
               |  int j = $this->jpeg_info.next_scanline;
               |  RogueInt32* pixels = $bitmap->pixels->data->as_int32s + j*$width - 1;

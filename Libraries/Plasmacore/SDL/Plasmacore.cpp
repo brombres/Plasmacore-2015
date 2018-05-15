@@ -350,9 +350,11 @@ static bool should_quit = false;
 
 static int current_fps = 0;
 static int new_fps = 60;
-static unsigned int start_time = 0;
 
 #include <sys/time.h>
+
+#ifdef __EMSCRIPTEN__
+static unsigned int start_time = 0;
 
 static unsigned int get_ticks (void)
 {
@@ -361,6 +363,7 @@ static unsigned int get_ticks (void)
   unsigned int now = nowts.tv_sec * 1000000 + nowts.tv_usec;
   return now;
 }
+#endif
 
 static void do_iteration (void)
 {
@@ -545,8 +548,10 @@ int PlasmacoreLauncher::launch()
     // CD into what we think the executable's directory is.
     char * exe = strdup(argv[0]);
     char * dir = dirname(exe);
-    chdir(dir);
-    free(exe);
+
+    // chdir complains on unused result. 0 is success.
+    if (chdir(dir)) free( exe );
+    else            free( exe );
   #endif
 
   if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|flags) != 0) return 1;
