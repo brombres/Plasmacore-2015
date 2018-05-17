@@ -1,31 +1,32 @@
 # Plasmacore
 
-## NOTICE
-
-Plasmacore is being revamped to use the Rogo build system. It is nearing completion but is not quite ready to use at this time.
-
-
-About     | Current Release
+About     | &nbsp;
 ----------|-----------------------
-Version   | v0.9.0 (In Development)
-Date      | May 13, 2018
-Platforms | macOS
+Version   | v0.9.0
+Date      | May 16, 2018
+Platforms | macOS, Linux
 Targets   | macOS, iOS, Linux, Web
 
 
-## Notes
-- Requires a Mac with Xcode and the iOS SDK.
-- Requires the Rogue language to be installed:
-    - https://github.com/AbePralle/Rogue
+## Requirements
+- The Rogue language must be installed separately from: 
+    - [https://github.com/AbePralle/Rogue](https://github.com/AbePralle/Rogue)
+- macOS & iOS targets require Xcode.
+
+### Compile Target Support
+Host Platform | macOS   | Linux  | iOS    | Web
+--------------|---------|--------|--------|----
+macOS         | &#10004;|        |&#10004;|&#10004;
+Linux         |         |&#10004;|        |&#10004;
 
 
 ## Bootstrap Command
 
-To bootstrap a new Plasmacore-based project, open a Terminal in your new project folder and copy and paste the following command:
+To bootstrap a new Plasmacore-based project, install Rogue, open a Terminal in your new project folder, and copy and paste the following command:
 
     curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/Bootstrap.rogue && rogo --build=Bootstrap
 
-The command will fetch a bootstrap makefile which in turn will `git clone` the latest Plasmacore repo in a temporary folder and copy all the files into the current folder.
+The command will fetch a bootstrap build file which in turn will `git clone` the latest Plasmacore repo in a temporary folder and copy all the files into the current folder.
 
 
 ## Documentation and Resources
@@ -49,9 +50,9 @@ A sample Plasmacore game project is available here: [https://github.com/AbePrall
 
 ## Updating an Existing Project
 
-`rogo update` will update your current project to the latest version of Plasmacore (via `git` and `rsync`) without touching any game-specific files.
+`rogo update` will update your current project to the latest version of Plasmacore (via `git`) without touching any game-specific files.
 
 
 ## License
-Plasmacore is released into the Public Domain under the terms of the [Unlicense](http://unlicense.org/).
+Plasmacore is released under the terms of the [MIT License](https://en.wikipedia.org/wiki/MIT_License).
 
