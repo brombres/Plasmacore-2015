@@ -1,4 +1,4 @@
-package org.plasmacore.project;
+package org.plasmacore.app;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 /**
- * Instrumentation test, which will execute on an Android device.
+ * Instrumented test, which will execute on an Android device.
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
@@ -18,11 +18,11 @@ import static org.junit.Assert.*;
 public class ExampleInstrumentedTest
 {
   @Test
-  public void useAppContext() throws Exception
+  public void useAppContext()
   {
     // Context of the app under test.
     Context appContext = InstrumentationRegistry.getTargetContext();
 
-    assertEquals("org.plasmacore.project", appContext.getPackageName());
+    assertEquals("org.plasmacore.app", appContext.getPackageName());
   }
 }
