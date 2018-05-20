@@ -4,12 +4,8 @@ using namespace std;
 
 #include "RogueProgram.h"
 
-extern "C" JNIEXPORT jstring
-
-JNICALL
-Java_org_plasmacore_app_MainActivity_stringFromJNI2(
-        JNIEnv *env,
-        jobject /* this */) {
+extern "C" JNIEXPORT void JNICALL Java_org_plasmacore_framework_Rogue_rogueLaunch( JNIEnv *env )
+{
   try
   {
     Rogue_quit();  // reset global state
@@ -22,6 +18,5 @@ Java_org_plasmacore_app_MainActivity_stringFromJNI2(
     printf( "Uncaught exception\n" );
     RogueException__display( err );
   }
-    const char* hello = "Hello from C++!";
-    return env->NewStringUTF( hello );
 }
+
