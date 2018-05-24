@@ -51,23 +51,6 @@ class PlasmacoreViewController : GLKViewController
     self.setupGL()
   }
 
-  override func didReceiveMemoryWarning() {
-    super.didReceiveMemoryWarning()
-
-    if self.isViewLoaded && (self.view.window != nil)
-    {
-      self.view = nil
-
-      self.tearDownGL()
-
-      if EAGLContext.current() === self.context
-      {
-        EAGLContext.setCurrent(nil)
-      }
-      self.context = nil
-    }
-  }
-
   func setupGL()
   {
     EAGLContext.setCurrent( self.context )
