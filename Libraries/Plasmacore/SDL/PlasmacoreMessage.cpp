@@ -165,7 +165,7 @@ void PlasmacoreMessage::getString( const char* name, PlasmacoreCString& result )
         return;
 
       case DataType::INT64:
-        snprintf( buffer, 80, "%ld", readInt64() );
+        snprintf( buffer, 80, "%lld", (long long int)readInt64() );
 
       case DataType::INT32:
         snprintf( buffer, 80, "%d", readInt32() );

@@ -25,9 +25,6 @@ endClass
 
 
 class InitialState : State<<MainScreen>>
-  PROPERTIES
-    text = RichText()
-
   METHODS
     method on_start
       # Called when this state becomes the active state
