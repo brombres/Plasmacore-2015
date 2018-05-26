@@ -82,8 +82,8 @@ public:
   Plasmacore & launch();
   Plasmacore & relaunch();
   void removeMessageHandler( HID handlerID );
-  void send( PlasmacoreMessage & m );
-  void send_rsvp( PlasmacoreMessage & m, HandlerCallback callback );
+  void post( PlasmacoreMessage & m );
+  void post_rsvp( PlasmacoreMessage & m, HandlerCallback callback );
   Plasmacore & setIdleUpdateFrequency( double f );
   void start();
   void stop();

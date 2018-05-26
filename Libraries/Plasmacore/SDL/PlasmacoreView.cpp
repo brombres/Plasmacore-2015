@@ -82,7 +82,7 @@ void PlasmacoreView::configure()
 
   pwindowID = Plasmacore::singleton.getResourceID( this );
 
-  SDL_RaiseWindow(window); // Should we immediately send a focus event? (Mac version does...)
+  SDL_RaiseWindow(window); // Should we immediately post a focus event? (Mac version does...)
 
   fprintf( stderr, "PlasmacoreView %s:\n", name );
   fprintf( stderr, "  SDL   WID %d:\n", swindowID );
@@ -107,13 +107,13 @@ void PlasmacoreView::redraw ()
 
   int display_width, display_height;
   SDL_GetWindowSize(window, &display_width, &display_height);
-  auto m = PlasmacoreMessage( "Display.on_render" );
+  auto m = PlasmacoreMessage( "Display.on_render", true );
   m.set( "window_id", pwindowID ).set( "display_name", name );
   m.set( "display_width",  display_width );
   m.set( "display_height", display_height );
   m.set( "viewport_width",  display_width );
   m.set( "viewport_height", display_height );
-  m.send();
+  m.post();
   SDL_GL_SwapWindow(window);
 }
 
@@ -133,7 +133,7 @@ void PlasmacoreView::on_mouse_down (int x, int y, int button)
   m.set( "x", x );
   m.set( "y", y );
   m.set( "index", button );
-  m.send();
+  m.post();
 }
 
 void PlasmacoreView::on_mouse_up (int x, int y, int button)
@@ -145,7 +145,7 @@ void PlasmacoreView::on_mouse_up (int x, int y, int button)
   m.set( "x", x );
   m.set( "y", y );
   m.set( "index", button );
-  m.send();
+  m.post();
 }
 
 void PlasmacoreView::on_mouse_move (int x, int y)
@@ -156,7 +156,7 @@ void PlasmacoreView::on_mouse_move (int x, int y)
   m.set( "type", 0 );  // 0=move
   m.set( "x", x );
   m.set( "y", y );
-  m.send();
+  m.post();
 }
 
 void PlasmacoreView::on_focus_gained  (void)
@@ -165,7 +165,7 @@ void PlasmacoreView::on_focus_gained  (void)
   auto m = PlasmacoreMessage( "Display.focus_gained" );
   m.set( "window_id", pwindowID );
   m.set( "display_name", name );
-  m.send();
+  m.post();
 }
 
 

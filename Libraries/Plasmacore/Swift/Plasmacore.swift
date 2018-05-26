@@ -26,19 +26,19 @@ class Plasmacore
   class func onStop()
   {
     singleton.stop()
-    PlasmacoreMessage( type:"Application.on_stop" ).send()
+    PlasmacoreMessage( type:"Application.on_stop", immediate:true ).post()
   }
 
   class func onStart()
   {
-    PlasmacoreMessage( type:"Application.on_start" ).send()
+    PlasmacoreMessage( type:"Application.on_start" ).post()
     singleton.start()
   }
 
   class func onSave()
   {
     singleton.stop()
-    PlasmacoreMessage( type:"Application.on_save" ).send()
+    PlasmacoreMessage( type:"Application.on_save", immediate:true ).post()
   }
 
   @discardableResult
@@ -211,7 +211,7 @@ class Plasmacore
 #if os(OSX)
   m.set( name:"is_window_based", value:true )
 #endif
-    m.send()
+    m.post()
     return self
   }
 
@@ -227,7 +227,7 @@ class Plasmacore
 
   func relaunch()->Plasmacore
   {
-    PlasmacoreMessage( type:"Application.on_launch" ).set( name:"is_window_based", value:true ).send()
+    PlasmacoreMessage( type:"Application.on_launch" ).set( name:"is_window_based", value:true ).post()
     return self
   }
 
@@ -252,7 +252,7 @@ class Plasmacore
     }
   }
 
-  func send( _ m:PlasmacoreMessage )
+  func post( _ m:PlasmacoreMessage )
   {
     objc_sync_enter( self ); defer { objc_sync_exit(self) }    // @synchronized (self)
 
@@ -268,13 +268,13 @@ class Plasmacore
     update()
   }
 
-  func send_rsvp( _ m:PlasmacoreMessage, callback:@escaping ((PlasmacoreMessage)->Void) )
+  func post_rsvp( _ m:PlasmacoreMessage, callback:@escaping ((PlasmacoreMessage)->Void) )
   {
     objc_sync_enter( self ); defer { objc_sync_exit(self) }   // @synchronized (self)
 
     reply_listeners[ m.message_id ] = PlasmacoreMessageListener( listenerID:nextListenerID, type:"<reply>", callback:callback )
     nextListenerID += 1
-    send( m )
+    post( m )
   }
 
   func setIdleUpdateFrequency( _ f:Double )->Plasmacore

@@ -1,5 +1,47 @@
 #==============================================================================
 # Messaging.rogue
+#
+# Communication mechanism between Plasmacore and Native Layer.
+#
+# post()ing a message adds it to a queue that is sent en mass during the next
+# update or before a send().
+#
+# send()ing a message pushes the message queue and then sends the current
+# message directly. It allows for a message in response.
+#
+# TODO: make the following 'immediate' on the native side:
+# Display.on_render
+# Application.on_save
+# Application.on_stop
+#
+# High-low byte order for Int32, Int64, and Real64
+#
+# Message Queue
+#   while (has_another)
+#     message_size : Int32              # number of bytes that follow not including this
+#     message      : Byte[message_size]
+#   endWhile
+#
+# Message
+#   type_name_count : Int32                 # 0 means a reply
+#   type_name_utf8  : UTF8[type_name_count]
+#   message_id      : Int32                 # serial number (always present, only needed with RSVP replies)
+#   immediate       : Byte                  # dispatch immediately instead of queuing?
+#   timestamp       : Real64
+#   while (position < message_size)
+#     arg_name_count : Int32
+#     arg_name       : UTF8[arg_name_count]
+#     arg_data_type  : Byte
+#     arg_data_size  : Int32
+#     arg_data       : Byte[arg_data_size]
+#   endWhile
+#
+# Data Types
+#   DATA_TYPE_REAL64 = 1   # value:Int64 (Real64.integer_bits stored)
+#   DATA_TYPE_INT64  = 2   # high:Int32, low:Int32
+#   DATA_TYPE_INT32  = 3   # value:Int32
+#   DATA_TYPE_BYTE   = 4   # value:Byte
+#
 #==============================================================================
 
 module Plasmacore
@@ -33,6 +75,10 @@ class MessageManager [essential singleton]
     message_builder = BufferedDataWriter()
     io_writer       = BufferedDataWriter( io_buffer )
 
+    dispatch_buffer = Byte[]  # native layer accesses this directly
+    dispatch_reader = BufferedDataReader( dispatch_buffer )
+    dispatch_writer = BufferedDataWriter( dispatch_buffer )
+
     next_id   = 1
     string_buffer = StringBuilder()
 
@@ -43,6 +89,7 @@ class MessageManager [essential singleton]
       # Recycled messages
 
     incoming_message_queue = Message[]
+    incoming_message_active_list = Message[]
 
     outgoing_message = Message()
       # Recycled for outgoing messages
@@ -53,20 +100,21 @@ class MessageManager [essential singleton]
 
   METHODS
     method init_object
-      add_listener( "<reply>",
+      add_listener( "",  # Reply listener
         function(m:Message)
           local callback = MessageManager.reply_callbacks_by_id.remove( m.message_id )
           if (callback) callback( m )
         endFunction
       )
 
-    method add_listener( type:String, listener:Function(Message), &once )
+    method add_listener( type:String, listener:Function(Message), &once, &replace_existing )
       local table = select{ once:one_time_listeners || listeners }
       local _list = table[ type ]
       if (not _list)
         _list = Function(Message)[]
         table[ type ] = _list
       endIf
+      if (replace_existing) _list.clear
       _list.add( listener )
 
     method remove_listener( type:String, listener:Function(Message) )
@@ -82,13 +130,7 @@ class MessageManager [essential singleton]
       if (_list) _list.clear
 
     method set_listener( type:String, listener:Function(Message), &once )
-      local table = select{ once:one_time_listeners || listeners }
-      local _list = table[ type ]
-      if (not _list)
-        _list = Function(Message)[]
-        table[ type ] = _list
-      endIf
-      _list.clear.add( listener )
+      add_listener( type, listener, &=once, &replace_existing )
 
     method consolidated_type_name( name:String )->String
       local consolidated = message_type_lookup[ name ]
@@ -103,6 +145,12 @@ class MessageManager [essential singleton]
       message_type_lookup[ consolidated ] = consolidated
       return consolidated
 
+    method create_message( reader:BufferedDataReader )->Message
+      if (incoming_message_pool.is_empty) incoming_message_pool.add( Message() )
+      local incoming_message = incoming_message_pool.remove_last
+      incoming_message.init( reader )
+      return incoming_message
+
     method create_message( type:String, message_id=null:Int32? )->Message
       if (not message_id.exists)
         message_id = next_id
@@ -113,8 +161,9 @@ class MessageManager [essential singleton]
       return outgoing_message
 
     method dispatch_incoming_messages
-      dispatch_incoming_message( forEach in incoming_message_queue )
+      incoming_message_active_list.clear.add( incoming_message_queue )
       incoming_message_queue.clear
+      dispatch_incoming_message( forEach in incoming_message_active_list )
 
     method dispatch_incoming_message( m:Message )
       local _list = listeners[ m.type ]
@@ -131,13 +180,18 @@ class MessageManager [essential singleton]
 
       incoming_message_pool.add( m )  # recycle
 
+    method dispatch_message->Logical
+      # Creates and dispatches a message using dispatch_buffer & reader
+      # Returns "true" if dispatch_buffer is rewritten with reply, "false" for no reply
+      # TODO
+      return false
 
-    method send( m:Message )
+    method post( m:Message )
       message_builder.write_int32( m.data.count )
       message_builder.write( m.data )
 
-    method send_rsvp( m:Message, callback:Function(Message) )
-      send( m )
+    method post_rsvp( m:Message, callback:Function(Message) )
+      post( m )
       reply_callbacks_by_id[ m.message_id ] = callback
 
     method update->Byte[] [essential]
@@ -147,22 +201,13 @@ class MessageManager [essential singleton]
       io_reader.reset
 
       while (io_reader.has_another)
-        if (incoming_message_pool.is_empty) incoming_message_pool.add( Message() )
-        local incoming_message = incoming_message_pool.remove_last
-        incoming_message.init( io_reader )
+        local incoming_message = create_message( io_reader )
         incoming_message_queue.add( incoming_message )
 
-        contingent
-          # Most messages should be queued so that they can be executed at the beginning
-          # of a render, when the graphics context is active and images can be loaded etc.
-          sufficient (incoming_message.type == "Display.on_render")
-          sufficient (incoming_message.type == "Application.on_save")
-          sufficient (incoming_message.type == "Application.on_stop")
-          sufficient (incoming_message.logical("urgent"))
-          escapeContingent
-        satisfied
-          dispatch_incoming_messages
-        endContingent
+        # Most messages should be queued so that they can be executed at the beginning
+        # of a render, when the graphics context is active and images can be loaded etc.
+        # Urgent messages are dispatched immediately.
+        if (incoming_message.immediate) dispatch_incoming_messages
 
       endWhile
 
@@ -182,12 +227,10 @@ endClass
 
 class Message
   ENUMERATE
-    DATA_TYPE_STRING        = 1
-    DATA_TYPE_REAL64        = 2
-    DATA_TYPE_INT64         = 3
-    DATA_TYPE_INT32         = 4
-    DATA_TYPE_LOGICAL       = 5
-    DATA_TYPE_BYTES         = 6
+    DATA_TYPE_REAL64 = 1
+    DATA_TYPE_INT64  = 2
+    DATA_TYPE_INT32  = 3
+    DATA_TYPE_BYTE   = 4
 
   GLOBAL METHODS
     method create( name:String )->Message
@@ -196,7 +239,8 @@ class Message
   PROPERTIES
     type       : String
     message_id : Int32
-    timestamp  : Real64  # set locally; not transmitted or received
+    immediate  : Logical
+    timestamp  : Real64
 
     data       = Byte[]
     reader     = BufferedDataReader( data )
@@ -211,33 +255,37 @@ class Message
   METHODS
     method init
       timestamp = System.time
+      immediate = false
 
-    method init( new_type:String, message_id )
+    method init( new_type:String, message_id, immediate=false )
       timestamp = System.time
       if (not sent and type) println "ERROR: unsent outgoing message of type '$'." (type)
       type = MessageManager.consolidated_type_name( new_type )
       sent = false
       writer.clear
 
-      writer.write_string( type )
-      writer.write_int32x( message_id )
+      _write_string( type )
+      writer.write_int32( message_id )
+      writer.write_logical( immediate )
+      writer.write_real64( timestamp )
 
     method init( source:DataReader )
-      timestamp = System.time
       keys.clear
       offsets.clear
       local size = source.read_int32
       source.read( data.clear, size )
       reader.reset
-      type = read_type_name
-      message_id = reader.read_int32x
-      while (index_another) noAction
+      type = _read_type_name
+      message_id = reader.read_int32
+      immediate = reader.read_logical
+      timestamp = reader.read_real64
+      while (_index_another) noAction
 
     method contains( name:String )->Logical
       return keys.locate(name).exists
 
     method create_reply->Message
-      return MessageManager.create_message( "<reply>", message_id )
+      return MessageManager.create_message( "", message_id )
 
     method get( name:String )->Value
       local i = keys.locate_last( name )
@@ -245,62 +293,52 @@ class Message
 
       reader.seek( offsets[i.value] )
 
-      which (reader.read_int32x)
-        case DATA_TYPE_STRING
-          return Value( reader.read_string( MessageManager.string_buffer.clear )->String )
+      local arg_type = reader.read_byte
 
-        case DATA_TYPE_BYTES
-          local count = reader.read_int32x
-          MessageManager.string_buffer.clear
-          forEach (1..count) MessageManager.string_buffer.print( reader.read->Character )
-          return Value( MessageManager.string_buffer->String )
-
+      which (arg_type)
         case DATA_TYPE_REAL64
-          return Value( reader.read_real64 )
+          return Value( real64(name) )
 
         case DATA_TYPE_INT64
-          return Value( reader.read_int64x )
+          return Value( int64(name) )
 
         case DATA_TYPE_INT32
-          return Value( reader.read_int32x )
+          return Value( int32(name) )
 
-        case DATA_TYPE_LOGICAL
-          return Value( reader.read_int32x? )
+        case DATA_TYPE_BYTE
+          return Value( string(name) )
 
         others
           return UndefinedValue
       endWhich
 
     method string( name:String, default="":String )->String
-      local i = keys.locate_last( name )
+      local i = keys.locate( name )
       if (not i.exists) return default
-
-      reader.seek( offsets[i.value] )
-      which (reader.read_int32x)
-        case DATA_TYPE_STRING
-          return reader.read_string( MessageManager.string_buffer.clear )->String
-        case DATA_TYPE_BYTES
-          local count = reader.read_int32x
-          MessageManager.string_buffer.clear
-          forEach (1..count) MessageManager.string_buffer.print( reader.read->Character )
-          return MessageManager.string_buffer->String
-      endWhich
-
-      return default
+      return string( name, MessageManager.string_buffer.clear )->String
 
     method string( name:String, buffer:StringBuilder )->StringBuilder
       local i = keys.locate_last( name )
       if (not i.exists) return buffer
 
       reader.seek( offsets[i.value] )
-      which (reader.read_int32x)
-        case DATA_TYPE_STRING
-          return reader.read_string( buffer )
-        case DATA_TYPE_BYTES
-          local count = reader.read_int32x
-          buffer.reserve( count )
-          forEach (1..count) buffer.print( reader.read->Character )
-          return buffer
+      local arg_type = reader.read_byte
+      local arg_size = reader.read_int32
+      if (arg_size == 0) return buffer
+
+      which (arg_type)
+        case DATA_TYPE_REAL64
+          buffer.print( reader.read_real64 )
+
+        case DATA_TYPE_INT64
+          buffer.print( reader.read_int64 )
+
+        case DATA_TYPE_INT32
+          buffer.print( reader.read_int32 )
+
+        case DATA_TYPE_BYTE
+          buffer.reserve( arg_size )
+          forEach (1..arg_size) buffer.write( reader.read_byte )
       endWhich
 
       return buffer
@@ -310,15 +348,22 @@ class Message
       if (not i.exists) return default
 
       reader.seek( offsets[i.value] )
-      which (reader.read_int32x)
+      local arg_type = reader.read_byte
+      local arg_size = reader.read_int32
+      if (arg_size == 0) return default
+
+      which (arg_type)
         case DATA_TYPE_REAL64
           return reader.read_real64
 
         case DATA_TYPE_INT64
-          return reader.read_int64x
+          return reader.read_int64
 
-        case DATA_TYPE_INT32, DATA_TYPE_LOGICAL
-          return reader.read_int32x
+        case DATA_TYPE_INT32
+          return reader.read_int32
+
+        case DATA_TYPE_BYTE
+          return reader.read_byte
       endWhich
 
       return default
@@ -328,15 +373,22 @@ class Message
       if (not i.exists) return default
 
       reader.seek( offsets[i.value] )
-      which (reader.read_int32x)
+      local arg_type = reader.read_byte
+      local arg_size = reader.read_int32
+      if (arg_size == 0) return default
+
+      which (arg_type)
         case DATA_TYPE_REAL64
           return reader.read_real64->Int64
 
         case DATA_TYPE_INT64
-          return reader.read_int64x
+          return reader.read_int64
 
-        case DATA_TYPE_INT32, DATA_TYPE_LOGICAL
-          return reader.read_int32x
+        case DATA_TYPE_INT32
+          return reader.read_int32
+
+        case DATA_TYPE_BYTE
+          return reader.read_byte
       endWhich
 
       return default
@@ -346,53 +398,40 @@ class Message
       if (not i.exists) return default
 
       reader.seek( offsets[i.value] )
-      which (reader.read_int32x)
+      local arg_type = reader.read_byte
+      local arg_size = reader.read_int32
+      if (arg_size == 0) return default
+
+      which (arg_type)
         case DATA_TYPE_REAL64
           return reader.read_real64->Int32
 
         case DATA_TYPE_INT64
-          return reader.read_int64x->Int32
+          return reader.read_int64->Int32
 
-        case DATA_TYPE_INT32, DATA_TYPE_LOGICAL
-          return reader.read_int32x
+        case DATA_TYPE_INT32
+          return reader.read_int32
+
+        case DATA_TYPE_BYTE
+          return reader.read_byte
       endWhich
 
       return default
 
     method logical( name:String, default=false:Logical )->Logical
-      local i = keys.locate_last( name )
-      if (not i.exists) return default
-
-      reader.seek( offsets[i.value] )
-      which (reader.read_int32x)
-        case DATA_TYPE_REAL64
-          return reader.read_real64 != 0
-
-        case DATA_TYPE_INT64
-          return reader.read_int64x != 0
-
-        case DATA_TYPE_INT32, DATA_TYPE_LOGICAL
-          return reader.read_int32x != 0
-      endWhich
-
-      return default
+      return int32( name, ?:{default:1||0} ) != 0
 
     method bytes( name:String, bytes=Byte[]:Byte[] )->Byte[]
       local i = keys.locate_last( name )
       if (not i.exists) return bytes
 
       reader.seek( offsets[i.value] )
-      which (reader.read_int32x)
-        case DATA_TYPE_STRING
-          local count = reader.read_int32x
-          bytes.reserve( count )
-          forEach (1..count) bytes.add( reader.read_int32x->Byte )
+      local arg_type = reader.read_byte
+      local arg_size = reader.read_int32
+      if (arg_size == 0) return bytes
 
-        case DATA_TYPE_BYTES
-          local count = reader.read_int32x
-          bytes.reserve( count )
-          forEach (1..count) bytes.add( reader.read->Byte )
-      endWhich
+      bytes.reserve( arg_size )
+      forEach (1..arg_size) bytes.add( reader.read->Byte )
 
       return bytes
 
@@ -413,93 +452,88 @@ class Message
       else                 return default
 
     method set( name:String, _value:String )->this
-      writer.write_string( name )
-      writer.write_int32x( Message.DATA_TYPE_STRING ).write_string( _value )
+      _write_string( name )
+      writer.write_byte( Message.DATA_TYPE_BYTE )
+      _write_string( _value )
       return this
 
     method set( name:String, _value:Real64 )->this
-      writer.write_string( name )
-      writer.write_int32x( Message.DATA_TYPE_REAL64 ).write_real64( _value )
+      _write_string( name )
+      writer.write_byte( Message.DATA_TYPE_REAL64 ).write_int32( 8 )
+      writer.write_real64( _value )
       return this
 
     method set( name:String, _value:Int64 )->this
-      writer.write_string( name )
-      writer.write_int32x( Message.DATA_TYPE_INT64 ).write_int64x( _value )
+      _write_string( name )
+      writer.write_byte( Message.DATA_TYPE_INT64 ).write_int32( 8 )
+      writer.write_int64( _value )
       return this
 
     method set( name:String, _value:Int32 )->this
-      writer.write_string( name )
-      writer.write_int32x( Message.DATA_TYPE_INT32 ).write_int32x( _value )
+      _write_string( name )
+      writer.write_byte( Message.DATA_TYPE_INT32 ).write_int32( 4 )
+      writer.write_int32( _value )
       return this
 
     method set( name:String, _value:Logical )->this
-      writer.write_string( name )
-      writer.write_int32x( Message.DATA_TYPE_LOGICAL ).write_logical( _value )
+      _write_string( name )
+      writer.write_byte( Message.DATA_TYPE_BYTE ).write_int32( 1 )
+      writer.write_byte( _value->Int32 )
       return this
 
     method set( name:String, bytes:Byte[] )->this
-      writer.write_string( name )
-      writer.write_int32x( Message.DATA_TYPE_BYTES ).write_int32x( bytes.count )
+      _write_string( name )
+      writer.write_byte( Message.DATA_TYPE_BYTE ).write_int32( bytes.count )
       forEach (b in bytes) writer.write_byte( b )
       return this
 
     method set( name:String, _value:Value )->this
       return set( name, _value.to_json )
 
-    method send
-      MessageManager.send( this )
+    method post
+      MessageManager.post( this )
       sent = true
 
-    method send_rsvp( callback:Function(Message) )
-      # This form of send_rsvp waits for the native layer to reply() directly to this
+    method post_rsvp( callback:Function(Message) )
+      # This form of post_rsvp waits for the native layer to reply() directly to this
       # message.
-      MessageManager.send_rsvp( this, callback )
+      MessageManager.post_rsvp( this, callback )
       sent = true
 
-    method send_rsvp( response_message_type:String, callback:Function(Message) )
-      # Rather than awaiting a reply to this specific message, this form of send_rsvp
+    method post_rsvp( response_message_type:String, callback:Function(Message) )
+      # Rather than awaiting a reply to this specific message, this form of post_rsvp
       # installs a global one-time message listener that calls the given callback
       # when a new message (not a reply) of the given response type comes through.
       add_message_listener( response_message_type, callback, &once )
-      MessageManager.send( this )
+      MessageManager.post( this )
       sent = true
 
     # INTERNAL USE ------------------------------------------------------------
 
-    method index_another->Logical
+    method _index_another->Logical
       if (not reader.has_another) return false
-      local key    = read_type_name
+      local key    = _read_type_name
       local offset = reader.position
       keys.add( key )
       offsets.add( offset )
 
-      # Skip value
-      local data_type = reader.read_int32x
-      which (data_type)
-        case DATA_TYPE_STRING
-          local count = reader.read_int32x
-          forEach (1..count) reader.read_int32x
+      reader.read_byte                   # skip arg type
+      reader.skip( reader.read_int32 )   # skip arg data
 
-        case DATA_TYPE_BYTES
-          local count = reader.read_int32x
-          forEach (1..count) reader.read_byte
-
-        case DATA_TYPE_REAL64
-          reader.read_real64
-
-        case DATA_TYPE_INT64
-          reader.read_int64x
-
-        case DATA_TYPE_INT32, DATA_TYPE_LOGICAL
-          reader.read_int32x
-
-        others
-          println "ERROR: unsupported message data type $." (data_type)
-      endWhich
       return true
 
-    method read_type_name->String
-      return MessageManager.consolidated_type_name( reader.read_string(MessageManager.string_buffer.clear) )
+    method _read_string( builder:StringBuilder )->StringBuilder
+      local n = reader.read_int32
+      forEach (1..n) builder.write( reader.read_byte )
+      return builder
+
+    method _read_type_name->String
+      return MessageManager.consolidated_type_name( _read_string(MessageManager.string_buffer.clear) )
+
+    method _write_string( value:String )
+      local n = value.byte_count
+      writer.write_int32( n )
+      forEach (i in 0..<n) writer.write_byte( value.byte(i) )
 
 endClass
 

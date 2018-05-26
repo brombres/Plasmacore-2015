@@ -5,73 +5,51 @@
 
 MID PlasmacoreMessage::next_message_id = 1;
 
-
-
 PlasmacoreMessage::PlasmacoreMessage ( Buffer& data )
 {
-  init();
+  //init();
   this->data = data;
   readString( type );
-  message_id = readIntX();
+  message_id = readInt32();
+  immediate = readByte();
+  timestamp = readReal64();
   while (indexAnother());
 }
 
-PlasmacoreMessage::PlasmacoreMessage (const char * type, MID message_id)
+PlasmacoreMessage::PlasmacoreMessage (const char * type, MID message_id, bool immediate )
 {
-  init();
+  //init();
   this->type = type;
   this->message_id = message_id;
-  writeString(type);
-  writeIntX(message_id);
+  this->immediate = immediate;
+  this->timestamp = Plasmacore_time();
+  writeString( type );
+  writeInt32( message_id );
+  writeByte( immediate ? 1 : 0 );
+  writeReal64( timestamp );
 }
 
-PlasmacoreMessage::PlasmacoreMessage (const char * type) : PlasmacoreMessage(type, PlasmacoreMessage::next_message_id++)
+PlasmacoreMessage::PlasmacoreMessage (const char * type, bool immediate)
+    : PlasmacoreMessage(type, PlasmacoreMessage::next_message_id++, immediate)
 {
 }
 
-PlasmacoreMessage::PlasmacoreMessage (void)
-{
-  init();
-}
+//PlasmacoreMessage::PlasmacoreMessage (void)
+//{
+  //init();
+//}
 
-void PlasmacoreMessage::init (void)
-{
-  type = "Unspecified";
-  message_id = 0;
-}
+//void PlasmacoreMessage::init (void)
+//{
+//  type = "Unspecified";
+//  message_id = 0;
+//  immediate = false;
+//}
 
 PlasmacoreMessage PlasmacoreMessage::createReply (void) const
 {
-  return PlasmacoreMessage("<reply>", message_id);
+  return PlasmacoreMessage("", message_id);
 }
-
-/*
-Buffer PlasmacoreMessage::getBytes (const char * name)
-{
-  auto offset = entries.find(name);
-  if (offset != entries.end())
-  {
-    position = offset->second;
-    switch (readIntX())
-    {
-      case DataType::BYTES:
-      {
-        auto count = readIntX();
-        Buffer buffer;
-        buffer.reserve(count);
-        for (int i = 0; i < count; ++i)
-        {
-          buffer.push_back(readByte());
-        }
-        return buffer;
-      }
-      default:
-        break;
-    }
-  }
-  return Buffer();
-}
-*/
 
 int32_t PlasmacoreMessage::getInt32 (const char* name, int32_t default_value)
 {
@@ -79,22 +57,23 @@ int32_t PlasmacoreMessage::getInt32 (const char* name, int32_t default_value)
   if (entry)
   {
     position = entry->value;
-    switch (readIntX())
+    auto arg_type = readByte();
+    auto arg_size = readInt32();
+    if (arg_size == 0) return default_value;
+
+    switch (arg_type)
     {
-    case DataType::REAL64:
-      return (int32_t)readReal64();
+      case DataType::REAL64:
+        return (int32_t)readReal64();
 
-    case DataType::INT64:
-      return (int32_t)readInt64X();
+      case DataType::INT64:
+        return (int32_t)readInt64();
 
-    case DataType::INT32:
-      return readIntX();
+      case DataType::INT32:
+        return readInt32();
 
-    case DataType::LOGICAL:
-      return readIntX();
-
-    default:
-      return default_value;
+      case DataType::BYTE:
+        return readByte();
     }
   }
   return default_value;
@@ -106,22 +85,23 @@ int64_t PlasmacoreMessage::getInt64 (const char* name, int64_t default_value)
   if (entry)
   {
     position = entry->value;
-    switch (readIntX())
+    auto arg_type = readByte();
+    auto arg_size = readInt32();
+    if (arg_size == 0) return default_value;
+
+    switch (arg_type)
     {
-    case DataType::REAL64:
-      return (int64_t)readReal64();
+      case DataType::REAL64:
+        return (int64_t)readReal64();
 
-    case DataType::INT64:
-      return readInt64X();
+      case DataType::INT64:
+        return readInt64();
 
-    case DataType::INT32:
-      return (int64_t)readIntX();
+      case DataType::INT32:
+        return (int64_t)readInt32();
 
-    case DataType::LOGICAL:
-      return readIntX();
-
-    default:
-      return default_value;
+      case DataType::BYTE:
+        return readByte();
     }
   }
   return default_value;
@@ -138,22 +118,23 @@ double PlasmacoreMessage::getReal64( const char* name, double default_value )
   if (entry)
   {
     position = entry->value;
-    switch (readIntX())
+    auto arg_type = readByte();
+    auto arg_size = readInt32();
+    if (arg_size == 0) return default_value;
+
+    switch (arg_type)
     {
-    case DataType::REAL64:
-      return readReal64();
+      case DataType::REAL64:
+        return readReal64();
 
-    case DataType::INT64:
-      return double(readInt64X());
+      case DataType::INT64:
+        return double(readInt64());
 
-    case DataType::INT32:
-      return double(readIntX());
+      case DataType::INT32:
+        return double(readInt32());
 
-    case DataType::LOGICAL:
-      return double(readIntX());
-
-    default:
-      return default_value;
+      case DataType::BYTE:
+        return double(readByte());
     }
   }
   return default_value;
@@ -166,12 +147,31 @@ void PlasmacoreMessage::getString( const char* name, PlasmacoreCString& result )
   if (entry)
   {
     position = entry->value;
-    switch (readIntX())
+    auto arg_type = readByte();
+    auto arg_size = readInt32();
+    if (arg_size == 0) return;
+
+    if (arg_type == DataType::BYTE)
     {
-      case DataType::STRING:
-        readString( result );
-        break;
+      readString( result );
+      return;
     }
+
+    char buffer[ 80 ];
+    switch (arg_type)
+    {
+      case DataType::REAL64:
+        snprintf( buffer, 80, "%lf", readReal64() );
+        return;
+
+      case DataType::INT64:
+        snprintf( buffer, 80, "%ld", readInt64() );
+
+      case DataType::INT32:
+        snprintf( buffer, 80, "%d", readInt32() );
+    }
+
+    result = buffer;
   }
 }
 
@@ -183,54 +183,21 @@ bool PlasmacoreMessage::indexAnother (void)
   readString( name );
   entries[ name.as_c_string() ] = position;
 
-  switch (readIntX())
-  {
-  case DataType::STRING:
-  {
-    auto count = readIntX();
-    for (int i = 0; i < count; i++) readIntX();
-    return true;
-  }
-  case DataType::REAL64:
-  {
-    readReal64();
-    return true;
-  }
-  case DataType::INT64:
-  {
-    readInt64X();
-    return true;
-  }
-  case DataType::INT32:
-  {
-    readIntX();
-    return true;
-  }
-  case DataType::LOGICAL:
-  {
-    readIntX();
-    return true;
-  }
-  case DataType::BYTES:
-  {
-    position += readIntX();
-    return true;
-  }
-  default:
-  {
-    return false;
-  }
-  }
+  readByte();  // arg type
+  auto arg_size = readInt32();
+  position += arg_size;
+
+  return true;
 }
 
-void PlasmacoreMessage::send()
+void PlasmacoreMessage::post()
 {
-  Plasmacore::singleton.send( *this );
+  Plasmacore::singleton.post( *this );
 }
 
-void PlasmacoreMessage::send_rsvp( HandlerCallback callback )
+void PlasmacoreMessage::post_rsvp( HandlerCallback callback )
 {
-  Plasmacore::singleton.send_rsvp( *this, callback );
+  Plasmacore::singleton.post_rsvp( *this, callback );
 }
 
 PlasmacoreMessage & PlasmacoreMessage::set( const char * name, Buffer & value )
@@ -238,11 +205,11 @@ PlasmacoreMessage & PlasmacoreMessage::set( const char * name, Buffer & value )
   position = data.count;
   writeString( name );
   entries[ name ] = position;
-  writeIntX( DataType::BYTES );
-  writeIntX( value.count );
+  writeByte( DataType::BYTE );
+  writeInt32( value.count );
   for (int i = 0; i < value.count; ++i)
   {
-    writeIntX( value[i] );
+    writeByte( value[i] );
   }
   return *this;
 }
@@ -252,9 +219,9 @@ PlasmacoreMessage & PlasmacoreMessage::set( const char * name, int64_t value )
   position = data.count;
   writeString( name );
   entries[ name ] = position;
-  writeIntX( DataType::INT64 );
-  writeIntX( Int(value>>32) );
-  writeIntX( Int(value) );
+  writeByte( DataType::INT64 );
+  writeInt32( 8 );
+  writeInt64( value );
   return *this;
 }
 
@@ -263,8 +230,9 @@ PlasmacoreMessage & PlasmacoreMessage::set( const char * name, Int value )
   position = data.count;
   writeString( name );
   entries[ name ] = position;
-  writeIntX( DataType::INT32 );
-  writeIntX( value );
+  writeByte( DataType::INT32 );
+  writeInt32( 4 );
+  writeInt32( value );
   return *this;
 }
 
@@ -273,8 +241,9 @@ PlasmacoreMessage & PlasmacoreMessage::set( const char * name, bool value )
   position = data.count;
   writeString( name );
   entries[ name ] = position;
-  writeIntX( DataType::LOGICAL );
-  writeIntX( value ? 1 : 0 );
+  writeByte( DataType::BYTE );
+  writeInt32( 1 );
+  writeByte( value ? 1 : 0 );
   return *this;
 }
 
@@ -283,7 +252,8 @@ PlasmacoreMessage & PlasmacoreMessage::set( const char * name, double value )
   position = data.count;
   writeString( name );
   entries[ name ] = position;
-  writeIntX( DataType::REAL64 );
+  writeByte( DataType::REAL64 );
+  writeInt32( 8 );
   writeReal64( value );
   return *this;
 }
@@ -293,7 +263,7 @@ PlasmacoreMessage & PlasmacoreMessage::set( const char * name, const char * valu
   position = data.count;
   writeString( name );
   entries[ name ] = position;
-  writeIntX( DataType::STRING );
+  writeByte( DataType::BYTE );
   writeString( value );
   return *this;
 }
@@ -310,10 +280,10 @@ Int PlasmacoreMessage::readByte (void)
   return Int(data[position-1]);
 }
 
-int64_t PlasmacoreMessage::readInt64X (void)
+int64_t PlasmacoreMessage::readInt64 (void)
 {
-  auto result = int64_t( readIntX() ) << 32;
-  return result | int64_t( uint32_t(readIntX()) );
+  auto result = int64_t( readInt32() ) << 32;
+  return result | int64_t( uint32_t(readInt32()) );
 }
 
 int32_t PlasmacoreMessage::readInt32()
@@ -322,42 +292,6 @@ int32_t PlasmacoreMessage::readInt32()
   result = (result << 8) | readByte();
   result = (result << 8) | readByte();
   return (result << 8) | readByte();
-}
-
-Int PlasmacoreMessage::readIntX()
-{
-  auto b = readByte();
-  if ((b & 0xc0) != 0x80)
-  {
-    return b;
-  }
-
-  switch (b & 0x30)
-  {
-    case 0x00:
-      return ((b & 15) << 8) | readByte();
-
-    case 0x10:
-      position += 2;
-      if (position > data.count)
-      {
-        position = data.count;
-        return 0;
-      }
-      return ((b & 15) << 16) | (Int(data[position-2])<<8) | Int(data[position-1]);
-
-    case 0x20:
-      position += 3;
-      if (position > data.count)
-      {
-        position = data.count;
-        return 0;
-      }
-      return ((b & 15) << 24) | (Int(data[position-3])<<16) | (Int(data[position-2]<<8)) | Int(data[position-1]);
-
-    default:
-      return readInt32();
-  }
 }
 
 double PlasmacoreMessage::readReal64 (void)
@@ -370,10 +304,10 @@ double PlasmacoreMessage::readReal64 (void)
 void PlasmacoreMessage::readString ( PlasmacoreCString& result )
 {
   PlasmacoreCStringBuilder string_buffer;
-  auto count = readIntX();
+  auto count = readInt32();
   for (int i = 0; i < count; ++i)
   {
-    string_buffer.add( char(readIntX()) );
+    string_buffer.add( char(readByte()) );
   }
   result = string_buffer.as_c_string();
 }
@@ -381,10 +315,10 @@ void PlasmacoreMessage::readString ( PlasmacoreCString& result )
 void PlasmacoreMessage::readString ( PlasmacoreCStringBuilder& result )
 {
   result.clear();
-  auto count = readIntX();
+  auto count = readInt32();
   for (int i = 0; i < count; ++i)
   {
-    result.add( char(readIntX()) );
+    result.add( char(readByte()) );
   }
 }
 
@@ -409,41 +343,10 @@ void PlasmacoreMessage::writeInt32( Int value )
   writeByte( value );
 }
 
-void PlasmacoreMessage::writeInt64X( int64_t value )
+void PlasmacoreMessage::writeInt64( int64_t value )
 {
-  writeIntX( Int(value>>32) );
-  writeIntX( Int(value) );
-}
-
-void PlasmacoreMessage::writeIntX( Int value )
-{
-  if (value >= -64 && value <= 127)
-  {
-    writeByte( value );
-  }
-  else if (value >= -0x400 && value <= 0x3ff)
-  {
-    writeByte( 0x80 | ((value >> 8) & 15) );
-    writeByte( value );
-  }
-  else if (value >= -0x40000 && value <= 0x3ffff)
-  {
-    writeByte( 0x90 | ((value >> 16) & 15) );
-    writeByte( value >> 8 );
-    writeByte( value );
-  }
-  else if (value >= -0x4000000 && value <= 0x3ffffff)
-  {
-    writeByte( 0xa0 | ((value >> 24) & 15) );
-    writeByte( value >> 16 );
-    writeByte( value >> 8 );
-    writeByte( value );
-  }
-  else
-  {
-    writeByte( 0xb0 );
-    writeInt32( value );
-  }
+  writeInt32( Int(value>>32) );
+  writeInt32( Int(value) );
 }
 
 void PlasmacoreMessage::writeReal64 ( double value )
@@ -456,9 +359,9 @@ void PlasmacoreMessage::writeReal64 ( double value )
 void PlasmacoreMessage::writeString ( const char* value )
 {
   int len = strlen( value );
-  writeIntX( len );
+  writeInt32( len );
   for (int i = 0; i < len; ++i)
   {
-    writeIntX( Int(value[i]) );
+    writeByte( value[i] );
   }
 }

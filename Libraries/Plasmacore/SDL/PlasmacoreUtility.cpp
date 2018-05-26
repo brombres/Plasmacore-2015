@@ -9,6 +9,8 @@ using namespace std;
 
 using namespace std;
 
+#include <sys/time.h>
+
 //=============================================================================
 //  PlasmacoreCString
 //=============================================================================
@@ -145,3 +147,22 @@ PlasmacoreCStringBuilder& PlasmacoreCStringBuilder::reserve( int additional_capa
   return *this;
 }
 
+double Plasmacore_time()
+{
+#if defined(_WIN32)
+  struct __timeb64 time_struct;
+  double time_seconds;
+  _ftime64_s( &time_struct );
+  time_seconds = (double) time_struct.time;
+  time_seconds += time_struct.millitm / 1000.0;
+  return time_seconds;
+
+#else
+  struct timeval time_struct;
+  double time_seconds;
+  gettimeofday( &time_struct, 0 );
+  time_seconds = (double) time_struct.tv_sec;
+  time_seconds += (time_struct.tv_usec / 1000000.0);
+  return time_seconds;
+#endif
+}

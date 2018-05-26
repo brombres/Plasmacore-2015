@@ -868,4 +868,7 @@ struct PlasmacoreIntTable
   }
 };
 
+double Plasmacore_time();
+
+
 #endif // PLASMACORE_UTILITY_H

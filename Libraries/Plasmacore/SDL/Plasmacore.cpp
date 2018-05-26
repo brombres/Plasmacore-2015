@@ -146,7 +146,7 @@ Plasmacore & Plasmacore::launch()
 #ifdef WINDOW_BASED
   m.set( "is_window_based", true );
 #endif
-  m.send();
+  m.post();
   return *this;
 }
 
@@ -156,7 +156,7 @@ Plasmacore & Plasmacore::launch()
 Plasmacore & Plasmacore::relaunch()
 {
   //XXX: Always relaunch window based?
-  PlasmacoreMessage( "Application.on_launch" ).set( "is_window_based", true ).send();
+  PlasmacoreMessage( "Application.on_launch" ).set( "is_window_based", true ).post();
   return *this;
 }
 
@@ -185,7 +185,7 @@ void Plasmacore::removeMessageHandler( HID handlerID )
 }
 
 
-void Plasmacore::send( PlasmacoreMessage & m )
+void Plasmacore::post( PlasmacoreMessage & m )
 {
   auto size = m.data.count;
   pending_message_data.add( uint8_t((size>>24)&255) );
@@ -200,11 +200,11 @@ void Plasmacore::send( PlasmacoreMessage & m )
 }
 
 
-void Plasmacore::send_rsvp( PlasmacoreMessage & m, HandlerCallback callback )
+void Plasmacore::post_rsvp( PlasmacoreMessage & m, HandlerCallback callback )
 {
   reply_handlers[ m.message_id ] = new PlasmacoreMessageHandler( nextHandlerID, "<reply>", callback );
   nextHandlerID += 1;
-  send( m );
+  post( m );
 }
 
 
@@ -436,7 +436,7 @@ static void do_iteration (void)
         m.set( "type", 0 );  // 0=move
         m.set( "x", e.tfinger.x );
         m.set( "y", e.tfinger.y );
-        m.send();
+        m.post();
         break;
       }
       case SDL_FINGERDOWN:
@@ -445,7 +445,7 @@ static void do_iteration (void)
         m.set( "type", 1 );  // 1=press
         m.set( "x", e.tfinger.x );
         m.set( "y", e.tfinger.y );
-        m.send();
+        m.post();
         break;
       }
       case SDL_FINGERUP:
@@ -454,7 +454,7 @@ static void do_iteration (void)
         m.set( "type", 2 );  // 2=release
         m.set( "x", e.tfinger.x );
         m.set( "y", e.tfinger.y );
-        m.send();
+        m.post();
         break;
       }
       case SDL_WINDOWEVENT:
@@ -500,7 +500,7 @@ extern "C" void Rogue_sync_local_storage()
 extern "C" void launch_plasmacore()
 {
   Plasmacore::singleton.configure().launch();
-  PlasmacoreMessage( "Application.on_start" ).send();
+  PlasmacoreMessage( "Application.on_start" ).post();
   Plasmacore::singleton.start();
 
   plasmacore_launched = true;

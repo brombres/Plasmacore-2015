@@ -16,7 +16,7 @@ class PlasmacoreView: NSOpenGLView
 {
 
   var isConfigured = false
-  
+
   @objc var name = "unnamed"
   var windowID     = 0
   var displayLink  : CVDisplayLink?
@@ -58,7 +58,7 @@ class PlasmacoreView: NSOpenGLView
     let m = PlasmacoreMessage( type:"Display.focus_gained" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
-    m.send()
+    m.post()
     return true
   }
 
@@ -112,12 +112,12 @@ class PlasmacoreView: NSOpenGLView
     let display_width  = Int( view_bounds.width )
     let display_height = Int( view_bounds.height )
 
-    let m = PlasmacoreMessage( type:"Display.on_render" )
+    let m = PlasmacoreMessage( type:"Display.on_render", immediate:true  )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"display_width",  value:display_width )
     m.set( name:"display_height", value:display_height )
-    m.send()
+    m.post()
 
     CGLFlushDrawable( context.cglContextObj! )
     CGLUnlockContext( context.cglContextObj! )
@@ -158,7 +158,7 @@ class PlasmacoreView: NSOpenGLView
       m.set( name:"display_name", value:name )
       m.set( name:"is_press", value:(keyModifierFlags & mask) == 0 )
       m.set( name:"keycode", value:keycode )
-      m.send()
+      m.post()
     }
   }
 
@@ -175,7 +175,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"keycode", value:keycode )
     m.set( name:"syscode", value:syscode )
     m.set( name:"is_repeat", value:event.isARepeat )
-    m.send()
+    m.post()
 
     guard let characters = event.characters else { return }
     if (characters.isEmpty) { return }
@@ -193,7 +193,7 @@ class PlasmacoreView: NSOpenGLView
       {
         m.set( name:"text", value:characters )
       }
-      m.send()
+      m.post()
     }
   }
 
@@ -209,7 +209,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"is_press", value:false )
     m.set( name:"keycode", value:keycode )
     m.set( name:"syscode", value:syscode )
-    m.send()
+    m.post()
   }
 
   override func mouseDown( with event:NSEvent )
@@ -224,7 +224,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"x", value:Double(point.x) )
     m.set( name:"y", value:Double(bounds.size.height - point.y) )
     m.set( name:"index", value:0 )
-    m.send()
+    m.post()
   }
 
   override func mouseDragged( with event:NSEvent )
@@ -238,7 +238,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"type", value:0 )  // 0=move
     m.set( name:"x", value:Double(point.x) )
     m.set( name:"y", value:Double(bounds.size.height - point.y) )
-    m.send()
+    m.post()
   }
 
   override func mouseMoved( with event:NSEvent )
@@ -252,7 +252,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"type", value:0 )  // 0=move
     m.set( name:"x", value:Double(point.x) )
     m.set( name:"y", value:Double(bounds.size.height - point.y) )
-    m.send()
+    m.post()
   }
 
   override func mouseUp( with event:NSEvent )
@@ -267,7 +267,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"x", value:Double(point.x) )
     m.set( name:"y", value:Double(bounds.size.height - point.y) )
     m.set( name:"index", value:0 )
-    m.send()
+    m.post()
   }
 
   func onRedraw()
@@ -318,7 +318,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"x", value:Double(point.x) )
     m.set( name:"y", value:Double(bounds.size.height - point.y) )
     m.set( name:"index", value:1 )
-    m.send()
+    m.post()
   }
 
   override func rightMouseDragged( with event:NSEvent )
@@ -332,7 +332,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"type", value:0 )  // 0=move
     m.set( name:"x", value:Double(point.x) )
     m.set( name:"y", value:Double(bounds.size.height - point.y) )
-    m.send()
+    m.post()
   }
 
   override func rightMouseUp( with event:NSEvent )
@@ -347,7 +347,7 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"x", value:Double(point.x) )
     m.set( name:"y", value:Double(bounds.size.height - point.y) )
     m.set( name:"index", value:1 )
-    m.send()
+    m.post()
   }
 
   override func scrollWheel( with event:NSEvent )
@@ -363,7 +363,7 @@ class PlasmacoreView: NSOpenGLView
       m.set( name:"display_name", value:name )
       m.set( name:"dx", value:Double(dx) )
       m.set( name:"dy", value:Double(dy) )
-      m.send()
+      m.post()
     }
   }
 

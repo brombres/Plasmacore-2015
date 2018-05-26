@@ -17,10 +17,10 @@ class Window
       id = Plasmacore.create_resource_id
       WindowManager.windows_by_id[ id ] = this
       WindowManager.window_list.add( this )
-      Message( "Window.create" ).set("id",id).set("name",name).send
+      Message( "Window.create" ).set("id",id).set("name",name).post
 
     method call( method_name:String )
-      Message( "Window.call" ).set("id",id).set("method_name",method_name).send
+      Message( "Window.call" ).set("id",id).set("method_name",method_name).post
 
     method on_cleanup
       close
@@ -28,7 +28,7 @@ class Window
     method close
       WindowManager.windows_by_id.remove( id )
       WindowManager.window_list.remove( this )
-      Message( "Window.close" ).set("id",id).send
+      Message( "Window.close" ).set("id",id).post
 
     method find_display( display_name_buffer:StringBuilder )->Display
       if (display_name_buffer == current_display_name) return current_display
@@ -66,7 +66,7 @@ class Window
       }#
 
     method show
-      Message( "Window.show" ).set("id",id).send
+      Message( "Window.show" ).set("id",id).post
 
 endClass
 
