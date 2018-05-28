@@ -100,8 +100,9 @@ class Plasmacore [essential singleton]
 
       load_image_index
 
-      MessageManager.add_listener( "Display.on_render",
+      MessageManager.set_listener( "Display.on_render",
         function(m:Message)
+          MessageManager.dispatch_incoming_messages
           if (Plasmacore.show_fps)
             ++Plasmacore.next_fps
             if (Plasmacore.fps_timer.is_expired)
@@ -121,7 +122,7 @@ class Plasmacore [essential singleton]
           Display( m.string("display_name") ).render( display_size, viewport_size, refresh_rate )
         endFunction )
 
-      MessageManager.add_listener( "Display.on_key_event",
+      MessageManager.set_listener( "Display.on_key_event",
         function(m:Message)
           local display   = Display( m.string("display_name") )
           local keycode   = m.int32( "keycode" )
@@ -134,7 +135,7 @@ class Plasmacore [essential singleton]
           display.handle( e )
         endFunction )
 
-      MessageManager.add_listener( "Display.on_pointer_event",
+      MessageManager.set_listener( "Display.on_pointer_event",
         function(m:Message)
           local display = Display( m.string("display_name") )
           local scale = display.display_scale
@@ -149,7 +150,7 @@ class Plasmacore [essential singleton]
           display.handle( e )
         endFunction )
 
-      MessageManager.add_listener( "Display.on_scroll_event",
+      MessageManager.set_listener( "Display.on_scroll_event",
         function(m:Message)
           local display = Display( m.string("display_name") )
           local scale = display.display_scale
@@ -160,7 +161,7 @@ class Plasmacore [essential singleton]
           display.handle( e )
         endFunction )
 
-      MessageManager.add_listener( "Input.on_stylus_event",
+      MessageManager.set_listener( "Input.on_stylus_event",
         # Stylus/touch event not associated with any display.  Dispatch to each display,
         # mapping normalized coordinates to each display's size.
         function(m:Message)
@@ -177,7 +178,7 @@ class Plasmacore [essential singleton]
           endForEach
         endFunction )
 
-      MessageManager.add_listener( "Display.on_text_event",
+      MessageManager.set_listener( "Display.on_text_event",
         function(m:Message)
           local display    = Display( m.string("display_name") )
           local character  = m.int32( "character" )->Character

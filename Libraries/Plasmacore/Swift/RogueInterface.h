@@ -24,7 +24,8 @@ extern "C" {
 
 void    RogueInterface_configure();
 void    RogueInterface_launch();
-NSData* RogueInterface_send_messages( const unsigned char* data, int count );
+NSData* RogueInterface_post_messages( const unsigned char* data, int count );
+NSData* RogueInterface_send_message( const unsigned char* data, int count );
 void    RogueInterface_set_arg_count( int count );
 void    RogueInterface_set_arg_value( int index, const char* value );
 

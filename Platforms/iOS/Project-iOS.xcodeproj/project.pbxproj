@@ -358,7 +358,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.plasmaworks.Project-iOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Project-iOS-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Project-iOS-Swift.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
 			};
@@ -375,6 +377,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.plasmaworks.Project-iOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Project-iOS-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Project-iOS-Swift.h";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
 			};

@@ -112,12 +112,12 @@ class PlasmacoreView: NSOpenGLView
     let display_width  = Int( view_bounds.width )
     let display_height = Int( view_bounds.height )
 
-    let m = PlasmacoreMessage( type:"Display.on_render", immediate:true  )
+    let m = PlasmacoreMessage( type:"Display.on_render" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"display_width",  value:display_width )
     m.set( name:"display_height", value:display_height )
-    m.post()
+    m.send()
 
     CGLFlushDrawable( context.cglContextObj! )
     CGLUnlockContext( context.cglContextObj! )

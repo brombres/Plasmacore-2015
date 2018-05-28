@@ -349,7 +349,12 @@ void Plasmacore::real_update (bool reschedule)
 static bool should_quit = false;
 
 static int current_fps = 0;
+
+#ifdef __EMSCRIPTEN__
+static int new_fps = 30;
+#else
 static int new_fps = 60;
+#endif
 
 #include <sys/time.h>
 

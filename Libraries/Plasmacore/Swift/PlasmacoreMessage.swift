@@ -14,7 +14,6 @@
 //   type_name_count : Int32                 # 0 means a reply
 //   type_name_utf8  : UTF8[type_name_count]
 //   message_id      : Int32                 # serial number (always present, only needed with RSVP replies)
-//   immediate       : Byte                  # dispatch immediately instead of queuing?
 //   timestamp       : Real64
 //   while (position < message_size)
 //     arg_name_count : Int32
@@ -44,7 +43,6 @@ class PlasmacoreMessage
 
   var type       : String
   var message_id : Int
-  var immediate  : Bool
   var timestamp  : Double
 
   var data          = [UInt8]()
@@ -52,9 +50,11 @@ class PlasmacoreMessage
   var entries  = [String:Int]()
   var position = 0
 
-  convenience init( type:String, immediate:Bool=false )
+  var _reply:PlasmacoreMessage? = nil
+
+  convenience init( type:String )
   {
-    self.init( type:type, message_id:PlasmacoreMessage.next_message_id, immediate:immediate )
+    self.init( type:type, message_id:PlasmacoreMessage.next_message_id )
     PlasmacoreMessage.next_message_id += 1
   }
 
@@ -64,25 +64,23 @@ class PlasmacoreMessage
     self.data = data
     type = readString()
     message_id = readInt32()
-    immediate  = (readByte() != 0)
+    timestamp = readReal64()
     while (indexAnother()) {}
   }
 
-  convenience init( type:String, message_id:Int, immediate:Bool=false )
+  convenience init( type:String, message_id:Int )
   {
     self.init()
     self.type = type
     self.message_id = message_id
-    self.immediate = immediate
     writeString( type )
     writeInt32( message_id )
-    writeByte( immediate ? 1 : 0 )
     writeReal64( timestamp )
   }
 
-  convenience init( reply_to_message_id:Int, immediate:Bool=false )
+  convenience init( reply_to_message_id:Int )
   {
-    self.init( type: "", message_id: reply_to_message_id, immediate: immediate )
+    self.init( type: "", message_id: reply_to_message_id )
   }
 
   init()
@@ -90,12 +88,12 @@ class PlasmacoreMessage
     type = "Unspecified"
     message_id = 0
     timestamp = PlasmacoreMessage.currentTime()
-    immediate = false
   }
 
-  func createReply()->PlasmacoreMessage
+  func reply()->PlasmacoreMessage
   {
-    return PlasmacoreMessage( type:"", message_id:message_id )
+    if (_reply == nil) { _reply = PlasmacoreMessage( type:"", message_id:message_id ) }
+    return _reply!
   }
 
   func getBytes( name:String )->[UInt8]
@@ -259,6 +257,20 @@ class PlasmacoreMessage
   func post_rsvp( _ callback:@escaping ((PlasmacoreMessage)->Void) )
   {
     Plasmacore.singleton.post_rsvp( self, callback:callback );
+  }
+
+  @discardableResult
+  func send()->PlasmacoreMessage?
+  {
+    Plasmacore.singleton.update()  // transmit any post()ed messages
+    if let result_data = RogueInterface_send_message( data, Int32(data.count) )
+    {
+      return PlasmacoreMessage( data:[UInt8](result_data) )
+    }
+    else
+    {
+      return nil
+    }
   }
 
   @discardableResult

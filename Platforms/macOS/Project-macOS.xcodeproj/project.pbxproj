@@ -372,8 +372,8 @@
 		30F184FC1DEB5F3D002FE6D4 = {
 			isa = PBXGroup;
 			children = (
-				30F185AD1DEB61ED002FE6D4 /* Plasmacore */,
 				30F185071DEB5F3D002FE6D4 /* Project-macOS */,
+				30F185AD1DEB61ED002FE6D4 /* Plasmacore */,
 				305348D41EDB411E00400E0D /* Box2D */,
 				30F185061DEB5F3D002FE6D4 /* Products */,
 				30F185A91DEB61AB002FE6D4 /* Frameworks */,
@@ -812,6 +812,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.plasmaworks.Project-macOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Project-macOS-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Project-macOS-Swift.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
@@ -830,6 +831,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.plasmaworks.Project-macOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Project-macOS-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Project-macOS-Swift.h";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
 				USER_HEADER_SEARCH_PATHS = "../../Libraries/Box2D/Box2D/**";

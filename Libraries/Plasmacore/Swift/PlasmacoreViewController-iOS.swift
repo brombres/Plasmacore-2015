@@ -79,7 +79,7 @@ class PlasmacoreViewController : GLKViewController
 
     if (display_width == 0 || display_height == 0) { return }
 
-    let m = PlasmacoreMessage( type:"Display.on_render", immediate:true )
+    let m = PlasmacoreMessage( type:"Display.on_render" )
     m.set( name:"display_name",   value:name )
     m.set( name:"display_width",  value:Int(display_width) )
     m.set( name:"display_height", value:Int(display_height) )
@@ -87,7 +87,7 @@ class PlasmacoreViewController : GLKViewController
     // viewport size only differs from display size on the iPhone Plus physical device (not simulator)
     m.set( name:"viewport_width",  value:Int(UIScreen.main.nativeBounds.width))
     m.set( name:"viewport_height", value:Int(UIScreen.main.nativeBounds.height))
-    m.post()
+    m.send()
   }
 
   override func touchesBegan( _ touches:Set<UITouch>, with event:UIEvent? )

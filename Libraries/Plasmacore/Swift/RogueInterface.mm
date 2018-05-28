@@ -3,8 +3,13 @@
 
 #import <AVFoundation/AVAudioPlayer.h>
 
-#if defined(ROGUE_PLATFORM_IOS)
+
+#ifdef ROGUE_PLATFORM_IOS
   #import <UIKit/UIKit.h>
+  #import <GLKit/GLKit.h>
+  #import "Project-iOS-Swift.h"
+#else
+  #import "Project-macOS-Swift.h"
 #endif
 
 #include <cstdio>
@@ -170,6 +175,32 @@ void PlasmacoreSound_set_volume( void* sound, double volume )
 }
 
 
+//-----------------------------------------------------------------------------
+// Message
+//-----------------------------------------------------------------------------
+bool PlasmacoreMessage_send( RogueByte_List* bytes )
+{
+  NSData* result = [PlasmacoreInterface dispatch:bytes->data->as_bytes count:bytes->count];
+  if (result)
+  {
+    RogueInt32 count = (RogueInt32) result.length;
+    RogueByte_List__clear( bytes );
+    RogueByte_List__reserve__Int32( bytes, count );
+    bytes->count = count;
+    [result getBytes:bytes->data->as_bytes length:count];
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+
+//-----------------------------------------------------------------------------
+// RogueInterface
+// Swift -> Rogue Helpers
+//-----------------------------------------------------------------------------
 extern "C" void RogueInterface_configure()
 {
   Rogue_configure( RogueInterface_argc, RogueInterface_argv );
@@ -180,7 +211,7 @@ extern "C" void RogueInterface_launch()
   Rogue_launch();
 }
 
-extern "C" NSData* RogueInterface_send_messages( const unsigned char* data, int count )
+extern "C" NSData* RogueInterface_post_messages( const unsigned char* data, int count )
 {
   try
   {
@@ -206,6 +237,27 @@ extern "C" NSData* RogueInterface_send_messages( const unsigned char* data, int 
   {
     RogueException__display( err );
     return [NSData data];
+  }
+}
+
+extern "C" NSData* RogueInterface_send_message( const unsigned char* data, int count )
+{
+  RogueClassPlasmacore__MessageManager* mm =
+    (RogueClassPlasmacore__MessageManager*) ROGUE_SINGLETON(Plasmacore__MessageManager);
+  RogueByte_List* list = mm->direct_message_buffer;
+  RogueByte_List__clear( list );
+  RogueByte_List__reserve__Int32( list, count );
+  memcpy( list->data->as_bytes, data, count );
+  list->count = count;
+
+  if (RoguePlasmacore__MessageManager__receive_message(mm))
+  {
+    // direct_message_buffer has been filled with result bytes
+    return [[NSData alloc] initWithBytes:list->data->as_bytes length:list->count];
+  }
+  else
+  {
+    return nil;
   }
 }
 

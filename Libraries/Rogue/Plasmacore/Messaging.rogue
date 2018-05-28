@@ -9,11 +9,6 @@
 # send()ing a message pushes the message queue and then sends the current
 # message directly. It allows for a message in response.
 #
-# TODO: make the following 'immediate' on the native side:
-# Display.on_render
-# Application.on_save
-# Application.on_stop
-#
 # High-low byte order for Int32, Int64, and Real64
 #
 # Message Queue
@@ -26,7 +21,6 @@
 #   type_name_count : Int32                 # 0 means a reply
 #   type_name_utf8  : UTF8[type_name_count]
 #   message_id      : Int32                 # serial number (always present, only needed with RSVP replies)
-#   immediate       : Byte                  # dispatch immediately instead of queuing?
 #   timestamp       : Real64
 #   while (position < message_size)
 #     arg_name_count : Int32
@@ -49,35 +43,15 @@ module Plasmacore
 $essential Byte[].clear()
 $essential Byte[].reserve(Int32)
 
-routine add_message_listener( type:String, fn:Function(Message), &once )->Function(Message)
-  MessageManager.add_listener( type, fn, once )
-  return fn
-endRoutine
-
-routine set_message_listener( type:String, fn:Function(Message), &once )->Function(Message)
-  MessageManager.set_listener( type, fn, once )
-  return fn
-endRoutine
-
-routine remove_message_listener( type:String, fn:Function(Message) )
-  MessageManager.remove_listener( type, fn )
-endRoutine
-
-routine remove_message_listeners( type:String )
-  MessageManager.remove_listeners( type )
-endRoutine
-
 class MessageManager [essential singleton]
   PROPERTIES
     io_buffer = Byte[]  # native layer accesses this directly
     io_reader = BufferedDataReader( io_buffer )
+    io_writer = BufferedDataWriter( io_buffer )
+
+    direct_message_buffer = Byte[]
 
     message_builder = BufferedDataWriter()
-    io_writer       = BufferedDataWriter( io_buffer )
-
-    dispatch_buffer = Byte[]  # native layer accesses this directly
-    dispatch_reader = BufferedDataReader( dispatch_buffer )
-    dispatch_writer = BufferedDataWriter( dispatch_buffer )
 
     next_id   = 1
     string_buffer = StringBuilder()
@@ -85,52 +59,32 @@ class MessageManager [essential singleton]
     message_type_lookup = StringTable<<String>>()
     # Maps StringBuilder to String
 
-    incoming_message_pool = Message[]
+    message_pool = Message[]
       # Recycled messages
 
     incoming_message_queue = Message[]
     incoming_message_active_list = Message[]
 
-    outgoing_message = Message()
-      # Recycled for outgoing messages
-
-    listeners             = Table<<String,Function(Message)[]>>()
-    one_time_listeners    = Table<<String,Function(Message)[]>>()
+    listeners             = Table<<String,Function(Message)>>()
+    one_time_listeners    = Table<<String,Function(Message)>>()
     reply_callbacks_by_id = Table<<Int32,Function(Message)>>()
 
   METHODS
     method init_object
-      add_listener( "",  # Reply listener
+      set_listener( "",  # Reply listener
         function(m:Message)
           local callback = MessageManager.reply_callbacks_by_id.remove( m.message_id )
           if (callback) callback( m )
         endFunction
       )
 
-    method add_listener( type:String, listener:Function(Message), &once, &replace_existing )
-      local table = select{ once:one_time_listeners || listeners }
-      local _list = table[ type ]
-      if (not _list)
-        _list = Function(Message)[]
-        table[ type ] = _list
-      endIf
-      if (replace_existing) _list.clear
-      _list.add( listener )
-
-    method remove_listener( type:String, listener:Function(Message) )
-      local _list = listeners[ type ]
-      if (_list) _list.remove( listener )
-      _list = one_time_listeners[ type ]
-      if (_list) _list.remove( listener )
-
-    method remove_listeners( type:String )
-      local _list = listeners[ type ]
-      if (_list) _list.clear
-      _list = one_time_listeners[ type ]
-      if (_list) _list.clear
-
     method set_listener( type:String, listener:Function(Message), &once )
-      add_listener( type, listener, &=once, &replace_existing )
+      local table = select{ once:one_time_listeners || listeners }
+      table[ type ] = listener
+
+    method remove_listener( type:String )
+      listeners.remove( type )
+      one_time_listeners.remove( type )
 
     method consolidated_type_name( name:String )->String
       local consolidated = message_type_lookup[ name ]
@@ -145,11 +99,14 @@ class MessageManager [essential singleton]
       message_type_lookup[ consolidated ] = consolidated
       return consolidated
 
+    method create_message->Message
+      if (message_pool.is_empty) message_pool.add( Message() )
+      return message_pool.remove_last
+
     method create_message( reader:BufferedDataReader )->Message
-      if (incoming_message_pool.is_empty) incoming_message_pool.add( Message() )
-      local incoming_message = incoming_message_pool.remove_last
-      incoming_message.init( reader )
-      return incoming_message
+      local m = create_message
+      m.init( reader )
+      return m
 
     method create_message( type:String, message_id=null:Int32? )->Message
       if (not message_id.exists)
@@ -157,6 +114,8 @@ class MessageManager [essential singleton]
         ++next_id
       endIf
 
+      local outgoing_message = create_message
+      outgoing_message.sent = true
       outgoing_message.init( type, message_id.value )
       return outgoing_message
 
@@ -166,33 +125,47 @@ class MessageManager [essential singleton]
       dispatch_incoming_message( forEach in incoming_message_active_list )
 
     method dispatch_incoming_message( m:Message )
-      local _list = listeners[ m.type ]
-      if (_list)
-        forEach (listener in _list step -1) listener( m )
+      local listener = one_time_listeners[ m.type ]
+      if (listener)
+        listener( m )
+        if (m.@reply and not m.reply.sent)
+          m.reply.post  # adds to message pool
+          m.@reply = null
+        endIf
       endIf
 
-      _list = one_time_listeners[ m.type ]
-      if (_list)
-        local n = _list.count
-        forEach (listener in _list step -1) listener( m )
-        _list.discard( 0, n )
+      listener = listeners[ m.type ]
+      if (listener)
+        listener( m )
+        if (m.@reply and not m.reply.sent)
+          m.reply.post  # adds to message pool
+          m.@reply = null
+        endIf
       endIf
 
-      incoming_message_pool.add( m )  # recycle
-
-    method dispatch_message->Logical
-      # Creates and dispatches a message using dispatch_buffer & reader
-      # Returns "true" if dispatch_buffer is rewritten with reply, "false" for no reply
-      # TODO
-      return false
+      m.recycle
 
     method post( m:Message )
       message_builder.write_int32( m.data.count )
       message_builder.write( m.data )
+      m.recycle
 
     method post_rsvp( m:Message, callback:Function(Message) )
       post( m )
       reply_callbacks_by_id[ m.message_id ] = callback
+
+    method receive_message->Logical [essential]
+      local m = create_message
+      m.init( direct_message_buffer )
+      dispatch_incoming_message( m )
+      if (m.@reply and not m.@reply.sent)
+        direct_message_buffer.clear.add( m.@reply.data )
+        m.@reply.recycle
+        m.@reply = null
+        return true
+      else
+        return false
+      endIf
 
     method update->Byte[] [essential]
       # 'io_reader' has already been set up to decode 'io_buffer', which
@@ -203,12 +176,6 @@ class MessageManager [essential singleton]
       while (io_reader.has_another)
         local incoming_message = create_message( io_reader )
         incoming_message_queue.add( incoming_message )
-
-        # Most messages should be queued so that they can be executed at the beginning
-        # of a render, when the graphics context is active and images can be loaded etc.
-        # Urgent messages are dispatched immediately.
-        if (incoming_message.immediate) dispatch_incoming_messages
-
       endWhile
 
       Plasmacore.global_update
@@ -239,7 +206,6 @@ class Message
   PROPERTIES
     type       : String
     message_id : Int32
-    immediate  : Logical
     timestamp  : Real64
 
     data       = Byte[]
@@ -250,14 +216,15 @@ class Message
     keys       = String[]
     offsets    = Int32[]
 
-    sent       : Logical
+    sent       : Logical  # Sent or posted
+
+    reply      : Message
 
   METHODS
     method init
       timestamp = System.time
-      immediate = false
 
-    method init( new_type:String, message_id, immediate=false )
+    method init( new_type:String, message_id )
       timestamp = System.time
       if (not sent and type) println "ERROR: unsent outgoing message of type '$'." (type)
       type = MessageManager.consolidated_type_name( new_type )
@@ -266,25 +233,38 @@ class Message
 
       _write_string( type )
       writer.write_int32( message_id )
-      writer.write_logical( immediate )
       writer.write_real64( timestamp )
 
     method init( source:DataReader )
-      keys.clear
-      offsets.clear
       local size = source.read_int32
       source.read( data.clear, size )
+      init_from_data
+
+    method init( bytes:Byte[] )
+      data.clear.add( bytes )
+      init_from_data
+
+    method init_from_data
       reader.reset
       type = _read_type_name
       message_id = reader.read_int32
-      immediate = reader.read_logical
       timestamp = reader.read_real64
+
+      keys.clear
+      offsets.clear
       while (_index_another) noAction
 
     method contains( name:String )->Logical
       return keys.locate(name).exists
 
-    method create_reply->Message
+    method recycle
+      if (MessageManager.message_pool.contains( this ))
+        println "**** Message already exists in pool!!!! ****"
+      endIf
+      MessageManager.message_pool.add( this )
+
+    method reply->Message
+      if (@reply) return @reply
       return MessageManager.create_message( "", message_id )
 
     method get( name:String )->Value
@@ -504,9 +484,28 @@ class Message
       # Rather than awaiting a reply to this specific message, this form of post_rsvp
       # installs a global one-time message listener that calls the given callback
       # when a new message (not a reply) of the given response type comes through.
-      add_message_listener( response_message_type, callback, &once )
+      MessageManager.set_listener( response_message_type, callback, &once )
       MessageManager.post( this )
       sent = true
+
+    method send->Message
+      # Synchronously sends message to native layer, can get message in response
+      nativeHeader struct RogueByte_List;
+      nativeHeader bool PlasmacoreMessage_send( RogueByte_List* data );
+
+      local has_reply : Logical
+      native @|$has_reply = PlasmacoreMessage_send( $this->data );
+      sent = true
+      if (has_reply)
+        init_from_data  # reply has been placed in same Byte[] buffer
+        return this
+      else
+        recycle
+        return null
+      endIf
+
+    method to->String
+      return type + keys->String
 
     # INTERNAL USE ------------------------------------------------------------
 
