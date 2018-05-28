@@ -451,21 +451,8 @@ class Bitmap
       return this
 
     method decode( bytes:Byte[] )->Logical
-$if (not (target("Console") or target("Linux") or target("Web")))
-      nativeHeader
-        struct RogueClassPlasmacore__Bitmap;
-        RogueClassPlasmacore__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueInt32 count );
-      endNativeHeader
-      local decoded = native( "Plasmacore_decode_image( $bytes->data->as_bytes, $bytes->count )" )->Bitmap
-      if (not decoded) return false
-
-      # Adopt the decoded bitmap data
-      init( decoded.width, decoded.height, decoded.pixels )
-      swap_red_and_blue
-      is_premultiplied_alpha = true
-      return true
-
-$else
+$if (target("Console") or target("Linux") or target("Web"))
+      # Use linked PNG/JPEG decoder
       if (bytes.count < 4) return false
 
       if (bytes[0] == 0x89 and bytes[1] == 'P' and bytes[2] == 'N' and bytes[3] == 'G')
@@ -481,6 +468,29 @@ $endIf
       endIf
 
       return false
+
+$elseIf (target("Android"))
+      local decoded = Message( "Bitmap.decode" ).set( "data", bytes ).send
+      trace decoded
+      #if (not decoded) return false
+      #return true
+      return false
+
+$else
+      # Use native layer/OS PNG/JPEG decoder
+      nativeHeader
+        struct RogueClassPlasmacore__Bitmap;
+        RogueClassPlasmacore__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueInt32 count );
+      endNativeHeader
+      local decoded = native( "Plasmacore_decode_image( $bytes->data->as_bytes, $bytes->count )" )->Bitmap
+      if (not decoded) return false
+
+      # Adopt the decoded bitmap data
+      init( decoded.width, decoded.height, decoded.pixels )
+      swap_red_and_blue
+      is_premultiplied_alpha = true
+      return true
+
 $endIf
 
     method get( x:Int32, y:Int32 )->Color

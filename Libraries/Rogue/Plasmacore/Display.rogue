@@ -9,7 +9,7 @@ class Display [singleton]
         #define glClearDepth glClearDepthf
       endNativeHeader
 
-    $elseIf target("Linux") or target("emscripten")
+    $elseIf target("Linux") or target("emscripten") or target("Android")
       nativeHeader
         #include <GLES2/gl2.h>
         #include <GLES2/gl2ext.h>

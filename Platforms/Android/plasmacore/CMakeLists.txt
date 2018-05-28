@@ -5,6 +5,15 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -Wall -fno-strict-aliasing -Wno-invalid-offsetof")
+
+add_custom_command(
+  OUTPUT ${CMAKE_SOURCE_DIR}/../../../Build/Android/Source/RogueProgram.h
+  OUTPUT ${CMAKE_SOURCE_DIR}/../../../Build/Android/Source/RogueProgram.cpp
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../../..
+  COMMAND rogo android
+)
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
@@ -41,6 +50,7 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
                        plasmacore
+                       GLESv2
 
                        # Links the target library to the log library
                        # included in the NDK.
