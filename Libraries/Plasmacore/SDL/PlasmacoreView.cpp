@@ -107,13 +107,13 @@ void PlasmacoreView::redraw ()
 
   int display_width, display_height;
   SDL_GetWindowSize(window, &display_width, &display_height);
-  auto m = PlasmacoreMessage( "Display.on_render", true );
+  auto m = PlasmacoreMessage( "Display.on_render" );
   m.set( "window_id", pwindowID ).set( "display_name", name );
   m.set( "display_width",  display_width );
   m.set( "display_height", display_height );
   m.set( "viewport_width",  display_width );
   m.set( "viewport_height", display_height );
-  m.post();
+  m.send();
   SDL_GL_SwapWindow(window);
 }
 

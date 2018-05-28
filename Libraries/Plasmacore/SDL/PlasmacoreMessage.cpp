@@ -1,4 +1,5 @@
 #include "PlasmacoreMessage.h"
+#include "RogueInterface.h"
 
 #include <cstdio>
 #include "Plasmacore.h"
@@ -11,44 +12,39 @@ PlasmacoreMessage::PlasmacoreMessage ( Buffer& data )
   this->data = data;
   readString( type );
   message_id = readInt32();
-  immediate = readByte();
   timestamp = readReal64();
   while (indexAnother());
 }
 
-PlasmacoreMessage::PlasmacoreMessage (const char * type, MID message_id, bool immediate )
+PlasmacoreMessage::PlasmacoreMessage (const char * type, MID message_id )
 {
   //init();
   this->type = type;
   this->message_id = message_id;
-  this->immediate = immediate;
   this->timestamp = Plasmacore_time();
   writeString( type );
   writeInt32( message_id );
-  writeByte( immediate ? 1 : 0 );
   writeReal64( timestamp );
 }
 
-PlasmacoreMessage::PlasmacoreMessage (const char * type, bool immediate)
-    : PlasmacoreMessage(type, PlasmacoreMessage::next_message_id++, immediate)
+PlasmacoreMessage::PlasmacoreMessage (const char * type )
+    : PlasmacoreMessage(type, PlasmacoreMessage::next_message_id++)
 {
 }
 
-//PlasmacoreMessage::PlasmacoreMessage (void)
-//{
-  //init();
-//}
-
-//void PlasmacoreMessage::init (void)
-//{
-//  type = "Unspecified";
-//  message_id = 0;
-//  immediate = false;
-//}
-
-PlasmacoreMessage PlasmacoreMessage::createReply (void) const
+PlasmacoreMessage::~PlasmacoreMessage()
 {
-  return PlasmacoreMessage("", message_id);
+  if (_reply)
+  {
+    delete _reply;
+    _reply = NULL;
+  }
+}
+
+PlasmacoreMessage* PlasmacoreMessage::reply()
+{
+  if ( !_reply ) _reply = new PlasmacoreMessage( "", message_id );
+  return _reply;
 }
 
 int32_t PlasmacoreMessage::getInt32 (const char* name, int32_t default_value)
@@ -193,11 +189,21 @@ bool PlasmacoreMessage::indexAnother (void)
 void PlasmacoreMessage::post()
 {
   Plasmacore::singleton.post( *this );
+  sent = true;
 }
 
 void PlasmacoreMessage::post_rsvp( HandlerCallback callback )
 {
   Plasmacore::singleton.post_rsvp( *this, callback );
+  sent = true;
+}
+
+PlasmacoreMessage* PlasmacoreMessage::send()
+{
+  Plasmacore::singleton.real_update( false );  // flush buffered post() messages.
+  PlasmacoreMessage* result = RogueInterface_send_message( *this );
+  sent = true;
+  return result;
 }
 
 PlasmacoreMessage & PlasmacoreMessage::set( const char * name, Buffer & value )

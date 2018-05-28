@@ -57,15 +57,10 @@ static void do_async_call ( void (*cb)(void *), int millis )
 #endif
 
 
-HID Plasmacore::addMessageHandler( const char * type, HandlerCallback handler )
+void Plasmacore::set_message_handler( const char * type, HandlerCallback handler )
 {
-  auto info = new PlasmacoreMessageHandler( nextHandlerID, type, handler );
-  nextHandlerID += 1;
-
-  handlers_by_id[ info->handlerID ] = info;
-  if ( !handlers[ type ] ) handlers[ type ] = new PlasmacoreList<PlasmacoreMessageHandler*>();
-  handlers[ type ]->add( info );
-  return info->handlerID;
+  auto info = new PlasmacoreMessageHandler( type, handler );
+  handlers[ type ] = info;
 }
 
 
@@ -74,13 +69,13 @@ Plasmacore & Plasmacore::configure()
   if (is_configured) return *this;
   is_configured = true;
 
-  addMessageHandler( "<reply>", [] (PlasmacoreMessage m)
+  set_message_handler( "", [] (PlasmacoreMessage* m)
     {
-        auto entry = singleton.reply_handlers.find( m.message_id );
+        auto entry = singleton.reply_handlers.find( m->message_id );
         if (entry)
         {
           auto handler = entry->value;
-          singleton.reply_handlers.remove( m.message_id );
+          singleton.reply_handlers.remove( m->message_id );
           handler->callback( m );
           delete handler;
         }
@@ -88,7 +83,7 @@ Plasmacore & Plasmacore::configure()
   );
 
   #ifdef WINDOW_BASED
-  addMessageHandler( "Window.create", [] (PlasmacoreMessage m)
+  set_message_handler( "Window.create", [] (PlasmacoreMessage m)
     {
       auto name = m.getString( "name" );
 
@@ -100,7 +95,7 @@ Plasmacore & Plasmacore::configure()
     }
   );
 
-  addMessageHandler( "Window.show", [] (PlasmacoreMessage m)
+  set_message_handler( "Window.show", [] (PlasmacoreMessage m)
     {
       auto window_id = m.getInt32( "id" );
       auto view  = (PlasmacoreView*)Plasmacore::singleton.resources[ window_id ];
@@ -156,30 +151,17 @@ Plasmacore & Plasmacore::launch()
 Plasmacore & Plasmacore::relaunch()
 {
   //XXX: Always relaunch window based?
-  PlasmacoreMessage( "Application.on_launch" ).set( "is_window_based", true ).post();
+  PlasmacoreMessage( "Application.on_launch" ).set( "is_window_based", true ).send();
   return *this;
 }
 
 
-void Plasmacore::removeMessageHandler( HID handlerID )
+void Plasmacore::remove_message_handler( const char* type )
 {
-  auto entry = handlers_by_id.find(handlerID);
-  if (entry)
+  if (handlers.contains(type))
   {
-    auto handler = entry->value;
-    handlers_by_id.remove( handlerID );
-    auto handler_list = handlers[ handler->type ];
-    if (handler_list)
-    {
-      for (int i = 0; i < handler_list->count; ++i)
-      {
-        if ((*handler_list)[i]->handlerID == handlerID)
-        {
-          handler_list->remove_at( i );
-          return;
-        }
-      }
-    }
+    auto handler = handlers[ type ];
+    handlers.remove( type );
     delete handler;
   }
 }
@@ -202,8 +184,7 @@ void Plasmacore::post( PlasmacoreMessage & m )
 
 void Plasmacore::post_rsvp( PlasmacoreMessage & m, HandlerCallback callback )
 {
-  reply_handlers[ m.message_id ] = new PlasmacoreMessageHandler( nextHandlerID, "<reply>", callback );
-  nextHandlerID += 1;
+  reply_handlers[ m.message_id ] = new PlasmacoreMessageHandler( "", callback );
   post( m );
 }
 
@@ -282,7 +263,7 @@ void Plasmacore::real_update (bool reschedule)
     io_buffer.clear().add( pending_message_data );
     pending_message_data.clear();
 
-    RogueInterface_send_messages( io_buffer );
+    RogueInterface_post_messages( io_buffer );
     auto count = io_buffer.count;
     //if (count || io_buffer.size())
     //  printf("TX:%-8lu  RX:%-8lu  @iter:%i\n", io_buffer.size(), count, iterations);
@@ -306,18 +287,11 @@ void Plasmacore::real_update (bool reschedule)
         }
 
         auto m = PlasmacoreMessage( decode_buffer );
-        printf( "Received message type %s\n", m.type.characters );
-        /*
-        auto entry = handlers.find(m.type.characters);
-        if (entry)
+        dispatch( m );
+        if (m._reply && !m._reply->sent)
         {
-          auto& list = *(entry->value);
-          for (int i=0; i<list.count; ++i)
-          {
-            list[i]->callback( m );
-          }
+          m._reply->post();
         }
-        */
       }
       else
       {
@@ -342,6 +316,15 @@ void Plasmacore::real_update (bool reschedule)
     // in 1/60 second instead of the usual 1.0 seconds.
     // We'll now have another (slow) call to update, but it'll probably return
     do_async_call(fast_update, 16);
+  }
+}
+
+void Plasmacore::dispatch( PlasmacoreMessage& m )
+{
+  auto entry = handlers.find( m.type.characters );
+  if (entry)
+  {
+    entry->value->callback( &m );
   }
 }
 

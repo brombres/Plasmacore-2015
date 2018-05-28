@@ -23,7 +23,6 @@
 //   type_name_count : Int32                 # 0 means a reply
 //   type_name_utf8  : UTF8[type_name_count]
 //   message_id      : Int32                 # serial number (always present, only needed with RSVP replies)
-//   immediate       : Byte                  # dispatch immediately instead of queuing?
 //   timestamp       : Real64
 //   while (position < message_size)
 //     arg_name_count : Int32
@@ -47,7 +46,7 @@
 
 class PlasmacoreMessage;
 
-typedef void (*HandlerCallback)(PlasmacoreMessage);
+typedef void (*HandlerCallback)(PlasmacoreMessage*);
 
 
 typedef int MID;
@@ -70,19 +69,18 @@ public:
 
   PlasmacoreCString type;
   MID    message_id;
-  bool   immediate;
   double timestamp;
-
   Buffer data;
   PlasmacoreStringTable<int> entries;
-  int position = 0;
+  int  position = 0;
+  bool sent = false;
+  PlasmacoreMessage* _reply = NULL;
 
   PlasmacoreMessage ( Buffer& data );
-  PlasmacoreMessage ( const char * type, MID message_id, bool immediate=false );
-  PlasmacoreMessage ( const char * type, bool immediate=false );
-  //PlasmacoreMessage (void);
-  //void init (void);
-  PlasmacoreMessage createReply (void) const;
+  PlasmacoreMessage ( const char * type, MID message_id );
+  PlasmacoreMessage ( const char * type );
+  ~PlasmacoreMessage();
+  PlasmacoreMessage* reply();
   int32_t getInt32 (const char* name, int32_t default_value = 0);
   int64_t getInt64 (const char* name, int64_t default_value = 0 );
   bool getLogical( const char* name, bool default_value = false );
@@ -91,6 +89,7 @@ public:
   bool indexAnother (void);
   void post();
   void post_rsvp( HandlerCallback callback );
+  PlasmacoreMessage* send();
   PlasmacoreMessage & set( const char * name, Buffer & value );
   PlasmacoreMessage & set( const char * name, int64_t value );
   PlasmacoreMessage & set( const char * name, Int value );

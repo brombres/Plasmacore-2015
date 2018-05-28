@@ -28,10 +28,7 @@ class InitialState : State<<MainScreen>>
   METHODS
     method on_start
       # Called when this state becomes the active state
-      MessageManager.set_listener( "pong", &once, (m)=>println m )
-
       println "Hello World"
-      Message("ping").send
 
     method after_draw
       # This happens after the current screen's on_draw()

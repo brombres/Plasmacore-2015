@@ -34,17 +34,16 @@ struct PlasmacoreLauncher
 class PlasmacoreMessageHandler
 {
 public:
-  HID handlerID;
   const char* type;
   HandlerCallback callback;
 
-  PlasmacoreMessageHandler (HID handlerID, const char* type, HandlerCallback callback)
-  : handlerID(handlerID), type(type), callback(callback)
+  PlasmacoreMessageHandler (const char* type, HandlerCallback callback)
+  : type(type), callback(callback)
   {
   }
 
   PlasmacoreMessageHandler ()
-  : handlerID(-1), type("<invalid>")
+  : type("<invalid>")
   {
   }
 };
@@ -59,7 +58,6 @@ public:
   bool is_configured = false;
   bool is_launched   = false;
 
-  HID nextHandlerID = 1;
   double idleUpdateFrequency = 0.5;
 
   Buffer pending_message_data;
@@ -69,19 +67,18 @@ public:
   bool is_sending = false;
   bool update_requested = false;
 
-  PlasmacoreStringTable<PlasmacoreList<PlasmacoreMessageHandler*>*> handlers;
-  PlasmacoreIntTable<PlasmacoreMessageHandler*> handlers_by_id;
-  PlasmacoreIntTable<PlasmacoreMessageHandler*> reply_handlers;
+  PlasmacoreStringTable<PlasmacoreMessageHandler*> handlers;
+  PlasmacoreIntTable<PlasmacoreMessageHandler*>    reply_handlers;
   PlasmacoreIntTable<void*> resources;
 
   bool update_timer = false; // true if running
 
-  HID addMessageHandler( const char * type, HandlerCallback handler );
+  void set_message_handler( const char * type, HandlerCallback handler );
   Plasmacore & configure();
   RID getResourceID( void * resource);
   Plasmacore & launch();
   Plasmacore & relaunch();
-  void removeMessageHandler( HID handlerID );
+  void remove_message_handler( const char* type );
   void post( PlasmacoreMessage & m );
   void post_rsvp( PlasmacoreMessage & m, HandlerCallback callback );
   Plasmacore & setIdleUpdateFrequency( double f );
@@ -90,6 +87,7 @@ public:
   static void update(void * dummy);
   static void fast_update(void * dummy);
   void real_update(bool reschedule);
+  void dispatch( PlasmacoreMessage& m );
 };
 
 #endif
