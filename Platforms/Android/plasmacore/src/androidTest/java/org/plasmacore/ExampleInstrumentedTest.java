@@ -1,4 +1,4 @@
-package org.plasmacore.framework;
+package org.plasmacore;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -23,6 +23,6 @@ public class ExampleInstrumentedTest
     // Context of the app under test.
     Context appContext = InstrumentationRegistry.getTargetContext();
 
-    assertEquals("org.plasmacore.framework.test", appContext.getPackageName());
+    assertEquals("org.plasmacore.test", appContext.getPackageName());
   }
 }

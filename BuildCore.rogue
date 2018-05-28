@@ -23,6 +23,10 @@ routine rogo_default
   rogo_help
 endRoutine
 
+routine rogo_android
+  Build.build( "Android" )
+endRoutine
+
 routine rogo_ios
   Build.build( "iOS" )
 endRoutine
@@ -223,7 +227,7 @@ class Build [essential singleton]
         case "Web":          target += ",SDL,emscripten"
       endWhich
 
-      which (target)
+      which (platform)
         case "iOS", "Android": target += ",Mobile"
         others:                target += ",Desktop"
       endWhich

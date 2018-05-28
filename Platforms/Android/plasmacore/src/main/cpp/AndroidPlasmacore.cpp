@@ -5,7 +5,7 @@ using namespace std;
 #include "RogueProgram.h"
 
 #define ROGUE_FN(return_type,class_name,fn_name) \
-  extern "C" JNIEXPORT return_type JNICALL Java_org_plasmacore_framework_##class_name##_##fn_name
+  extern "C" JNIEXPORT return_type JNICALL Java_org_plasmacore_##class_name##_##fn_name
 
 ROGUE_FN( void, Rogue,nativeLaunch )( JNIEnv* env )
 {

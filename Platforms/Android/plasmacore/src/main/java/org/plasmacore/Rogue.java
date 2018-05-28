@@ -1,4 +1,4 @@
-package org.plasmacore.framework;
+package org.plasmacore;
 
 public class Rogue
 {

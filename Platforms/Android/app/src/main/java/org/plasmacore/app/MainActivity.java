@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.*;
 import android.widget.*;
 
-import org.plasmacore.framework.Rogue;
+import org.plasmacore.Rogue;
 
 public class MainActivity extends Activity
 {
