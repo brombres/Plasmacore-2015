@@ -9,7 +9,7 @@ using namespace std;
 
 static JNIEnv* Plasmacore_jni_env;  // updated every Java JNI call
 
-ROGUE_FN( void, Rogue,nativeLaunch )( JNIEnv* env )
+ROGUE_FN( void, Plasmacore, nativeLaunch )( JNIEnv* env )
 {
   ROGUE_LOG( "Launching Rogue..." );
   Plasmacore_jni_env = env;
@@ -26,7 +26,7 @@ ROGUE_FN( void, Rogue,nativeLaunch )( JNIEnv* env )
   }
 }
 
-ROGUE_FN( void, Rogue,nativeQuit )( JNIEnv* env )
+ROGUE_FN( void, Plasmacore, nativeQuit )( JNIEnv* env )
 {
   Plasmacore_jni_env = env;
   try

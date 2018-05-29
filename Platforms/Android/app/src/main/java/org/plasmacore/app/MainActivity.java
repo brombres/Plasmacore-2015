@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.*;
 import android.widget.*;
 
-import org.plasmacore.Rogue;
+import org.plasmacore.*;
 
 public class MainActivity extends Activity
 {
@@ -14,18 +14,12 @@ public class MainActivity extends Activity
   {
     super.onCreate(savedInstanceState);
 
+    // Turn off title bar
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-    // Example of a call to a native method
-    /*
-    TextView tv = new TextView( this );
-    int MATCH_PARENT = RelativeLayout.LayoutParams.MATCH_PARENT;
-    RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams( MATCH_PARENT, MATCH_PARENT );
-    tv.setLayoutParams( layoutParams );
-    tv.setText(stringFromJNI2());
-    setContentView( tv );
-    */
-    Rogue.launch();
+    setContentView( new PlasmacoreView(this) );
+
+    //Plasmacore.launch();
   }
 }
