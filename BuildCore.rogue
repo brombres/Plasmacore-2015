@@ -218,6 +218,8 @@ class Build [essential singleton]
       local output_folder = File.fix_slashes( "Build/$/Source" (platform) )
       create_folder( output_folder )
 
+      launch_asset_compiler( platform )
+
       if (not needs_compile(platform,output_folder)) return
 
       local target = platform + ",C++"
@@ -236,8 +238,6 @@ class Build [essential singleton]
         (ROGUEC,target,output_folder)
       if (Build.ide_mode) cmd += " --ide"
       run( cmd )
-
-      launch_asset_compiler( platform )
 
     method create_folder( folder:String )
       if (File.exists(folder)) return
