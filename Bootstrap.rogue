@@ -10,6 +10,7 @@ else
     Bootstrap.sync( "Libraries/Box2D/**" )
     Bootstrap.sync( "Libraries/ImageIO/**" )
     Bootstrap.sync( "Libraries/Plasmacore/**" )
+    Bootstrap.sync( "Libraries/Rogue/AssetCompiler/**" )
     Bootstrap.sync( "Libraries/Rogue/Plasmacore/**" )
   else
     println "Invalid option: " + cmd
