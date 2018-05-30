@@ -1,4 +1,4 @@
-$define PLASMACORE_VERSION "0.9.0 (2)"
+$define PLASMACORE_VERSION "0.9.0 (3)"
 
 #$ ROGUEC(macOS)    = Programs/RogueC-macOS
 #$ ROGUEC(Linux)    = roguec
