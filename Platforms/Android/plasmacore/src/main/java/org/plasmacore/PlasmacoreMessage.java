@@ -3,7 +3,7 @@ package org.plasmacore;
 //==============================================================================
 // PlasmacoreMessage.rogue
 //
-// Communication mechanism between Plasmacore and Native Layer.
+// Communication mechanism between Plasmacore and Native Layer (Java).
 //
 // post()ing a message adds it to a queue that is sent en mass during the next
 // update or before a send().
@@ -87,20 +87,21 @@ public class PlasmacoreMessage
     return create().init( type, nextMessageID++ );
   }
 
-  static PlasmacoreMessage create( byte[] data )
+  static PlasmacoreMessage create( byte[] data, int i1, int n )
   {
-    return create().init( data );
+    return create().init( data, i1, n );
   }
 
   // PROPERTIES
-  public String  type;
-  public int     messageID;
-  public double  timestamp;
-  public byte[]  data = new byte[128];
-  public int     count;    // data size; data.length is capacity
-  public int     position; // read position (count is write position)
-  public boolean isSent;
-  public boolean isRecycled;
+  public String   type;
+  public int      messageID;
+  public double   timestamp;
+  public byte[]   data = new byte[128];
+  public int      count;    // data size; data.length is capacity
+  public int      position; // read position (count is write position)
+  public int      argStartPosition;
+  public boolean  isSent;
+  public boolean  isRecycled;
   public PlasmacoreMessage reply;
 
   // METHODS
@@ -117,6 +118,7 @@ public class PlasmacoreMessage
     isSent = false;
     isRecycled = false;
     reply = null;
+    argStartPosition = 0;
     return this;
   }
 
@@ -131,34 +133,244 @@ public class PlasmacoreMessage
     _writeInt32( messageID );
     _writeReal64( timestamp );
 
+    argStartPosition = count;
+
     return this;
   }
 
-  public PlasmacoreMessage init( byte[] data )
+  public PlasmacoreMessage init( byte[] data, int i1, int n )
   {
     reset();
 
     // Copy in data
-    if (data.length > this.data.length)
+    if (n > this.data.length)
     {
-      this.data = new byte[ data.length ];
+      this.data = new byte[ n ];
     }
-    for (int i=data.length; --i>=0; )
+    for (int i=n; --i>=0; )
     {
-      this.data[i] = data[i];
+      this.data[i] = data[i+i1];
     }
+
+    count = n;
 
     // Read out header
     type = consolidate( _readString() );
     messageID = _readInt32();
     timestamp = _readReal64();
 
+    argStartPosition = position;
+
+    return this;
+  }
+
+  public boolean getBoolean( String key )
+  {
+    return getByte( key ) != 0;
+  }
+
+  public byte getByte( String key )
+  {
+    if ( !seek(key) ) return 0;
+
+    int arg_type = _readByte();
+    int arg_size = _readInt32();
+    if (arg_size == 0) return 0;
+
+    switch (arg_type)
+    {
+      case DATA_TYPE_BYTE:   return (byte)_readByte();
+      case DATA_TYPE_INT32:  return (byte)_readInt32();
+      case DATA_TYPE_INT64:  return (byte)_readInt64();
+      case DATA_TYPE_REAL64: return (byte)_readReal64();
+    }
+
+    return 0;
+  }
+
+  public byte[] getBytes( String key )
+  {
+    if ( !seek(key) ) return new byte[0];
+    _readByte();
+    int count = _readInt32();
+    byte[] result = new byte[ count ];
+    getBytes( key, result, 0, count );
+    return result;
+  }
+
+  public int getBytes( String key, byte[] buffer, int i1, int max )
+  {
+    if ( !seek(key) ) return 0;
+
+    int arg_type = _readByte();
+    int arg_size = _readInt32();
+    if (arg_size == 0) return 0;
+
+    int n = Math.min( arg_size, max );
+    for (int i=n; --i>=0; )
+    {
+      buffer[ i+i1 ] = (byte)_readByte();
+    }
+
+    return n;
+  }
+
+  public double getDouble( String key )
+  {
+    if ( !seek(key) ) return 0;
+
+    int arg_type = _readByte();
+    int arg_size = _readInt32();
+    if (arg_size == 0) return 0;
+
+    switch (arg_type)
+    {
+      case DATA_TYPE_BYTE:   return _readByte();
+      case DATA_TYPE_INT32:  return _readInt32();
+      case DATA_TYPE_INT64:  return _readInt64();
+      case DATA_TYPE_REAL64: return _readReal64();
+    }
+
+    return 0;
+  }
+
+  public int getInt( String key )
+  {
+    if ( !seek(key) ) return 0;
+
+    int arg_type = _readByte();
+    int arg_size = _readInt32();
+    if (arg_size == 0) return 0;
+
+    switch (arg_type)
+    {
+      case DATA_TYPE_BYTE:   return _readByte();
+      case DATA_TYPE_INT32:  return _readInt32();
+      case DATA_TYPE_INT64:  return (int)_readInt64();
+      case DATA_TYPE_REAL64: return (int)_readReal64();
+    }
+
+    return 0;
+  }
+
+  public long getLong( String key )
+  {
+    if ( !seek(key) ) return 0;
+
+    int arg_type = _readByte();
+    int arg_size = _readInt32();
+    if (arg_size == 0) return 0;
+
+    switch (arg_type)
+    {
+      case DATA_TYPE_BYTE:   return _readByte();
+      case DATA_TYPE_INT32:  return _readInt32();
+      case DATA_TYPE_INT64:  return _readInt64();
+      case DATA_TYPE_REAL64: return (long) _readReal64();
+    }
+
+    return 0;
+  }
+
+  public String getString( String key )
+  {
+    if ( !seek(key) ) return "";
+
+    int arg_type = _readByte();
+    if (arg_type == DATA_TYPE_BYTE)
+    {
+      return _readString().toString();
+    }
+
+    int arg_size = _readInt32();
+    if (arg_size == 0) return "";
+
+    switch (arg_type)
+    {
+      case DATA_TYPE_INT32:  return "" + _readInt32();
+      case DATA_TYPE_INT64:  return "" + _readInt64();
+      case DATA_TYPE_REAL64: return "" + _readReal64();
+    }
+
+    return "";
+  }
+
+  public boolean seek( String key )
+  {
+    position = argStartPosition;
+    while (position < count)
+    {
+      if (_readString().equals(key)) return true;  // leaves read position set correctly
+      _readByte(); // skip type
+      position += _readInt32(); // skip data to advance to next property
+    }
+    return false; // never found it
+  }
+
+  public PlasmacoreMessage set( String key, boolean value )
+  {
+    return set( key, (byte)(value?1:0) );
+  }
+
+  public PlasmacoreMessage set( String key, byte value )
+  {
+    _writeString( key );
+    _writeByte( DATA_TYPE_BYTE )._writeInt32( 1 );
+    _writeByte( value );
+    return this;
+  }
+
+  public PlasmacoreMessage set( String key, byte[] bytes )
+  {
+    return set( key, bytes, 0, bytes.length );
+  }
+
+  public PlasmacoreMessage set( String key, byte[] bytes, int i1, int n )
+  {
+    _writeString( key );
+    _writeByte( DATA_TYPE_BYTE )._writeInt32( n );
+    for (int i=0; i<n; ++i)
+    {
+      _writeByte( bytes[i+i1] );
+    }
+    return this;
+  }
+
+  public PlasmacoreMessage set( String key, double value )
+  {
+    _writeString( key );
+    _writeByte( DATA_TYPE_REAL64 )._writeInt32( 8 );
+    _writeReal64( value );
+    return this;
+  }
+
+  public PlasmacoreMessage set( String key, int value )
+  {
+    _writeString( key );
+    _writeByte( DATA_TYPE_INT32 )._writeInt32( 4 );
+    _writeInt32( value );
+    return this;
+  }
+
+  public PlasmacoreMessage set( String key, long value )
+  {
+    _writeString( key );
+    _writeByte( DATA_TYPE_INT64 )._writeInt32( 8 );
+    _writeInt64( value );
+    return this;
+  }
+
+  public PlasmacoreMessage set( String key, String value )
+  {
+    _writeString( key );
+    _writeByte( DATA_TYPE_BYTE );
+    _writeString( value );
     return this;
   }
 
   public int _readByte()
   {
-    if (position == count) return 0;
+    if (position >= count) return 0;
     return ((int) data[ position++ ]) & 255;
   }
 
@@ -222,34 +434,38 @@ public class PlasmacoreMessage
     return this;
   }
 
-  public void _writeByte( int value )
+  public PlasmacoreMessage _writeByte( int value )
   {
     _reserve( 1 );
     data[ count++ ] = (byte) value;
+    return this;
   }
 
-  public void _writeInt32( int value )
+  public PlasmacoreMessage _writeInt32( int value )
   {
     _reserve( 4 );
     _writeByte( value >> 24 );
     _writeByte( value >> 16 );
     _writeByte( value >> 8 );
     _writeByte( value );
+    return this;
   }
 
-  public void _writeInt64( long value )
+  public PlasmacoreMessage _writeInt64( long value )
   {
     _reserve( 8 );
     _writeInt32( (int) (value >> 32) );
     _writeInt32( (int) value );
+    return this;
   }
 
-  public void _writeReal64( double value )
+  public PlasmacoreMessage _writeReal64( double value )
   {
     _writeInt64( Double.doubleToLongBits(value) );
+    return this;
   }
 
-  public void _writeString( String value )
+  public PlasmacoreMessage _writeString( String value )
   {
     utf8Writer.clear().write( value );
     int n = utf8Writer.count;
@@ -259,6 +475,7 @@ public class PlasmacoreMessage
     {
       _writeByte( bytes[i] );
     }
+    return this;
   }
 }
 
