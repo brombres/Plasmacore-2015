@@ -87,6 +87,11 @@ public class PlasmacoreMessage
     return create().init( type, nextMessageID++ );
   }
 
+  static PlasmacoreMessage create( byte[] data )
+  {
+    return create().init( data, 0, data.length );
+  }
+
   static PlasmacoreMessage create( byte[] data, int i1, int n )
   {
     return create().init( data, i1, n );
@@ -171,7 +176,7 @@ public class PlasmacoreMessage
 
   public byte getByte( String key )
   {
-    if ( !seek(key) ) return 0;
+    if ( !_seek(key) ) return 0;
 
     int arg_type = _readByte();
     int arg_size = _readInt32();
@@ -190,7 +195,7 @@ public class PlasmacoreMessage
 
   public byte[] getBytes( String key )
   {
-    if ( !seek(key) ) return new byte[0];
+    if ( !_seek(key) ) return new byte[0];
     _readByte();
     int count = _readInt32();
     byte[] result = new byte[ count ];
@@ -200,14 +205,14 @@ public class PlasmacoreMessage
 
   public int getBytes( String key, byte[] buffer, int i1, int max )
   {
-    if ( !seek(key) ) return 0;
+    if ( !_seek(key) ) return 0;
 
     int arg_type = _readByte();
     int arg_size = _readInt32();
     if (arg_size == 0) return 0;
 
     int n = Math.min( arg_size, max );
-    for (int i=n; --i>=0; )
+    for (int i=0; i<n; ++i)
     {
       buffer[ i+i1 ] = (byte)_readByte();
     }
@@ -217,7 +222,7 @@ public class PlasmacoreMessage
 
   public double getDouble( String key )
   {
-    if ( !seek(key) ) return 0;
+    if ( !_seek(key) ) return 0;
 
     int arg_type = _readByte();
     int arg_size = _readInt32();
@@ -236,7 +241,7 @@ public class PlasmacoreMessage
 
   public int getInt( String key )
   {
-    if ( !seek(key) ) return 0;
+    if ( !_seek(key) ) return 0;
 
     int arg_type = _readByte();
     int arg_size = _readInt32();
@@ -255,7 +260,7 @@ public class PlasmacoreMessage
 
   public long getLong( String key )
   {
-    if ( !seek(key) ) return 0;
+    if ( !_seek(key) ) return 0;
 
     int arg_type = _readByte();
     int arg_size = _readInt32();
@@ -274,7 +279,7 @@ public class PlasmacoreMessage
 
   public String getString( String key )
   {
-    if ( !seek(key) ) return "";
+    if ( !_seek(key) ) return "";
 
     int arg_type = _readByte();
     if (arg_type == DATA_TYPE_BYTE)
@@ -295,16 +300,25 @@ public class PlasmacoreMessage
     return "";
   }
 
-  public boolean seek( String key )
+  public void print()
   {
-    position = argStartPosition;
-    while (position < count)
+    for (int i=0; i<count; ++i)
     {
-      if (_readString().equals(key)) return true;  // leaves read position set correctly
-      _readByte(); // skip type
-      position += _readInt32(); // skip data to advance to next property
+      if (i > 0) System.out.print( " " );
+      int b = ((int) data[i]) & 255;
+      System.out.print( "0123456789ABCDEF".charAt(b>>4) );
+      System.out.print( "0123456789ABCDEF".charAt(b&15) );
     }
-    return false; // never found it
+    System.out.println();
+    for (int i=0; i<count; ++i)
+    {
+      if (i > 0) System.out.print( " " );
+      System.out.print( " " );
+      int b = ((int) data[i]) & 255;
+      if (b >= ' ' && b <= 126) System.out.print( (char) b );
+      else                      System.out.print( '.' );
+    }
+    System.out.println();
   }
 
   public PlasmacoreMessage set( String key, boolean value )
@@ -432,6 +446,19 @@ public class PlasmacoreMessage
     data = newData;
 
     return this;
+  }
+
+  public boolean _seek( String key )
+  {
+    position = argStartPosition;
+    while (position < count)
+    {
+      if (_readString().equals(key)) return true;  // leaves read position set correctly
+      _readByte(); // skip type
+      int skipSize = _readInt32(); // skip data to advance to next property
+      position += skipSize;
+    }
+    return false; // never found it
   }
 
   public PlasmacoreMessage _writeByte( int value )
