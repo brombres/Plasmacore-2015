@@ -19,7 +19,5 @@ public class MainActivity extends Activity
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
     setContentView( new PlasmacoreView(this) );
-
-    //Plasmacore.launch();
   }
 }

@@ -40,6 +40,8 @@ public class PlasmacoreView extends GLSurfaceView
   {
     public void onDrawFrame( GL10 gl )
     {
+      Plasmacore.launch();
+
       gl.glClearColor( 0, 0, 1, 1 );
       gl.glClear( GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT );
     }

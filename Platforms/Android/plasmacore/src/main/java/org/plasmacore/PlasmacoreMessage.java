@@ -44,7 +44,6 @@ import java.util.*;
 
 public class PlasmacoreMessage
 {
-  /*
   // ENUMERATE
   final static int DATA_TYPE_REAL64 = 1;
   final static int DATA_TYPE_INT64  = 2;
@@ -53,7 +52,9 @@ public class PlasmacoreMessage
 
   // GLOBAL PROPERTIES
   static int nextMessageID = 1;
-  static HashMap<String,String> consolidationTable = new HashMap<String,String>();
+  static HashMap<Comparable<String>,String> consolidationTable = new HashMap<Comparable<String>,String>();
+  static ComparableStringBuilder builder = new ComparableStringBuilder();
+  static UTF8Writer utf8Writer = new UTF8Writer();
   static ArrayList<PlasmacoreMessage> messagePool = new ArrayList<PlasmacoreMessage>();
 
   // GLOBAL METHODS
@@ -61,6 +62,15 @@ public class PlasmacoreMessage
   {
     String result = consolidationTable.get( text );
     if (result != null) return result;
+    consolidationTable.put( text, text );
+    return text;
+  }
+
+  static String consolidate( ComparableStringBuilder builder )
+  {
+    String result = consolidationTable.get( builder );
+    if (result != null) return result;
+    String text = builder.toString();
     consolidationTable.put( text, text );
     return text;
   }
@@ -107,6 +117,7 @@ public class PlasmacoreMessage
     isSent = false;
     isRecycled = false;
     reply = null;
+    return this;
   }
 
   public PlasmacoreMessage init( String type, int messageID )
@@ -119,6 +130,8 @@ public class PlasmacoreMessage
     _writeString( type );
     _writeInt32( messageID );
     _writeReal64( timestamp );
+
+    return this;
   }
 
   public PlasmacoreMessage init( byte[] data )
@@ -139,6 +152,8 @@ public class PlasmacoreMessage
     type = consolidate( _readString() );
     messageID = _readInt32();
     timestamp = _readReal64();
+
+    return this;
   }
 
   public int _readByte()
@@ -166,8 +181,16 @@ public class PlasmacoreMessage
     return Double.longBitsToDouble( _readInt64() );
   }
 
-  public String _readString()
+  public ComparableStringBuilder _readString()
   {
+    builder.clear();
+    int n = _readInt32();
+    builder.reserve( n );
+    while (--n >= 0)
+    {
+      builder.writeUTF8Byte( _readByte() );
+    }
+    return builder;
   }
 
   public void _recycle()
@@ -225,6 +248,17 @@ public class PlasmacoreMessage
   {
     _writeInt64( Double.doubleToLongBits(value) );
   }
-  */
+
+  public void _writeString( String value )
+  {
+    utf8Writer.clear().write( value );
+    int n = utf8Writer.count;
+    byte[] bytes = utf8Writer.utf8;
+    _writeInt32( n );
+    for (int i=0; i<n; ++i)
+    {
+      _writeByte( bytes[i] );
+    }
+  }
 }
 

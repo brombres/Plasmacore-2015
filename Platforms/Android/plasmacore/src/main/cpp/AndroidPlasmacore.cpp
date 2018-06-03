@@ -11,7 +11,7 @@ static JNIEnv* Plasmacore_jni_env;  // updated every Java JNI call
 
 ROGUE_FN( void, Plasmacore, nativeLaunch )( JNIEnv* env )
 {
-  ROGUE_LOG( "Launching Rogue..." );
+  ROGUE_LOG( "Launching Plasmacore..." );
   Plasmacore_jni_env = env;
   try
   {
