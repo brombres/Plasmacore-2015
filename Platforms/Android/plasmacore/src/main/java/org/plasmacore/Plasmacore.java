@@ -4,13 +4,15 @@ import android.util.*;
 
 public class Plasmacore
 {
-  static boolean    isLaunched;
-  static ByteBuffer messageBuffer = new ByteBuffer( 1024 );
+  static boolean  isLaunched;
+  static ByteList inputMessageQueue   = new ByteList( 1024 );
+  static ByteList outputMessageQueue  = new ByteList( 1024 );
+  static ByteList directMessageBuffer = new ByteList( 128 );
+  static String   mutex = new String( "mutex" );
 
   static
   {
     System.loadLibrary("plasmacore");
-
   }
 
   static public void launch()
@@ -19,6 +21,7 @@ public class Plasmacore
     {
       isLaunched = true;
       nativeLaunch();
+      PlasmacoreMessage.create( "Application.on_launch" ).post();
     }
   }
 
@@ -27,7 +30,59 @@ public class Plasmacore
     Log.i( "Plasmacore", message );
   }
 
-  native static void nativeLaunch();
-  native static void nativeQuit();
+  static public void post( PlasmacoreMessage m )
+  {
+    outputMessageQueue.reserve( m.data.count + 4 );
+    outputMessageQueue.writeInt32( m.data.count );
+    outputMessageQueue.add( m.data );
+    m.isSent = true;
+    m.recycle();
+  }
+
+  static public PlasmacoreMessage send( PlasmacoreMessage m )
+  {
+    directMessageBuffer.clear().add( m.data );
+    if (nativeSendMessage(directMessageBuffer))
+    {
+      // directMessageBuffer message has been replace with reply.
+      return PlasmacoreMessage.create( directMessageBuffer );
+    }
+    else
+    {
+      return null;
+    }
+  }
+
+  static public void update()
+  {
+    synchronized (mutex)
+    {
+      if (nativePostMessages(outputMessageQueue))
+      {
+        ByteList temp = inputMessageQueue;
+        inputMessageQueue = outputMessageQueue;
+        outputMessageQueue = temp.clear();
+
+        int readPos = 0;
+        while (readPos < inputMessageQueue.count)
+        {
+          int messageSize = inputMessageQueue.readInt32( readPos );
+          readPos += 4;
+          PlasmacoreMessage m = PlasmacoreMessage.create( inputMessageQueue.bytes, readPos, messageSize );
+          readPos += messageSize;
+          log( "TODO: dispatch received message " + m.type );
+        }
+      }
+      else
+      {
+        outputMessageQueue.clear();
+      }
+    }
+  }
+
+  native static void    nativeLaunch();
+  native static boolean nativePostMessages( ByteList queue );
+  native static void    nativeQuit();
+  native static boolean nativeSendMessage( ByteList data );
 }
 

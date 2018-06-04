@@ -21,6 +21,11 @@ public class ByteList
     return this;
   }
 
+  public ByteList add( ByteList other )
+  {
+    return add( other.bytes, 0, other.count );
+  }
+
   public ByteList add( byte[] bytes, int i1, int n )
   {
     reserve( n );
@@ -68,6 +73,16 @@ public class ByteList
     return this;
   }
 
+  public int readInt32( int startIndex )
+  {
+    if (startIndex + 4 > count) return 0;
+    int result = ((int)bytes[ startIndex ]) << 24;
+    result |= ((int)bytes[ startIndex+1 ]) << 16;
+    result |= ((int)bytes[ startIndex+2 ]) << 8;
+    result |= ((int)bytes[ startIndex+3 ]);
+    return result;
+  }
+
   public ByteList reserve( int additional )
   {
     int requiredCapacity = count + additional;
@@ -97,5 +112,16 @@ public class ByteList
     }
     buffer.append( ']' );
     return buffer.toString();
+  }
+
+  public ByteList writeInt32( int value )
+  {
+    reserve( 4 );
+    bytes[ count   ] = (byte) (value >> 24);
+    bytes[ count+1 ] = (byte) (value >> 16);
+    bytes[ count+2 ] = (byte) (value >> 8);
+    bytes[ count+3 ] = (byte) value;
+    count += 4;
+    return this;
   }
 }

@@ -84,7 +84,12 @@ public class PlasmacoreMessage
 
   static PlasmacoreMessage create( String type )
   {
-    return create().init( type, nextMessageID++ );
+    return create( type, nextMessageID++ );
+  }
+
+  static PlasmacoreMessage create( String type, int messageID )
+  {
+    return create().init( type, messageID );
   }
 
   static PlasmacoreMessage create( ByteList data )
@@ -169,8 +174,7 @@ public class PlasmacoreMessage
 
   public boolean dispatch()
   {
-    // FIXME
-    //Plasmacore.log( "DISPATCH " + type );
+    Plasmacore.log( "DISPATCH " + type );
     return false;
   }
 
@@ -305,6 +309,11 @@ public class PlasmacoreMessage
     return "";
   }
 
+  public void post()
+  {
+    Plasmacore.post( this );
+  }
+
   public void print()
   {
     for (int i=0; i<data.count; ++i)
@@ -334,10 +343,21 @@ public class PlasmacoreMessage
     messagePool.add( this );
   }
 
+  public PlasmacoreMessage reply()
+  {
+    if (this.reply == null) this.reply = PlasmacoreMessage.create( "", messageID );
+    return this.reply;
+  }
+
   public PlasmacoreMessage reserve( int additional )
   {
     data.reserve( additional );
     return this;
+  }
+
+  public void send()
+  {
+    Plasmacore.send( this );
   }
 
   public PlasmacoreMessage set( String key, boolean value )
@@ -459,11 +479,7 @@ public class PlasmacoreMessage
 
   public PlasmacoreMessage _writeInt32( int value )
   {
-    reserve( 4 );
-    _writeByte( value >> 24 );
-    _writeByte( value >> 16 );
-    _writeByte( value >> 8 );
-    _writeByte( value );
+    data.writeInt32( value );
     return this;
   }
 
@@ -496,15 +512,12 @@ public class PlasmacoreMessage
 
   //static public void main( String[] args )
   //{
-  //  PlasmacoreMessage m  = PlasmacoreMessage.create( "Testing" );
-  //  m.print();
-  //  PlasmacoreMessage m2 = PlasmacoreMessage.create( m.data );
+  //  PlasmacoreMessage m1 = PlasmacoreMessage.create( "Alpha" );
+  //  PlasmacoreMessage m2 = PlasmacoreMessage.create( "Beta" );
+  //  m1.print();
   //  m2.print();
-  //  m.recycle();
-  //  m2.recycle();
-  //  PlasmacoreMessage m3 = PlasmacoreMessage.create( "T2" );
-  //  System.out.println( "m3 == m2:" + (m3==m2) );
-  //  m3.print();
+  //  System.out.println( m1.messageID );
+  //  System.out.println( m2.messageID );
   //}
 }
 
