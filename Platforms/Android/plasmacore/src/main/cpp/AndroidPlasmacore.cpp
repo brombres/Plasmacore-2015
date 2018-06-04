@@ -7,12 +7,22 @@ using namespace std;
 #define ROGUE_FN(return_type,class_name,fn_name) \
   extern "C" JNIEXPORT return_type JNICALL Java_org_plasmacore_##class_name##_##fn_name
 
-static JNIEnv* Plasmacore_jni_env;  // updated every Java JNI call
+static JNIEnv* Plasmacore_env;  // updated every Java JNI call
+
+//-----------------------------------------------------------------------------
+// Java Plasmacore
+//-----------------------------------------------------------------------------
+static jclass jclass_PlasmacoreMessage;
+
 
 ROGUE_FN( void, Plasmacore, nativeLaunch )( JNIEnv* env )
 {
   ROGUE_LOG( "Launching Plasmacore..." );
-  Plasmacore_jni_env = env;
+  Plasmacore_env = env;
+
+  jclass cls = env->FindClass( "PlasmacoreMessage" );
+  jclass_PlasmacoreMessage = reinterpret_cast<jclass>(env->NewGlobalRef(cls));
+
   try
   {
     Rogue_quit();  // reset global state if necessary
@@ -28,7 +38,7 @@ ROGUE_FN( void, Plasmacore, nativeLaunch )( JNIEnv* env )
 
 ROGUE_FN( void, Plasmacore, nativeQuit )( JNIEnv* env )
 {
-  Plasmacore_jni_env = env;
+  Plasmacore_env = env;
   try
   {
     Rogue_quit();
@@ -40,6 +50,9 @@ ROGUE_FN( void, Plasmacore, nativeQuit )( JNIEnv* env )
   }
 }
 
+//-----------------------------------------------------------------------------
+// Rogue Plasmacore
+//-----------------------------------------------------------------------------
 extern "C" RogueString* Plasmacore_find_asset( RogueString* name )
 {
   return NULL;

@@ -87,9 +87,14 @@ public class PlasmacoreMessage
     return create().init( type, nextMessageID++ );
   }
 
+  static PlasmacoreMessage create( ByteList data )
+  {
+    return create( data.bytes, 0, data.count );
+  }
+
   static PlasmacoreMessage create( byte[] data )
   {
-    return create().init( data, 0, data.length );
+    return create( data, 0, data.length );
   }
 
   static PlasmacoreMessage create( byte[] data, int i1, int n )
@@ -101,9 +106,8 @@ public class PlasmacoreMessage
   public String   type;
   public int      messageID;
   public double   timestamp;
-  public byte[]   data = new byte[128];
-  public int      count;    // data size; data.length is capacity
-  public int      position; // read position (count is write position)
+  public ByteList data = new ByteList();
+  public int      position; // read position (data.count is write position)
   public int      argStartPosition;
   public boolean  isSent;
   public boolean  isRecycled;
@@ -118,7 +122,7 @@ public class PlasmacoreMessage
 
   public PlasmacoreMessage reset()
   {
-    count = 0;
+    data.clear();
     position = 0;
     isSent = false;
     isRecycled = false;
@@ -138,7 +142,7 @@ public class PlasmacoreMessage
     _writeInt32( messageID );
     _writeReal64( timestamp );
 
-    argStartPosition = count;
+    argStartPosition = data.count;
 
     return this;
   }
@@ -147,26 +151,27 @@ public class PlasmacoreMessage
   {
     reset();
 
-    // Copy in data
-    if (n > this.data.length)
-    {
-      this.data = new byte[ n ];
-    }
-    for (int i=n; --i>=0; )
-    {
-      this.data[i] = data[i+i1];
-    }
+    this.data.clear().add( data, i1, n );
+    initFromData();
 
-    count = n;
+    return this;
+  }
 
-    // Read out header
+  public void initFromData()
+  {
+    // Assumes that reset() has been called and that 'data' has been configured.
     type = consolidate( _readString() );
     messageID = _readInt32();
     timestamp = _readReal64();
 
     argStartPosition = position;
+  }
 
-    return this;
+  public boolean dispatch()
+  {
+    // FIXME
+    //Plasmacore.log( "DISPATCH " + type );
+    return false;
   }
 
   public boolean getBoolean( String key )
@@ -302,23 +307,37 @@ public class PlasmacoreMessage
 
   public void print()
   {
-    for (int i=0; i<count; ++i)
+    for (int i=0; i<data.count; ++i)
     {
       if (i > 0) System.out.print( " " );
-      int b = ((int) data[i]) & 255;
+      int b = ((int) data.bytes[i]) & 255;
       System.out.print( "0123456789ABCDEF".charAt(b>>4) );
       System.out.print( "0123456789ABCDEF".charAt(b&15) );
     }
     System.out.println();
-    for (int i=0; i<count; ++i)
+    for (int i=0; i<data.count; ++i)
     {
       if (i > 0) System.out.print( " " );
       System.out.print( " " );
-      int b = ((int) data[i]) & 255;
+      int b = ((int) data.bytes[i]) & 255;
       if (b >= ' ' && b <= 126) System.out.print( (char) b );
       else                      System.out.print( '.' );
     }
     System.out.println();
+  }
+
+  public void recycle()
+  {
+    if (isRecycled) return;
+    isRecycled = true;
+    data.limitCapacity( 1024 );
+    messagePool.add( this );
+  }
+
+  public PlasmacoreMessage reserve( int additional )
+  {
+    data.reserve( additional );
+    return this;
   }
 
   public PlasmacoreMessage set( String key, boolean value )
@@ -384,8 +403,8 @@ public class PlasmacoreMessage
 
   public int _readByte()
   {
-    if (position >= count) return 0;
-    return ((int) data[ position++ ]) & 255;
+    if (position >= data.count) return 0;
+    return ((int) data.bytes[ position++ ]) & 255;
   }
 
   public int _readInt32()
@@ -419,39 +438,10 @@ public class PlasmacoreMessage
     return builder;
   }
 
-  public void _recycle()
-  {
-    if (isRecycled) return;
-    isRecycled = true;
-    if (data.length > 1024)
-    {
-      data = new byte[ 1024 ];
-    }
-    messagePool.add( this );
-  }
-
-  public PlasmacoreMessage _reserve( int additional )
-  {
-    int requiredCapacity = count + additional;
-    if (requiredCapacity <= data.length) return this;
-
-    int newCapacity = data.length * 2;
-    if (requiredCapacity > newCapacity) newCapacity = requiredCapacity;
-
-    byte[] newData = new byte[ requiredCapacity ];
-    for (int i=count; --i>=0; )
-    {
-      newData[i] = data[i];
-    }
-    data = newData;
-
-    return this;
-  }
-
   public boolean _seek( String key )
   {
     position = argStartPosition;
-    while (position < count)
+    while (position < data.count)
     {
       if (_readString().equals(key)) return true;  // leaves read position set correctly
       _readByte(); // skip type
@@ -463,14 +453,13 @@ public class PlasmacoreMessage
 
   public PlasmacoreMessage _writeByte( int value )
   {
-    _reserve( 1 );
-    data[ count++ ] = (byte) value;
+    data.add( value );
     return this;
   }
 
   public PlasmacoreMessage _writeInt32( int value )
   {
-    _reserve( 4 );
+    reserve( 4 );
     _writeByte( value >> 24 );
     _writeByte( value >> 16 );
     _writeByte( value >> 8 );
@@ -480,7 +469,7 @@ public class PlasmacoreMessage
 
   public PlasmacoreMessage _writeInt64( long value )
   {
-    _reserve( 8 );
+    reserve( 8 );
     _writeInt32( (int) (value >> 32) );
     _writeInt32( (int) value );
     return this;
@@ -504,5 +493,18 @@ public class PlasmacoreMessage
     }
     return this;
   }
+
+  //static public void main( String[] args )
+  //{
+  //  PlasmacoreMessage m  = PlasmacoreMessage.create( "Testing" );
+  //  m.print();
+  //  PlasmacoreMessage m2 = PlasmacoreMessage.create( m.data );
+  //  m2.print();
+  //  m.recycle();
+  //  m2.recycle();
+  //  PlasmacoreMessage m3 = PlasmacoreMessage.create( "T2" );
+  //  System.out.println( "m3 == m2:" + (m3==m2) );
+  //  m3.print();
+  //}
 }
 

@@ -1,8 +1,11 @@
 package org.plasmacore;
 
+import android.util.*;
+
 public class Plasmacore
 {
-  static boolean isLaunched;
+  static boolean    isLaunched;
+  static ByteBuffer messageBuffer = new ByteBuffer( 1024 );
 
   static
   {
@@ -17,6 +20,11 @@ public class Plasmacore
       isLaunched = true;
       nativeLaunch();
     }
+  }
+
+  static public void log( String message )
+  {
+    Log.i( "Plasmacore", message );
   }
 
   native static void nativeLaunch();
