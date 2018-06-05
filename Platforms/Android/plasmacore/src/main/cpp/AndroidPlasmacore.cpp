@@ -13,7 +13,11 @@ static JNIEnv* Plasmacore_env;  // updated every Java JNI call
 // Java Plasmacore
 //-----------------------------------------------------------------------------
 static jclass    jclass_Plasmacore;
+static jfieldID  jfieldID_Plasmacore_directMessageBuffer;
+static jmethodID jmethodID_Plasmacore_dispatchDirectMessage;
+
 static jclass    jclass_PlasmacoreMessage;
+
 static jclass    jclass_ByteList;
 static jfieldID  jfieldID_ByteList_bytes;
 static jfieldID  jfieldID_ByteList_count;
@@ -28,13 +32,16 @@ static jclass Rogue_find_class( JNIEnv* env, const char* class_name )
 
 ROGUE_FN( void, Plasmacore, nativeLaunch )( JNIEnv* env )
 {
-  ROGUE_LOG( "Launching Plasmacore..." );
   Plasmacore_env = env;
+  ROGUE_LOG( "Launching Plasmacore..." );
 
-  jclass_Plasmacore        = Rogue_find_class( env, "org/plasmacore/Plasmacore" );
+  jclass_Plasmacore = Rogue_find_class( env, "org/plasmacore/Plasmacore" );
+  jfieldID_Plasmacore_directMessageBuffer    = env->GetStaticFieldID( jclass_Plasmacore, "directMessageBuffer", "Lorg/plasmacore/ByteList;" );
+  jmethodID_Plasmacore_dispatchDirectMessage = env->GetStaticMethodID( jclass_Plasmacore, "dispatchDirectMessage", "()Z" );
+
   jclass_PlasmacoreMessage = Rogue_find_class( env, "org/plasmacore/PlasmacoreMessage" );
-  jclass_ByteList          = Rogue_find_class( env, "org/plasmacore/ByteList" );
 
+  jclass_ByteList          = Rogue_find_class( env, "org/plasmacore/ByteList" );
   jfieldID_ByteList_bytes = env->GetFieldID( jclass_ByteList, "bytes", "[B" );
   jfieldID_ByteList_count = env->GetFieldID( jclass_ByteList, "count", "I" );
   jmethodID_ByteList_clear   = env->GetMethodID( jclass_ByteList, "clear", "()Lorg/plasmacore/ByteList;" );
@@ -55,6 +62,7 @@ ROGUE_FN( void, Plasmacore, nativeLaunch )( JNIEnv* env )
 
 ROGUE_FN( jboolean, Plasmacore, nativePostMessages )( JNIEnv* env, jobject static_context, jobject data )
 {
+  Plasmacore_env = env;
   try
   {
     Rogue_collect_garbage();  // only happens if new allocation threshold has been reached
@@ -113,6 +121,7 @@ ROGUE_FN( void, Plasmacore, nativeQuit )( JNIEnv* env )
 
 ROGUE_FN( jboolean, Plasmacore, nativeSendMessage )( JNIEnv* env, jobject static_context, jobject data )
 {
+  Plasmacore_env = env;
   try
   {
     RogueClassPlasmacore__MessageManager* mm =
@@ -171,8 +180,32 @@ extern "C" RogueString* Plasmacore_get_application_data_folder()
   return RogueString_create_from_utf8( "." );
 }
 
-bool PlasmacoreMessage_send( RogueByte_List* data )
+bool PlasmacoreMessage_send( RogueByte_List* rogue_bytes )
 {
-  ROGUE_LOG( "TODO: PlasmacoreMessage_send()" );
-  return false;
+  JNIEnv* env = Plasmacore_env;
+  jobject directMessageBuffer = env->GetStaticObjectField( jclass_Plasmacore, jfieldID_Plasmacore_directMessageBuffer );
+
+  // Copy message bytes into Java's directMessageBuffer
+  env->CallObjectMethod( directMessageBuffer, jmethodID_ByteList_clear );
+  env->CallObjectMethod( directMessageBuffer, jmethodID_ByteList_reserve, rogue_bytes->count );
+  env->SetIntField( directMessageBuffer, jfieldID_ByteList_count, rogue_bytes->count );
+  jobject bytes = env->GetObjectField( directMessageBuffer, jfieldID_ByteList_bytes );
+  env->SetByteArrayRegion( (jbyteArray) bytes, 0, rogue_bytes->count, (signed char*) rogue_bytes->data->as_bytes );
+
+  if (env->CallStaticBooleanMethod(jclass_Plasmacore, jmethodID_Plasmacore_dispatchDirectMessage))
+  {
+    jobject bytes = env->GetObjectField( directMessageBuffer, jfieldID_ByteList_bytes ); // this ref may have changed
+    RogueInt32 count = env->GetIntField( bytes, jfieldID_ByteList_count );
+
+    RogueByte_List__clear( rogue_bytes );
+    RogueByte_List__reserve__Int32( rogue_bytes, count );
+    rogue_bytes->count = count;
+
+    env->GetByteArrayRegion( (jbyteArray) bytes, 0, count, (signed char*) rogue_bytes->data->as_bytes );
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }

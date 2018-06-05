@@ -25,6 +25,19 @@ public class Plasmacore
     }
   }
 
+  static public boolean dispatchDirectMessage()
+  {
+    PlasmacoreMessage m = PlasmacoreMessage.create( directMessageBuffer );
+    dispatch( m );
+    m.recycle();
+    return false;
+  }
+
+  static public void dispatch( PlasmacoreMessage m )
+  {
+    log( "TODO: dispatch received message " + m.type );
+  }
+
   static public void log( String message )
   {
     Log.i( "Plasmacore", message );
@@ -70,7 +83,8 @@ public class Plasmacore
           readPos += 4;
           PlasmacoreMessage m = PlasmacoreMessage.create( inputMessageQueue.bytes, readPos, messageSize );
           readPos += messageSize;
-          log( "TODO: dispatch received message " + m.type );
+          dispatch( m );
+          m.recycle();
         }
       }
       else

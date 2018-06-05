@@ -87,6 +87,11 @@ public class PlasmacoreMessage
     return create( type, nextMessageID++ );
   }
 
+  static PlasmacoreMessage create( int replyToMessageID )
+  {
+    return create( "", replyToMessageID );
+  }
+
   static PlasmacoreMessage create( String type, int messageID )
   {
     return create().init( type, messageID );
@@ -170,12 +175,6 @@ public class PlasmacoreMessage
     timestamp = _readReal64();
 
     argStartPosition = position;
-  }
-
-  public boolean dispatch()
-  {
-    Plasmacore.log( "DISPATCH " + type );
-    return false;
   }
 
   public boolean getBoolean( String key )
