@@ -7,11 +7,18 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -Wall -fno-strict-aliasing -Wno-invalid-offsetof")
 
+add_custom_target(
+    run_rogo ALL
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/__always_run.h
+    )
+
 add_custom_command(
-  OUTPUT ${CMAKE_SOURCE_DIR}/../../../Build/Android/Source/RogueProgram.h
-  OUTPUT ${CMAKE_SOURCE_DIR}/../../../Build/Android/Source/RogueProgram.cpp
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../../..
-  COMMAND rogo android
+    OUTPUT
+      ${CMAKE_CURRENT_BINARY_DIR}/__always_run.h  # Non-existent; ensures we run each time
+      ${CMAKE_SOURCE_DIR}/../../../Build/Android/Source/RogueProgram.h
+      ${CMAKE_SOURCE_DIR}/../../../Build/Android/Source/RogueProgram.cpp
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../../..
+    COMMAND rogo android
 )
 
 # Creates and names a library, sets it as either STATIC
