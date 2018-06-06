@@ -469,13 +469,6 @@ $endIf
 
       return false
 
-$elseIf (target("Android"))
-      local decoded = Message( "Bitmap.decode" ).set( "data", bytes ).send
-      trace decoded
-      #if (not decoded) return false
-      #return true
-      return false
-
 $else
       # Use native layer/OS PNG/JPEG decoder
       nativeHeader

@@ -26,13 +26,13 @@ public class ByteList
     return add( other.bytes, 0, other.count );
   }
 
-  public ByteList add( byte[] bytes, int i1, int n )
+  public ByteList add( byte[] bytes, int offset, int n )
   {
     reserve( n );
     byte[] this_bytes = this.bytes;
     count += n;
     int count = this.count;
-    for (int i=i1+n; --i>=i1; )
+    for (int i=offset+n; --i>=offset; )
     {
       this_bytes[ --count ] = bytes[ i ];
     }

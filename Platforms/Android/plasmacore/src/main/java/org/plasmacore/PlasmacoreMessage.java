@@ -107,9 +107,9 @@ public class PlasmacoreMessage
     return create( data, 0, data.length );
   }
 
-  static PlasmacoreMessage create( byte[] data, int i1, int n )
+  static PlasmacoreMessage create( byte[] data, int offset, int n )
   {
-    return create().init( data, i1, n );
+    return create().init( data, offset, n );
   }
 
   // PROPERTIES
@@ -157,11 +157,11 @@ public class PlasmacoreMessage
     return this;
   }
 
-  public PlasmacoreMessage init( byte[] data, int i1, int n )
+  public PlasmacoreMessage init( byte[] data, int offset, int n )
   {
     reset();
 
-    this.data.clear().add( data, i1, n );
+    this.data.clear().add( data, offset, n );
     initFromData();
 
     return this;
@@ -211,7 +211,7 @@ public class PlasmacoreMessage
     return result;
   }
 
-  public int getBytes( String key, byte[] buffer, int i1, int max )
+  public int getBytes( String key, byte[] buffer, int offset, int max )
   {
     if ( !_seek(key) ) return 0;
 
@@ -222,7 +222,7 @@ public class PlasmacoreMessage
     int n = Math.min( arg_size, max );
     for (int i=0; i<n; ++i)
     {
-      buffer[ i+i1 ] = (byte)_readByte();
+      buffer[ i+offset ] = (byte)_readByte();
     }
 
     return n;
@@ -377,13 +377,13 @@ public class PlasmacoreMessage
     return set( key, bytes, 0, bytes.length );
   }
 
-  public PlasmacoreMessage set( String key, byte[] bytes, int i1, int n )
+  public PlasmacoreMessage set( String key, byte[] bytes, int offset, int n )
   {
     _writeString( key );
     _writeByte( DATA_TYPE_BYTE )._writeInt32( n );
     for (int i=0; i<n; ++i)
     {
-      _writeByte( bytes[i+i1] );
+      _writeByte( bytes[i+offset] );
     }
     return this;
   }

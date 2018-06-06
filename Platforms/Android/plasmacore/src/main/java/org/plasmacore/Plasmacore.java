@@ -1,18 +1,26 @@
 package org.plasmacore;
 
+import android.graphics.*;
 import android.util.*;
+
+import java.nio.*;
+import java.util.*;
 
 public class Plasmacore
 {
   static boolean  isLaunched;
+  static boolean  isConfigured;
   static ByteList inputMessageQueue   = new ByteList( 1024 );
   static ByteList outputMessageQueue  = new ByteList( 1024 );
-  static ByteList directMessageBuffer = new ByteList( 128 );
+  static ByteList ioBuffer = new ByteList( 128 );  // used for direct message i/o and bitmap decoding
   static String   mutex = new String( "mutex" );
+
+  static public HashMap<String,PlasmacoreMessageListener> messageListeners = new HashMap<String,PlasmacoreMessageListener>();
 
   static
   {
     System.loadLibrary("plasmacore");
+    configure();
   }
 
   static public void launch()
@@ -25,9 +33,15 @@ public class Plasmacore
     }
   }
 
+  static public void configure()
+  {
+    if (isConfigured) return;
+    isConfigured = true;
+  }
+
   static public boolean dispatchDirectMessage()
   {
-    PlasmacoreMessage m = PlasmacoreMessage.create( directMessageBuffer );
+    PlasmacoreMessage m = PlasmacoreMessage.create( ioBuffer );
     dispatch( m );
     m.recycle();
     return false;
@@ -38,9 +52,40 @@ public class Plasmacore
     log( "TODO: dispatch received message " + m.type );
   }
 
+  static public int decodeImage()
+  {
+    // Decodes image bytes that have been placed in ioBuffer.
+    // On success, places decoded data in ioBuffer and returns width of image.
+    // On failure returns 0.
+    Plasmacore.log( "Decode image: " + ioBuffer.count + " bytes" );
+    try
+    {
+      Bitmap bitmap = BitmapFactory.decodeByteArray( ioBuffer.bytes, 0, ioBuffer.count );
+      int width  = bitmap.getWidth();
+      int height = bitmap.getHeight();
+      Plasmacore.log( "Decoded image is " + width + "x" + height );
+      int byteCount = width * height * 4;
+      ioBuffer.clear().reserve( byteCount );
+      ioBuffer.count = byteCount;
+      ByteBuffer buffer = ByteBuffer.wrap( ioBuffer.bytes );
+      bitmap.copyPixelsToBuffer( buffer );
+      return width;
+    }
+    catch (Exception err)
+    {
+      Plasmacore.logError( "Failed to decode image." );
+      return 0;
+    }
+  }
+
   static public void log( String message )
   {
     Log.i( "Plasmacore", message );
+  }
+
+  static public void logError( String message )
+  {
+    Log.e( "Plasmacore", message );
   }
 
   static public void post( PlasmacoreMessage m )
@@ -54,11 +99,11 @@ public class Plasmacore
 
   static public PlasmacoreMessage send( PlasmacoreMessage m )
   {
-    directMessageBuffer.clear().add( m.data );
-    if (nativeSendMessage(directMessageBuffer))
+    ioBuffer.clear().add( m.data );
+    if (nativeSendMessage(ioBuffer))
     {
-      // directMessageBuffer message has been replace with reply.
-      return PlasmacoreMessage.create( directMessageBuffer );
+      // ioBuffer message has been replace with reply.
+      return PlasmacoreMessage.create( ioBuffer );
     }
     else
     {
@@ -66,8 +111,20 @@ public class Plasmacore
     }
   }
 
+  static public void setMessageListener( String type, PlasmacoreMessageListener listener )
+  {
+    messageListeners.put( type, listener );
+  }
+
+  static public void removeMessageListener( String type )
+  {
+    messageListeners.put( type, null );
+  }
+
   static public void update()
   {
+    if ( !isLaunched ) launch();
+
     synchronized (mutex)
     {
       if (nativePostMessages(outputMessageQueue))
