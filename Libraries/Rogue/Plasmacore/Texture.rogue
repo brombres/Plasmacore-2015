@@ -80,12 +80,14 @@ class Texture
               |
               |if (GL_FRAMEBUFFER_COMPLETE != glCheckFramebufferStatus(GL_FRAMEBUFFER))
               |{
-              |  printf( "Failed to create offscreen buffer.\n" );
+              |  ROGUE_LOG( "Failed to create offscreen buffer.\n" );
               |  glDeleteFramebuffers( 1, &fb_id );
               |  $this->render_target_id = 0;
               |}
               |
               |glBindFramebuffer( GL_FRAMEBUFFER, original_framebuffer_id );
+
+      OpenGL.log_errors( "creating offscreen buffer" )
 
     method on_cleanup
       unload

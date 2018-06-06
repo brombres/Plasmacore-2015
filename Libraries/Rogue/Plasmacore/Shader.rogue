@@ -107,7 +107,7 @@ $endIf
               |char* log = new char[ log_size ];
               |glGetShaderInfoLog( $shader, log_size, &log_size, log );
               |
-              |printf( "SHADER ERROR:\n%s\n", log );
+              |ROGUE_LOG_ERROR( "SHADER ERROR:\n%s\n", log );
               |delete[] log;
 
 endClass
