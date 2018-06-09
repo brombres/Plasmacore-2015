@@ -84,6 +84,7 @@ class Keycode
     SEMICOLON        59
     EQUALS           61
 
+    AT               64
     A                65
     B                66
     C                67

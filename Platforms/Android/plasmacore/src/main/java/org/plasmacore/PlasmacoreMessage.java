@@ -56,6 +56,7 @@ public class PlasmacoreMessage
   static ComparableStringBuilder builder = new ComparableStringBuilder();
   static UTF8Writer utf8Writer = new UTF8Writer();
   static ArrayList<PlasmacoreMessage> messagePool = new ArrayList<PlasmacoreMessage>();
+  static String mutex = new String( "mutex" );
 
   // GLOBAL METHODS
   static String consolidate( String text )
@@ -77,9 +78,12 @@ public class PlasmacoreMessage
 
   static PlasmacoreMessage create()
   {
-    int n = messagePool.size();
-    if (n == 0) return new PlasmacoreMessage();
-    return messagePool.remove( n - 1 ).reset();
+    synchronized (mutex)
+    {
+      int n = messagePool.size();
+      if (n == 0) return new PlasmacoreMessage();
+      return messagePool.remove( n - 1 ).reset();
+    }
   }
 
   static PlasmacoreMessage create( String type )
@@ -337,9 +341,13 @@ public class PlasmacoreMessage
   public void recycle()
   {
     if (isRecycled) return;
-    isRecycled = true;
-    data.limitCapacity( 1024 );
-    messagePool.add( this );
+
+    synchronized (mutex)
+    {
+      isRecycled = true;
+      data.limitCapacity( 1024 );
+      messagePool.add( this );
+    }
   }
 
   public PlasmacoreMessage reply()

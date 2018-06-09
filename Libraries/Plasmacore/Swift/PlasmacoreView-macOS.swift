@@ -411,8 +411,11 @@ class PlasmacoreView: NSOpenGLView
     static let ESCAPE           = 27
 
     static let SPACE            = 32
+    static let POUND            = 32
 
     static let APOSTROPHE       = 39
+    static let ASTERISK         = 42
+    static let PLUS             = 43
     static let COMMA            = 44
     static let MINUS            = 45
     static let PERIOD           = 46

@@ -27,9 +27,12 @@ public class Plasmacore
   {
     if ( !isLaunched )
     {
-      isLaunched = true;
-      nativeLaunch();
-      PlasmacoreMessage.create( "Application.on_launch" ).post();
+      synchronized (mutex)
+      {
+        isLaunched = true;
+        nativeLaunch();
+        PlasmacoreMessage.create( "Application.on_launch" ).post();
+      }
     }
   }
 
@@ -90,24 +93,30 @@ public class Plasmacore
 
   static public void post( PlasmacoreMessage m )
   {
-    outputMessageQueue.reserve( m.data.count + 4 );
-    outputMessageQueue.writeInt32( m.data.count );
-    outputMessageQueue.add( m.data );
-    m.isSent = true;
-    m.recycle();
+    synchronized (mutex)
+    {
+      outputMessageQueue.reserve( m.data.count + 4 );
+      outputMessageQueue.writeInt32( m.data.count );
+      outputMessageQueue.add( m.data );
+      m.isSent = true;
+      m.recycle();
+    }
   }
 
   static public PlasmacoreMessage send( PlasmacoreMessage m )
   {
-    ioBuffer.clear().add( m.data );
-    if (nativeSendMessage(ioBuffer))
+    synchronized (mutex)
     {
-      // ioBuffer message has been replace with reply.
-      return PlasmacoreMessage.create( ioBuffer );
-    }
-    else
-    {
-      return null;
+      ioBuffer.clear().add( m.data );
+      if (nativeSendMessage(ioBuffer))
+      {
+        // ioBuffer message has been replace with reply.
+        return PlasmacoreMessage.create( ioBuffer );
+      }
+      else
+      {
+        return null;
+      }
     }
   }
 
