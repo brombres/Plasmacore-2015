@@ -6,16 +6,22 @@ import android.graphics.*;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class PlasmacoreView extends GLSurfaceView
 {
+  final static public int
+    POINTER_MOVE    = 0,
+    POINTER_PRESS   = 1,
+    POINTER_RELEASE = 2;
+
   static public class Args
   {
     public Activity activity;
-    public String   displayName;
+    public String   displayName = "Main";
     public boolean  translucent;
 
     public Args( Activity activity )              { this.activity = activity; }
@@ -87,87 +93,48 @@ public class PlasmacoreView extends GLSurfaceView
     return true;
   }
 
-  /*
-  public boolean onTouchEvent( final MotionEvent event )
+  public boolean onTouchEvent( MotionEvent e )
   {
-    try
+    int type;
+    switch (e.getActionMasked())
     {
-      switch(event.getAction())
+      case MotionEvent.ACTION_MOVE: type = POINTER_MOVE;  break;
+      case MotionEvent.ACTION_DOWN: type = POINTER_PRESS; break;
+      default: type = POINTER_RELEASE;  // UP and CANCEL both count as release for Plasmacore
+    }
+
+    int n = e.getPointerCount();
+
+    int historyCount = e.getHistorySize();
+    if (historyCount > 0)
+    {
+      long msDelta = System.currentTimeMillis() - e.getEventTime();
+      for (int h=0; h<historyCount; ++h)
       {
-        case MotionEvent.ACTION_DOWN:
-        case 5:  //MotionEvent.ACTION_POINTER_1_DOWN:
-          begin_touch( event.getX(), event.getY() );
-          break;
-
-        case MotionEvent.ACTION_UP:
-        case 6:  //MotionEvent.ACTION_POINTER_1_UP:
-          end_touch( event.getX(), event.getY() );
-          break;
-
-        case 261: //MotionEvent.ACTION_POINTER_2_DOWN:
-          if (m_getX != null)
-          {
-            double x = (Float) m_getX.invoke( event, 1 );
-            double y = (Float) m_getY.invoke( event, 1 );
-            begin_touch( x, y );
-          }
-          break;
-
-        case 262: //MotionEvent.ACTION_POINTER_2_UP:
-          if (m_getX != null)
-          {
-            double x = (Float) m_getX.invoke( event, 1 );
-            double y = (Float) m_getY.invoke( event, 1 );
-            end_touch( x, y );
-          }
-          break;
-
-
-        case 517: //MotionEvent.ACTION_POINTER_3_DOWN:
-          if (m_getX != null)
-          {
-            double x = (Float) m_getX.invoke( event, 2 );
-            double y = (Float) m_getY.invoke( event, 2 );
-            begin_touch( x, y );
-          }
-          break;
-
-        case 518: //MotionEvent.ACTION_POINTER_3_UP:
-          if (m_getX != null)
-          {
-            double x = (Float) m_getX.invoke( event, 2 );
-            double y = (Float) m_getY.invoke( event, 2 );
-            end_touch( x, y );
-          }
-          break;
-
-        case MotionEvent.ACTION_MOVE:
-          if (m_getPointerCount == null)
-          {
-            update_touch( event.getX(), event.getY() );
-          }
-          else
-          {
-            int count = (Integer) m_getPointerCount.invoke( event );
-            for(int i = 0; i < count; ++i)
-            {
-              int id = (Integer) m_getPointerId.invoke( event, i );
-              double x = (Float) m_getX.invoke( event, id );
-              double y = (Float) m_getY.invoke( event, id );
-              update_touch( x, y );
-            }
-          }
-          break;
+        for (int i=0; i<n; ++i)
+        {
+          PlasmacoreMessage m = PlasmacoreMessage.create( "Display.on_pointer_event", (e.getHistoricalEventTime(h)+msDelta)/1000.0 );
+          m.set( "display_name", displayName );
+          m.set( "type", type );
+          m.set( "x", e.getHistoricalX(i,h) );
+          m.set( "y", e.getHistoricalY(i,h) );
+          m.post();
+        }
       }
     }
-    catch (Exception err)
+
+    for (int i=0; i<n; ++i)
     {
-      // never gonna happen
+      PlasmacoreMessage m = PlasmacoreMessage.create( "Display.on_pointer_event" );
+      m.set( "display_name", displayName );
+      m.set( "type", type );
+      m.set( "x", e.getX(i) );
+      m.set( "y", e.getY(i) );
+      m.post();
     }
 
     return true;
   }
-*/
 
   public void postKeyEvent( int syscode, int keycode, int unicode, boolean isPress, boolean isRepeat )
   {
@@ -200,7 +167,7 @@ public class PlasmacoreView extends GLSurfaceView
 
       PlasmacoreMessage m = PlasmacoreMessage.create( "Display.on_render" );
       //m.set( "window_id", windowID )
-      m.set( "display_name", "Main" );;
+      m.set( "display_name", displayName );;
       m.set( "display_width",  displayWidth );
       m.set( "display_height", displayHeight );
       m.send();

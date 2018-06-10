@@ -86,9 +86,13 @@ public class PlasmacoreMessage
     }
   }
 
-  static PlasmacoreMessage create( String type )
-  {
+  static PlasmacoreMessage create( String type ) {
     return create( type, nextMessageID++ );
+  }
+
+  static PlasmacoreMessage create( String type, double timestamp )
+  {
+    return create( type, nextMessageID++, timestamp );
   }
 
   static PlasmacoreMessage create( int replyToMessageID )
@@ -98,7 +102,12 @@ public class PlasmacoreMessage
 
   static PlasmacoreMessage create( String type, int messageID )
   {
-    return create().init( type, messageID );
+    return create( type, messageID, (System.currentTimeMillis() / 1000.0) );
+  }
+
+  static PlasmacoreMessage create( String type, int messageID, double timestamp )
+  {
+    return create().init( type, messageID, timestamp );
   }
 
   static PlasmacoreMessage create( ByteList data )
@@ -145,12 +154,12 @@ public class PlasmacoreMessage
     return this;
   }
 
-  public PlasmacoreMessage init( String type, int messageID )
+  public PlasmacoreMessage init( String type, int messageID, double timestamp )
   {
     reset();
     this.type = consolidate( type );
     this.messageID = messageID;
-    timestamp = System.currentTimeMillis() / 1000.0;
+    this.timestamp = timestamp;
 
     _writeString( type );
     _writeInt32( messageID );
