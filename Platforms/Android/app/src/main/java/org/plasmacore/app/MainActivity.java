@@ -18,7 +18,19 @@ public class MainActivity extends Activity
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-    setContentView( PlasmacoreView.args(this).create() );
+    setContentView( PlasmacoreView.builder(this).build() );
   }
+
+  //@Override
+  //protected void onStart()
+  //{
+  //  super.onStart();
+  //}
+
+  //@Override
+  //protected void onResume()
+  //{
+  //  super.onStart();
+  //}
 }
 

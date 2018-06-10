@@ -136,12 +136,12 @@ public class Plasmacore
 
     synchronized (mutex)
     {
-      if (nativePostMessages(outputMessageQueue))
-      {
-        ByteList temp = inputMessageQueue;
-        inputMessageQueue = outputMessageQueue;
-        outputMessageQueue = temp.clear();
+      ByteList temp = inputMessageQueue.clear();
+      inputMessageQueue = outputMessageQueue;
+      outputMessageQueue = temp;
 
+      if (nativePostMessages(inputMessageQueue))
+      {
         int readPos = 0;
         while (readPos < inputMessageQueue.count)
         {
@@ -152,10 +152,6 @@ public class Plasmacore
           dispatch( m );
           m.recycle();
         }
-      }
-      else
-      {
-        outputMessageQueue.clear();
       }
     }
   }

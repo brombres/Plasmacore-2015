@@ -18,22 +18,22 @@ public class PlasmacoreView extends GLSurfaceView
     POINTER_PRESS   = 1,
     POINTER_RELEASE = 2;
 
-  static public class Args
+  static public Builder builder( Activity activity )
+  {
+    return new Builder( activity );
+  }
+
+  static public class Builder
   {
     public Activity activity;
     public String   displayName = "Main";
     public boolean  translucent;
 
-    public Args( Activity activity )              { this.activity = activity; }
-    public Args setName( String name )            { this.displayName = name; return this; }
-    public Args setTranslucent( boolean setting ) { this.translucent = setting; return this; }
+    public Builder( Activity activity )              { this.activity = activity; }
+    public Builder setName( String name )            { this.displayName = name; return this; }
+    public Builder setTranslucent( boolean setting ) { this.translucent = setting; return this; }
 
-    public PlasmacoreView create() { return new PlasmacoreView(this); }
-  }
-
-  static public Args args( Activity activity )
-  {
-    return new Args( activity );
+    public PlasmacoreView build() { return new PlasmacoreView(this); }
   }
 
   // PROPERTIES
@@ -42,7 +42,7 @@ public class PlasmacoreView extends GLSurfaceView
   public PlasmacoreView.Renderer renderer;
 
   // METHODS
-  public PlasmacoreView( Args args )
+  public PlasmacoreView( Builder args )
   {
     super( args.activity );
     this.activity = args.activity;
@@ -175,12 +175,16 @@ public class PlasmacoreView extends GLSurfaceView
 
     public void onSurfaceChanged( GL10 gl, int width, int height )
     {
+      Plasmacore.log( "Display surface size changed: " + width + "x" + height );
       displayWidth = width;
       displayHeight = height;
     }
 
     public void onSurfaceCreated( GL10 gl, EGLConfig config )
     {
+      Plasmacore.log( "Display surface created" );
+      PlasmacoreMessage.create( "Display.on_graphics_lost" );
+      Plasmacore.update();  // flush posted messages
     }
   }
 }

@@ -17,7 +17,7 @@ class MainScreen : Screen [singleton]
 
     method on_resize
       # Called when the Display.size changes
-      trace
+      trace Display.size
 
     method on_update
       # Called 60 times a second

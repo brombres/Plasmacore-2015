@@ -53,27 +53,31 @@ public class PlasmacoreMessage
   // GLOBAL PROPERTIES
   static int nextMessageID = 1;
   static HashMap<Comparable<String>,String> consolidationTable = new HashMap<Comparable<String>,String>();
-  static ComparableStringBuilder builder = new ComparableStringBuilder();
-  static UTF8Writer utf8Writer = new UTF8Writer();
   static ArrayList<PlasmacoreMessage> messagePool = new ArrayList<PlasmacoreMessage>();
   static String mutex = new String( "mutex" );
 
   // GLOBAL METHODS
   static String consolidate( String text )
   {
-    String result = consolidationTable.get( text );
-    if (result != null) return result;
-    consolidationTable.put( text, text );
-    return text;
+    synchronized (mutex)
+    {
+      String result = consolidationTable.get( text );
+      if (result != null) return result;
+      consolidationTable.put( text, text );
+      return text;
+    }
   }
 
   static String consolidate( ComparableStringBuilder builder )
   {
-    String result = consolidationTable.get( builder );
-    if (result != null) return result;
-    String text = builder.toString();
-    consolidationTable.put( text, text );
-    return text;
+    synchronized (mutex)
+    {
+      String result = consolidationTable.get( builder );
+      if (result != null) return result;
+      String text = builder.toString();
+      consolidationTable.put( text, text );
+      return text;
+    }
   }
 
   static PlasmacoreMessage create()
@@ -87,12 +91,18 @@ public class PlasmacoreMessage
   }
 
   static PlasmacoreMessage create( String type ) {
-    return create( type, nextMessageID++ );
+    synchronized (mutex)
+    {
+      return create( type, nextMessageID++ );
+    }
   }
 
   static PlasmacoreMessage create( String type, double timestamp )
   {
-    return create( type, nextMessageID++, timestamp );
+    synchronized (mutex)
+    {
+      return create( type, nextMessageID++, timestamp );
+    }
   }
 
   static PlasmacoreMessage create( int replyToMessageID )
@@ -136,6 +146,9 @@ public class PlasmacoreMessage
   public boolean  isRecycled;
   public PlasmacoreMessage reply;
 
+  ComparableStringBuilder builder = new ComparableStringBuilder();
+  UTF8Writer utf8Writer = new UTF8Writer();
+
   // METHODS
   public PlasmacoreMessage()
   {
@@ -151,6 +164,7 @@ public class PlasmacoreMessage
     isRecycled = false;
     reply = null;
     argStartPosition = 0;
+    builder.clear();
     return this;
   }
 
