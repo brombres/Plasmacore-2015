@@ -16,7 +16,10 @@ class Texture
   GLOBAL METHODS
     method create( name:String )->Texture
       local texture = Display.textures_by_name[ name ]
-      if (texture) return texture.load
+      if (texture)
+        texture.load
+        return texture
+      endIf
 
       local asset_name = ""
       if (not name.begins_with("Assets/"))
@@ -31,7 +34,10 @@ class Texture
       local filepath = Plasmacore.asset_filepath( asset_name )
       if (filepath)
         texture = Display.textures_by_name[ filepath ]
-        if (texture) return texture.load
+        if (texture)
+          texture.load
+          return texture
+        endIf
 
         texture = Texture( File(filepath) )
         Display.textures_by_name[ filepath ] = texture
@@ -107,9 +113,10 @@ class Texture
     method is_loaded->Logical
       return id?
 
-    method load->this
+    method load->Logical
       should_unload = false
-      if (id) return this
+      if (id) return true
+      if (filepath is null) return false
 
       Log.println "Loading " + filepath
       local bitmap = Bitmap( File(filepath) )
@@ -127,7 +134,7 @@ class Texture
 
       Display.texture_list.add( this )
 
-      return this
+      return true
 
     method set( bitmap:Bitmap )
       local original_bitmap = bitmap

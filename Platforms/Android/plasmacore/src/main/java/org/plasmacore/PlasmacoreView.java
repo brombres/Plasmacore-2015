@@ -163,7 +163,7 @@ public class PlasmacoreView extends GLSurfaceView
 
     public void onDrawFrame( GL10 gl )
     {
-      Plasmacore.update();  // flush posted messages
+      Plasmacore.sendPostedMessages();
 
       PlasmacoreMessage m = PlasmacoreMessage.create( "Display.on_render" );
       //m.set( "window_id", windowID )
@@ -183,8 +183,10 @@ public class PlasmacoreView extends GLSurfaceView
     public void onSurfaceCreated( GL10 gl, EGLConfig config )
     {
       Plasmacore.log( "Display surface created" );
-      PlasmacoreMessage.create( "Display.on_graphics_lost" );
-      Plasmacore.update();  // flush posted messages
+      PlasmacoreMessage m = PlasmacoreMessage.create( "Display.on_graphics_lost" );
+      m.set( "display_name", displayName );
+      m.post();
+      Plasmacore.sendPostedMessages();
     }
   }
 }

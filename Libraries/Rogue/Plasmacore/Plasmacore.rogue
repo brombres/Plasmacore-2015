@@ -123,6 +123,7 @@ class Plasmacore [essential singleton]
 
       MessageManager.set_listener( "Display.on_graphics_lost",
         function(m:Message)
+          Display( m.string("display_name") ).on_graphics_lost
         endFunction )
 
       MessageManager.set_listener( "Display.on_key_event",

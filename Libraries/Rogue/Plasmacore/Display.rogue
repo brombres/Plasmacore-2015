@@ -593,6 +593,24 @@ class Display [singleton]
     method object_transform->Matrix
       return render_target.update_transform.object_transform
 
+    method on_graphics_lost
+      # Unload all textures
+      forEach (texture in texture_list step -1) texture.unload
+      texture_list.clear
+      forEach (data in font_data_by_name)
+        data.unload
+      endForEach
+
+      # Null any shaders so that the wrapper classes will be forced to regenerate them.
+      local this_type = type_info
+      local type_Shader = <<Shader>>
+      forEach (p in this_type.properties)
+        if (p.type.instance_of(type_Shader))
+          local shader = type_info.property<<Shader>>( this, p )
+          if (shader) type_info.set_property<<Shader>>( this, p, null )
+        endIf
+      endForEach
+
     method world_transform->Matrix
       return render_target.update_transform.world_transform
 

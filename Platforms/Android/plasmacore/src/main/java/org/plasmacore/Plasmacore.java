@@ -130,7 +130,7 @@ public class Plasmacore
     messageListeners.put( type, null );
   }
 
-  static public void update()
+  static public void sendPostedMessages()
   {
     if ( !isLaunched ) launch();
 
