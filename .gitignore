@@ -4,6 +4,9 @@ BuildLocal.rogue
 *.swp
 *.local
 
+# Android
+**/src/main/assets
+
 Test
 Update.mk
 Publish.mk
