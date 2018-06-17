@@ -8,6 +8,18 @@ routine launch_asset_compiler( platform:String ) [essential]
   launch_data_compiler( platform )
 endRoutine
 
+routine asset_folder( platform:String, subfolder:String )->String
+  local result : String
+  if (platform == "Android")
+    result = "Platforms/Android/app/src/main/assets/"
+  else
+    result = "Build/$/Assets/"
+  endIf
+  File.create_folder( result )
+  result += subfolder
+  return result
+endRoutine
+
 class CommentStripper
   PROPERTIES
     reader        : StringReader

@@ -4,6 +4,7 @@ Display( "Main" ).screen = MainScreen
 
 class MainScreen : Screen [singleton]
   PROPERTIES
+    img = Image( "pcore.png" )
 
   METHODS
     method on_start
@@ -21,6 +22,7 @@ class MainScreen : Screen [singleton]
 
     method on_update
       # Called 60 times a second
+      img.draw( Display.center )
 endClass
 
 

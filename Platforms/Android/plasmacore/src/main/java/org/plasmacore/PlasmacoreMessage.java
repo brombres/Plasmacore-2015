@@ -144,7 +144,7 @@ public class PlasmacoreMessage
   public int      argStartPosition;
   public boolean  isSent;
   public boolean  isRecycled;
-  public PlasmacoreMessage reply;
+  public PlasmacoreMessage _reply;
 
   ComparableStringBuilder builder = new ComparableStringBuilder();
   UTF8Writer utf8Writer = new UTF8Writer();
@@ -162,7 +162,7 @@ public class PlasmacoreMessage
     position = 0;
     isSent = false;
     isRecycled = false;
-    reply = null;
+    _reply = null;
     argStartPosition = 0;
     builder.clear();
     return this;
@@ -367,6 +367,11 @@ public class PlasmacoreMessage
 
     synchronized (mutex)
     {
+      if (_reply != null)
+      {
+        _reply.recycle();
+        _reply = null;
+      }
       isRecycled = true;
       data.limitCapacity( 1024 );
       messagePool.add( this );
@@ -375,8 +380,8 @@ public class PlasmacoreMessage
 
   public PlasmacoreMessage reply()
   {
-    if (this.reply == null) this.reply = PlasmacoreMessage.create( "", messageID );
-    return this.reply;
+    if (this._reply == null) this._reply = PlasmacoreMessage.create( "", messageID );
+    return this._reply;
   }
 
   public PlasmacoreMessage reserve( int additional )

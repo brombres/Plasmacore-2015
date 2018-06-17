@@ -164,7 +164,7 @@ class ImageCompiler
       endIf
 
     method write_image_index
-      local index_folder = "Build/$/Assets/Images/" (platform)
+      local index_folder = asset_folder( platform, "Images/" )
       File.create_folder( index_folder )
 
       local index_filepath = index_folder + "ImageIndex.json"
@@ -408,7 +408,7 @@ class ImageCommand
       group_name = File.before_wildcard_pattern( pattern.after_first("Assets/") )
       local output_filename = group_name.replacing('/','-')
 
-      local dest_folder = "Build/$/Assets/Images" (icom.platform)
+      local dest_folder = asset_folder( icom.platform, "Images" )
       File.create_folder( dest_folder )
 
       local oldest_existing_timestamp = 0.0
@@ -419,7 +419,7 @@ class ImageCommand
         endIf
       endForEach
 
-      local manifest_folder = "Build/$/Assets/Images" (icom.platform)
+      local manifest_folder = asset_folder( icom.platform, "Images" )
       File.create_folder( manifest_folder )
       local manifest_filepath = "$/$.json" (manifest_folder,output_filename)
       local manifest_timestamp = 0.0
@@ -467,7 +467,7 @@ class ImageCommand
       local textures = manifest.ensure_list( "textures" )
       forEach (sheet at index in image_sheets)
         sheet.filename = "$-$.png" (output_filename,index.right_justified(2,'0'))
-        local sheet_filepath = "Build/$/Assets/Images/$" (icom.platform,sheet.filename)
+        local sheet_filepath = asset_folder( icom.platform, "Images/"+sheet.filename )
         ++icom.files_written
         print "  Writing "
         print sheet_filepath
@@ -819,7 +819,7 @@ class ImageCommand
       local ext = File.extension(src_name).to_lowercase
       if (not (ext == "png" or ext == "jpeg" or ext == "jpg")) return
 
-      local dest_name = "Build/$/$" (icom.platform,src_name)
+      local dest_name = asset_folder( icom.platform, src_name.after_first("Assets/") )
       local info_name = dest_name.leftmost( -ext.count ) + "json"
 
       contingent

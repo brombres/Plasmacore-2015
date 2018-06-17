@@ -86,8 +86,8 @@ class Plasmacore [essential singleton]
     image_filters           = String[]
 
     application_data_folder : String
-    cache_folder            : String
     user_data_folder        : String
+    cache_folder            : String
 
     show_fps  : Logical
     fps       : Int32
@@ -99,6 +99,17 @@ class Plasmacore [essential singleton]
       Console.println "Initializing Plasmacore"
 
       load_image_index
+
+      MessageManager.set_listener( "Application.on_launch",
+        function(m:Message)
+          if (m.contains("application_data_folder")) Plasmacore.application_data_folder = m.string("application_data_folder")
+          if (m.contains("user_data_folder"))        Plasmacore.user_data_folder = m.string("user_data_folder")
+          if (m.contains("cache_folder"))            Plasmacore.cache_folder = m.string("cache_folder")
+          trace Plasmacore.application_data_folder
+          trace Plasmacore.user_data_folder
+          trace Plasmacore.cache_folder
+        endFunction
+      )
 
       MessageManager.set_listener( "Display.on_render",
         function(m:Message)
@@ -205,9 +216,11 @@ class Plasmacore [essential singleton]
       # iOS: Application data that is not accessible to the user but is still backed up
       # on iCloud.
       # Other OS: general data folder
-      if (not @application_data_folder)
-        application_data_folder = native( "Plasmacore_get_application_data_folder()" )->String
-      endIf
+      $if not target("Android")
+        if (not @application_data_folder)
+          application_data_folder = native( "Plasmacore_get_application_data_folder()" )->String
+        endIf
+      $endIf
       return @application_data_folder
 
     method asset_file( name:String )->File
@@ -219,14 +232,29 @@ class Plasmacore [essential singleton]
       if (File.exists(name)) return name   # already correct
 
       # may return null
-      return native( "Plasmacore_find_asset( $name )" )->String
+      $if target("Android")
+        local result = Message( "Plasmacore.find_asset" ).set( "filepath", name ).send
+        if (not result) return null
+        if (not result.contains("filepath")) return null
+        return result.string( "filepath" )
+      $else
+        return native( "Plasmacore_find_asset( $name )" )->String
+      $endIf
 
     method cache_folder->String
       # iOS: Files that can be removed by the OS as needed.
       # Other OS: general data folder
-      if (not @cache_folder)
-        cache_folder = application_data_folder + "/Caches"
-      endIf
+      # Android cache folder is sent in Application.on_launch
+      $if not target("Android")
+        if (not @cache_folder)
+          $if target("iOS")
+            cache_folder = application_data_folder + "/Caches"
+          $else
+            cache_folder = application_data_folder + "/Cache"
+            if (not File.exists(@cache_folder)) File.create_folder( @cache_folder )
+          $endIf
+        endIf
+      $endIf
       return @cache_folder
 
     method clear_image_filters->this
@@ -350,9 +378,11 @@ class Plasmacore [essential singleton]
       return this
 
     method user_data_folder->String
-      if (not @user_data_folder)
-        user_data_folder = native( "Plasmacore_get_user_data_folder()" )->String
-      endIf
+      $if not target("Android")
+        if (not @user_data_folder)
+          user_data_folder = native( "Plasmacore_get_user_data_folder()" )->String
+        endIf
+      $endIf
       return @user_data_folder
 
 endClass
@@ -463,8 +493,10 @@ class ImageGroupInfo
 
 endClass
 
+$if not target("Android")
 nativeCode extern "C" RogueString* Plasmacore_find_asset( RogueString* name );
 nativeCode extern "C" RogueString* Plasmacore_get_user_data_folder();
 nativeCode extern "C" RogueString* Plasmacore_get_application_data_folder();
+$endIf
 
 $endIf  # not Console

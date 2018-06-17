@@ -1,58 +1,184 @@
 package org.plasmacore;
 
+import android.app.Activity;
 import android.graphics.*;
 import android.util.*;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.*;
 import java.util.*;
 
 public class Plasmacore
 {
-  static boolean  isLaunched;
-  static boolean  isConfigured;
-  static ByteList inputMessageQueue   = new ByteList( 1024 );
-  static ByteList outputMessageQueue  = new ByteList( 1024 );
-  static ByteList ioBuffer = new ByteList( 128 );  // used for direct message i/o and bitmap decoding
-  static String   mutex = new String( "mutex" );
+  static public boolean  isLaunched;
+  static public boolean  isConfigured;
+  static public ByteList inputMessageQueue   = new ByteList( 1024 );
+  static public ByteList outputMessageQueue  = new ByteList( 1024 );
+  static public ByteList ioBuffer = new ByteList( 128 );  // used for direct message i/o and bitmap decoding
+  static public String   mutex = new String( "mutex" );
+
+  static public Activity activity;
+
+  static public String   applicationDataFolder;
+  static public String   userDataFolder;
+  static public String   cacheFolder;
 
   static public HashMap<String,PlasmacoreMessageListener> messageListeners = new HashMap<String,PlasmacoreMessageListener>();
 
   static
   {
     System.loadLibrary("plasmacore");
-    configure();
   }
 
-  static public void launch()
+  static public void launch( Activity activity )
   {
     if ( !isLaunched )
     {
       synchronized (mutex)
       {
+        configure( activity );
         isLaunched = true;
         nativeLaunch();
-        PlasmacoreMessage.create( "Application.on_launch" ).post();
+
+        PlasmacoreMessage m = PlasmacoreMessage.create( "Application.on_launch" );
+        m.set( "application_data_folder", applicationDataFolder );
+        m.set( "user_data_folder", userDataFolder );
+        m.set( "cache_folder", cacheFolder );
+        m.post();
       }
     }
   }
 
-  static public void configure()
+  static public void configure( Activity activity )
   {
+    Plasmacore.activity = activity;
+
     if (isConfigured) return;
     isConfigured = true;
+
+    try
+    {
+      cacheFolder = activity.getCacheDir().getCanonicalPath();
+    }
+    catch (IOException err)
+    {
+      cacheFolder = activity.getCacheDir().getPath();
+    }
+
+    try
+    {
+      applicationDataFolder = activity.getFilesDir().getCanonicalPath();
+    }
+    catch (IOException err)
+    {
+      applicationDataFolder = activity.getFilesDir().getPath();
+    }
+
+    userDataFolder = applicationDataFolder;
+
+    setMessageListener( "Plasmacore.find_asset",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            try
+            {
+              String filepath = m.getString( "filepath" );  // will be e.g.: Assets/Images/Image.png
+
+              int last_slash = filepath.lastIndexOf( '/' );
+              File destFolder = new File( (last_slash==-1)?cacheFolder:cacheFolder+"/"+filepath.substring(0,last_slash) );
+              if ( !destFolder.exists() ) destFolder.mkdirs();
+
+              String resolvedFilepath = cacheFolder + "/" + filepath;
+              File file = new File( resolvedFilepath );
+
+              // If a requested asset is not in the cache folder then we attempt
+              // to find and copy it from bundled assets.
+              if (file.exists() || Plasmacore.copyAsset(filepath,file))
+              {
+                m.reply().set( "filepath", resolvedFilepath );
+                return;
+              }
+            }
+            catch (Exception failed)
+            {
+              // no response
+            }
+          }
+        }
+    );
+  }
+
+  static boolean copyAsset( String filepath, File toFile )
+  {
+    if (filepath.startsWith("Assets/"))
+    {
+      filepath = filepath.substring( 7 );
+    }
+
+    BufferedInputStream infile = null;
+    BufferedOutputStream outfile = null;
+    try
+    {
+      infile  = new BufferedInputStream( activity.getAssets().open(filepath), 1024 );
+      outfile = new BufferedOutputStream( new FileOutputStream(toFile), 1024 );
+
+      for (int ch=infile.read(); ch!=-1; ch=infile.read())
+      {
+        outfile.write( ch );
+      }
+
+      infile.close();
+      infile = null;
+
+      outfile.close();
+      outfile = null;
+
+      return true;
+    }
+    catch (IOException err)
+    {
+      try
+      {
+        if (infile != null)  infile.close();
+        if (outfile != null) outfile.close();
+      }
+      catch (IOException ignore)
+      {
+      }
+    }
+    return false;
   }
 
   static public boolean dispatchDirectMessage()
   {
     PlasmacoreMessage m = PlasmacoreMessage.create( ioBuffer );
     dispatch( m );
-    m.recycle();
-    return false;
+    if (m._reply != null)
+    {
+      ioBuffer.clear().add( m._reply.data );
+      m._reply.isSent = true;
+      m.recycle();
+      return true;
+    }
+    else
+    {
+      m.recycle();
+      return false;
+    }
   }
 
   static public void dispatch( PlasmacoreMessage m )
   {
-    log( "TODO: dispatch received message " + m.type );
+    PlasmacoreMessageListener listener = messageListeners.get( m.type );
+    if (listener != null)
+    {
+      listener.on( m );
+    }
   }
 
   static public int decodeImage()
@@ -132,7 +258,7 @@ public class Plasmacore
 
   static public void sendPostedMessages()
   {
-    if ( !isLaunched ) launch();
+    if ( !isLaunched ) launch( activity );
 
     synchronized (mutex)
     {

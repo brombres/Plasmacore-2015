@@ -198,11 +198,14 @@ RogueClassPlasmacore__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueIn
   }
 }
 
+/*
 extern "C" RogueString* Plasmacore_find_asset( RogueString* name )
 {
   return NULL;
 }
+*/
 
+/*
 extern "C" RogueString* Plasmacore_get_user_data_folder()
 {
   return RogueString_create_from_utf8( "." );
@@ -212,6 +215,7 @@ extern "C" RogueString* Plasmacore_get_application_data_folder()
 {
   return RogueString_create_from_utf8( "." );
 }
+*/
 
 bool PlasmacoreMessage_send( RogueByte_List* rogue_bytes )
 {
@@ -228,7 +232,7 @@ bool PlasmacoreMessage_send( RogueByte_List* rogue_bytes )
   if (env->CallStaticBooleanMethod(jclass_Plasmacore, jmethodID_Plasmacore_dispatchDirectMessage))
   {
     jobject bytes = env->GetObjectField( ioBuffer, jfieldID_ByteList_bytes ); // this ref may have changed
-    RogueInt32 count = env->GetIntField( bytes, jfieldID_ByteList_count );
+    RogueInt32 count = env->GetIntField( ioBuffer, jfieldID_ByteList_count );
 
     RogueByte_List__clear( rogue_bytes );
     RogueByte_List__reserve__Int32( rogue_bytes, count );

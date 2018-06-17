@@ -8,15 +8,23 @@ import android.opengl.GLSurfaceView;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
+import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
 public class PlasmacoreView extends GLSurfaceView
 {
+  // Uses GL context-preserving technique from:
+  //   https://stackoverflow.com/a/37298497/135791
   final static public int
     POINTER_MOVE    = 0,
     POINTER_PRESS   = 1,
     POINTER_RELEASE = 2;
+
+  final  static public int EGL_CONTEXT_CLIENT_VERSION_VALUE = 2;
+  static public EGLContext glContext = null;
 
   static public Builder builder( Activity activity )
   {
@@ -40,6 +48,7 @@ public class PlasmacoreView extends GLSurfaceView
   public Activity                activity;
   public String                  displayName;
   public PlasmacoreView.Renderer renderer;
+  public boolean isChangingConfiguration;
 
   // METHODS
   public PlasmacoreView( Builder args )
@@ -54,12 +63,55 @@ public class PlasmacoreView extends GLSurfaceView
     }
 
     // Set OpenGL ES 2.0
-    setEGLContextClientVersion( 2 );
+    setEGLContextClientVersion( EGL_CONTEXT_CLIENT_VERSION_VALUE );
+    setEGLContextFactory(
+        new GLSurfaceView.EGLContextFactory()
+        {
+          private final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
+
+          public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig config )
+          {
+            if (glContext != null)
+            {
+              // Return retained context
+              EGLContext eglContext = glContext;
+              glContext = null;
+              return eglContext;
+            }
+
+            int[] attributeList = { EGL_CONTEXT_CLIENT_VERSION, EGL_CONTEXT_CLIENT_VERSION_VALUE, EGL10.EGL_NONE };
+            return egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, attributeList );
+          }
+
+          public void destroyContext( EGL10 egl, EGLDisplay display, EGLContext context )
+          {
+            if (isChangingConfiguration)
+            {
+              // Don't destroy; retain
+              glContext = context;
+              return;
+            }
+
+            if ( !egl.eglDestroyContext(display,context) )
+            {
+              throw new RuntimeException("eglDestroyContext failed: error " + egl.eglGetError());
+            }
+          }
+        }
+    );
 
     setPreserveEGLContextOnPause( true );
     renderer = new PlasmacoreView.Renderer();
     setRenderer( renderer );
   }
+
+  @Override
+  public void onPause()
+  {
+    isChangingConfiguration = activity.isChangingConfigurations();
+    super.onPause();
+  }
+
 
   public boolean onKeyDown( int keyCode, final KeyEvent event )
   {
@@ -159,7 +211,12 @@ public class PlasmacoreView extends GLSurfaceView
 
   public class Renderer implements GLSurfaceView.Renderer
   {
-    int displayWidth, displayHeight;
+    public int displayWidth, displayHeight;
+
+    public Renderer()
+    {
+      Plasmacore.configure( activity );
+    }
 
     public void onDrawFrame( GL10 gl )
     {
@@ -190,4 +247,3 @@ public class PlasmacoreView extends GLSurfaceView
     }
   }
 }
-
