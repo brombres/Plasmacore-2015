@@ -30,16 +30,36 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
 
     final PlasmacoreSoundManager THIS = this;
 
-    Plasmacore.setMessageListener( "Sound.create",
+    Plasmacore.setMessageListener(
+        "SoundManager.is_loading",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            for (int i=0; i<sounds.count(); ++i)
+            {
+              if (sounds.get(i).isLoading)
+              {
+                m.reply().set( "is_loading", true );
+                return;
+              }
+            }
+            m.reply().set( "is_loading", false );
+          }
+        }
+    );
+
+    Plasmacore.setMessageListener(
+        "Sound.create",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
           {
             String filepath = m.getString( "filepath" );
             boolean isMusic = m.getBoolean( "is_music" );
-            isMusic = false; // FIXME
             if (isMusic)
             {
+              m.reply().set( "id", sounds.id(new PlasmacoreSound.Music(THIS,filepath)) );
             }
             else
             {
@@ -49,7 +69,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
         }
     );
 
-    Plasmacore.setMessageListener( "Sound.duration",
+    Plasmacore.setMessageListener(
+        "Sound.duration",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
@@ -60,7 +81,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
         }
     );
 
-    Plasmacore.setMessageListener( "Sound.is_playing",
+    Plasmacore.setMessageListener(
+        "Sound.is_playing",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
@@ -71,7 +93,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
         }
     );
 
-    Plasmacore.setMessageListener( "Sound.pause",
+    Plasmacore.setMessageListener(
+        "Sound.pause",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
@@ -81,20 +104,22 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
         }
     );
 
-    Plasmacore.setMessageListener( "Sound.play",
+    Plasmacore.setMessageListener(
+        "Sound.play",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
           {
             int id = m.getInt( "id" );
-            boolean repeating = m.getBoolean( "repeating" );
+            boolean is_repeating = m.getBoolean( "is_repeating" );
             PlasmacoreSound sound = sounds.get_by_id( id );
-            if (sound != null) sound.play( repeating );
+            if (sound != null) sound.play( is_repeating );
           }
         }
     );
 
-    Plasmacore.setMessageListener( "Sound.position",
+    Plasmacore.setMessageListener(
+        "Sound.position",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
@@ -105,7 +130,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
         }
     );
 
-    Plasmacore.setMessageListener( "Sound.set_position",
+    Plasmacore.setMessageListener(
+        "Sound.set_position",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
@@ -116,7 +142,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
         }
     );
 
-    Plasmacore.setMessageListener( "Sound.set_volume",
+    Plasmacore.setMessageListener(
+        "Sound.set_volume",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
@@ -127,12 +154,18 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
         }
     );
 
-    Plasmacore.setMessageListener( "Sound.delete",
+    Plasmacore.setMessageListener(
+        "Sound.unload",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
           {
             int id = m.getInt( "id" );
+            PlasmacoreSound sound = sounds.removeID( id );
+            if (sound != null)
+            {
+              sound.unload();
+            }
           }
         }
     );

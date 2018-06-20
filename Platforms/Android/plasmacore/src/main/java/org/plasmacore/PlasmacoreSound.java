@@ -1,10 +1,13 @@
 package org.plasmacore;
 
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+
 abstract class PlasmacoreSound
 {
   public PlasmacoreSoundManager manager;
   public String  filepath;
-  public boolean repeating;
+  public boolean is_repeating;
   public boolean isLoading;
   public boolean isReady;
   public boolean error;
@@ -29,7 +32,8 @@ abstract class PlasmacoreSound
     }
   }
 
-  abstract public void play( boolean repeating );
+  abstract public void play( boolean is_repeating );
+  abstract public void unload();
 
   //---------------------------------------------------------------------------
   // Effect
@@ -43,6 +47,7 @@ abstract class PlasmacoreSound
     {
       this.manager = manager;
       this.filepath = filepath;
+      isLoading = true;
       soundID = manager.soundPool.load( filepath, 1 );
     }
 
@@ -51,13 +56,71 @@ abstract class PlasmacoreSound
       return (soundID == this.soundID);
     }
 
-    public void play( boolean repeating )
+    public void play( boolean is_repeating )
     {
-      this.repeating = repeating;
+      this.is_repeating = is_repeating;
       if ( !isReady ) return;
 
-      if (repeating) streamID = manager.soundPool.play( soundID, 1.0f, 1.0f, 0, -1, 1.0f );
-      else           streamID = manager.soundPool.play( soundID, 1.0f, 1.0f, 0, 0, 1.0f );
+      if (is_repeating) streamID = manager.soundPool.play( soundID, 1.0f, 1.0f, 0, -1, 1.0f );
+      else              streamID = manager.soundPool.play( soundID, 1.0f, 1.0f, 0, 0, 1.0f );
+    }
+
+    public void unload()
+    {
+      if (isReady)
+      {
+        manager.soundPool.unload( soundID );
+      }
+    }
+  }
+
+  //---------------------------------------------------------------------------
+  // Music
+  //---------------------------------------------------------------------------
+  static public class Music extends PlasmacoreSound //implements MediaPlayer.OnErrorListener
+  {
+    public MediaPlayer mediaPlayer;
+
+    public Music( PlasmacoreSoundManager manager, String filepath )
+    {
+      this.manager = manager;
+      this.filepath = filepath;
+      try
+      {
+        mediaPlayer = new MediaPlayer();
+        //mediaPlayer.setOnErrorListener( this );
+
+        mediaPlayer.setDataSource( filepath );
+        mediaPlayer.prepare();
+        mediaPlayer.setAudioStreamType( AudioManager.STREAM_MUSIC );
+        isReady = true;
+      }
+      catch (Exception e)
+      {
+        Plasmacore.logError( "Error initializing MediaPlayer: " + e.toString() );
+        mediaPlayer = null;
+        error = true;
+      }
+    }
+
+    public boolean hasSoundID( int soundID )
+    {
+      return false;
+    }
+
+    //public void onError( MediaPlayer player,int,int)
+
+    public void play( boolean is_repeating )
+    {
+      this.is_repeating = is_repeating;
+      if ( !isReady ) return;
+      mediaPlayer.setLooping( is_repeating );
+      mediaPlayer.start();
+    }
+
+    public void unload()
+    {
+      if (isReady && mediaPlayer != null) mediaPlayer.release();
     }
   }
 }

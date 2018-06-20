@@ -5,7 +5,8 @@ Display( "Main" ).screen = MainScreen
 class MainScreen : Screen [singleton]
   PROPERTIES
     img = Image( "pcore.png" )
-    sound = Sound( "Hit.mp3" )
+    sound = Sound( "Hit.mp3", 10 )
+    music = Sound( "Billionaire_Joker_Slots_music.mp3", &is_repeating )
 
   METHODS
     method on_start
@@ -15,7 +16,6 @@ class MainScreen : Screen [singleton]
     method on( e:PointerEvent )
 
     method on_draw
-      Display.clear( Color.BLUE )
 
     method on_resize
       # Called when the Display.size changes
@@ -27,11 +27,23 @@ class MainScreen : Screen [singleton]
 endClass
 
 
+class LoadState : State<<MainScreen>>
+  PROPERTIES
+  METHODS
+    method on_draw
+      Display.clear( Color.YELLOW )
+
+    method on_update
+      if (not SoundManager.is_loading) change_state( InitialState() )
+endClass
+
+
 class InitialState : State<<MainScreen>>
   METHODS
     method on_start
       # Called when this state becomes the active state
       println "Hello World"
+      screen.music.play
 
     method after_draw
       # This happens after the current screen's on_draw()
@@ -48,6 +60,7 @@ class InitialState : State<<MainScreen>>
 
     method on_draw
       # This happens before the current screen's on_draw()
+      Display.clear( Color.BLUE )
 
     method on_resize
       trace

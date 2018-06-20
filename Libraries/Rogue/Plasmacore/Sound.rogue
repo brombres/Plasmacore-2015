@@ -2,10 +2,10 @@ module Plasmacore
 
 class Sound [abstract]
   GLOBAL METHODS
-    method create( name:String, is_music=false:Logical, is_repeating=false:Logical )->Sound
+    method create( name:String, is_music=null:Logical?, is_repeating=false:Logical )->Sound
       return BasicSound( name, is_music, is_repeating )
 
-    method create( name:String, channels=1:Int32, is_music=false:Logical )->Sound
+    method create( name:String, channels=1:Int32, is_music=null:Logical? )->Sound
       return SoundGroup( name, channels, is_music )
 
   GLOBAL PROPERTIES
@@ -55,7 +55,7 @@ $endIf
     is_repeating : Logical
 
   METHODS
-    method init( name, is_music=false, is_repeating=false )
+    method init( name, is_music=null:Logical?, is_repeating=false )
       local asset_name = ""
       if (not name.begins_with("Assets/"))
         asset_name = "Assets/"
@@ -66,7 +66,8 @@ $endIf
 
       filepath = find_sound( asset_name )
       if (filepath)
-        if (not is_music)
+        if (not is_music.exists)
+          is_music = false
 $if target("Android")
           if (File.size(filepath) >= 262_144) is_music = true
 $else
@@ -76,6 +77,7 @@ $else
 $endIf
         endIf
 
+        this.is_music = is_music.value
         load
 
       else
@@ -188,7 +190,7 @@ class SoundGroup : Sound
     autoplay_task   : Task
 
   METHODS
-    method init( name:String, channels=1:Int32, &is_music )
+    method init( name:String, channels=1:Int32, is_music=null:Logical? )
       loop (channels) sounds.add( Sound(name,is_music) )
 
     method init( random=false, random_order=false, replay_last=false, autoplay=false )
@@ -340,7 +342,7 @@ class SoundData
 
     method play( repeating )
       is_paused = false
-      Message( "Sound.play" ).set( "id", player_id ).set( "repeating", repeating ).send
+      Message( "Sound.play" ).set( "id", player_id ).set( "is_repeating", repeating ).send
 
     method position->Real64
       local reply = Message("Sound.position").set("id",player_id).send
@@ -362,7 +364,7 @@ class SoundData
       position = 0
 
     method unload
-      Message( "Sound.delete" ).set( "id", player_id ).send
+      Message( "Sound.unload" ).set( "id", player_id ).send
       player_id = 0
 endClass
 
@@ -436,6 +438,14 @@ class SoundManager [singleton]
     method get( id:Int32 )->SoundData
       if (id < 0 or id >= sound_data.count) return null
       return sound_data[ id ]
+
+    method is_loading->Logical
+      $if target("Android")
+      local reply = Message("SoundManager.is_loading").send
+      return (reply and reply.logical("is_loading"))
+      $else
+        return false
+      $endIf
 
     method load( filepath:String, is_music:Logical )->Int32
       local id : Int32
