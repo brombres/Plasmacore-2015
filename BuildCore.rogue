@@ -1,5 +1,7 @@
 $define PLASMACORE_VERSION "0.9.0 (3)"
 
+#$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
+
 #$ ROGUEC(macOS)    = Programs/RogueC-macOS
 #$ ROGUEC(Linux)    = roguec
 #$ ROGUEC_ARGS      = --libraries=Libraries/Rogue

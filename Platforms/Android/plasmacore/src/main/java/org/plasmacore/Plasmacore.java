@@ -27,6 +27,8 @@ public class Plasmacore
   static public String   userDataFolder;
   static public String   cacheFolder;
 
+  static public PlasmacoreSoundManager soundManager;
+
   static public HashMap<String,PlasmacoreMessageListener> messageListeners = new HashMap<String,PlasmacoreMessageListener>();
 
   static
@@ -79,6 +81,8 @@ public class Plasmacore
     }
 
     userDataFolder = applicationDataFolder;
+
+    soundManager = new PlasmacoreSoundManager();
 
     setMessageListener( "Plasmacore.find_asset",
         new PlasmacoreMessageListener()

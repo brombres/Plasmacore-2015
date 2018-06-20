@@ -5,6 +5,7 @@ Display( "Main" ).screen = MainScreen
 class MainScreen : Screen [singleton]
   PROPERTIES
     img = Image( "pcore.png" )
+    sound = Sound( "Hit.mp3" )
 
   METHODS
     method on_start
@@ -40,6 +41,7 @@ class InitialState : State<<MainScreen>>
 
     method on( e:PointerEvent )
       if (e.is_press or e.is_release) trace e
+      if (e.is_press) screen.sound.play
 
     method on( e:TextEvent )
       trace e

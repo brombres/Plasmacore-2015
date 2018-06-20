@@ -35,6 +35,7 @@ endClass
 
 class BasicSound : Sound
   DEPENDENCIES
+$if not target("Android")
     nativeHeader void*  PlasmacoreSound_create( RogueString* filepath, bool is_music );
     nativeHeader void   PlasmacoreSound_delete( void* sound );
     nativeHeader double PlasmacoreSound_duration( void* sound );
@@ -44,6 +45,7 @@ class BasicSound : Sound
     nativeHeader double PlasmacoreSound_position( void* sound );
     nativeHeader void   PlasmacoreSound_set_position( void* sound, double to_time );
     nativeHeader void   PlasmacoreSound_set_volume( void* sound, double volume );
+$endIf
 
   PROPERTIES
     name         : String
@@ -65,9 +67,13 @@ class BasicSound : Sound
       filepath = find_sound( asset_name )
       if (filepath)
         if (not is_music)
+$if target("Android")
+          if (File.size(filepath) >= 262_144) is_music = true
+$else
           which (File.extension(filepath))
             case "mp3": is_music = true
           endWhich
+$endIf
         endIf
 
         load
@@ -295,6 +301,73 @@ class SoundGroup : Sound
 
 endClass
 
+$if target("Android")
+# Android uses direct message sending to avoid having to go from Rogue -> C -> Java for each call.
+class SoundData
+  PROPERTIES
+    filepath  : String
+    is_music  : Logical
+    is_paused : Logical
+    repeating : Logical
+    player_id : Int32
+
+  METHODS
+    method init( filepath, is_music )
+      local reply = Message("Sound.create").set("filepath",filepath).set( "is_music",is_music).send
+      if (reply) player_id = reply.int32( "id" )
+
+    method duration->Real64
+      # In seconds
+      local reply = Message("Sound.duration").set("id",player_id).send
+      if (reply) return reply.real64( "duration" )
+      else       return 0
+
+    method is_finished->Logical
+      if (is_paused) return false
+      return not is_playing
+
+    method is_playing->Logical
+      if (is_paused) return false
+      local reply = Message("Sound.is_playing").set("id",player_id).send
+      if (reply) return reply.logical( "is_playing" )
+      else       return false
+
+    method pause
+      if (not is_paused and is_playing)
+        is_paused = true
+        Message( "Sound.pause" ).set( "id", player_id ).send
+      endIf
+
+    method play( repeating )
+      is_paused = false
+      Message( "Sound.play" ).set( "id", player_id ).set( "repeating", repeating ).send
+
+    method position->Real64
+      local reply = Message("Sound.position").set("id",player_id).send
+      if (reply) return reply.real64( "position" )
+      else       return 0
+
+    method set_position( time:Real64 )
+      Message( "Sound.set_position" ).set( "id", player_id ).set( "position", time ).send
+
+    method set_volume( new_volume:Real64 )
+      Message( "Sound.set_volume" ).set( "id", player_id ).set( "volume", new_volume ).send
+
+    method resume
+      if (is_paused) play( repeating )
+
+    method stop
+      pause
+      is_paused = false
+      position = 0
+
+    method unload
+      Message( "Sound.delete" ).set( "id", player_id ).send
+      player_id = 0
+endClass
+
+$else
+# For every platform except Android.
 class SoundData
   PROPERTIES
     filepath  : String
@@ -349,7 +422,7 @@ class SoundData
       native @|PlasmacoreSound_delete( $this->player );
               |$this->player = 0;
 endClass
-
+$endIf
 
 class SoundManager [singleton]
   PROPERTIES

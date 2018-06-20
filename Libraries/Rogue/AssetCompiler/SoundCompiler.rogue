@@ -113,10 +113,11 @@ class SoundCompiler
       # Automatically exclude SoundConfig.txt
       included_sounds.remove( "Assets/Sounds/SoundConfig.txt" )
 
-      local dest_folder = "Build/$/" (platform)
+      local dest_folder = asset_folder( platform, "" )
       forEach (filepath in included_sounds)
         local attr = sound_attributes( filepath )
-        copy_sound( filepath, dest_folder + filepath, attr )
+        local dest_filepath = dest_folder + filepath.after_first("Assets/")
+        copy_sound( filepath, dest_filepath, attr )
       endForEach
 
       if (not files_written)
@@ -344,117 +345,6 @@ class SoundCommand
     method has_another->Logical
       consume_whitespace
       return (reader.has_another)
-
-      #{
-    method copy_sounds( args:@{} )
-      require_arg( args, "from" )
-      require_arg( args, "to" )
-      local from_filepath = args//from->String
-      local to_filepath   = args//to->String
-      if (from_filepath.begins_with("Sounds/")) from_filepath = "Assets/" + from_filepath
-      if (to_filepath.begins_with("Sounds/"))   to_filepath = "Assets/" + to_filepath
-      if (not from_filepath.begins_with("Assets/Sounds/")) from_filepath = "Assets/Sounds/" + from_filepath
-      if (not to_filepath.begins_with("Assets/Sounds/"))   to_filepath = "Assets/Sounds/" + to_filepath
-      local files = collect_files( from_filepath )
-      forEach (src_filepath in files)
-        local from_folder = File.before_wildcard_pattern( from_filepath )
-        local dest_filepath = to_filepath + src_filepath.after_first( from_folder )
-        local ext = src_filepath.after_last( "." ).to_lowercase
-
-        contingent
-          necessary  (not File.is_folder(src_filepath))
-          necessary  (ext == "png" or ext == "jpeg" or ext == "jpg")
-          sufficient (not File.exists(dest_filepath))
-
-          local dest_timestamp = File.timestamp( dest_filepath )
-          local src_timestamp = File.timestamp( src_filepath )
-          sufficient (src_timestamp > dest_timestamp)
-
-
-          escapeContingent
-
-        satisfied
-          copy_sounds( src_filepath, dest_filepath, args )
-
-        endContingent
-      endForEach
-
-    method copy_sounds( from_filepath:String, to_filepath:String, args:Value )
-      local attributes = @{}
-      forEach (attr in scom.attributes)
-        if (File.matches_wildcard_pattern(from_filepath,attr//pattern))
-          forEach (a in attr//attributes)
-            if (a//value) attributes[ a//name ]         = a//value
-            else          attributes[ a//name->String ] = true
-          endForEach
-        endIf
-      endForEach
-
-      println "Sound Copy $ -> $" (from_filepath.after_first("Assets/Sounds/"),to_filepath.after_first("Assets/Sounds/"))
-
-      local rescale = Convert.parse_scale( this, args//rescale )
-
-      local resize = false
-      local from_size : XY
-      local to_size   : XY
-      if (args//resize)
-        local resize_dims = args//resize->String.split( "->" )
-        if (resize_dims.count == 2)
-          resize = true
-          from_size = Convert.parse_dimensions( this, resize_dims.first )
-          to_size   = Convert.parse_dimensions( this, resize_dims.last )
-          if (not args//rescale)
-            # Derive scale from resize args
-            rescale = ((to_size.min / from_size.min) + (to_size.max / from_size.max)) / 2
-          endIf
-        endIf
-      endIf
-
-      if (rescale == 1.0)
-        File.copy( from_filepath, to_filepath )
-      else
-        local bitmap = Bitmaps[ from_filepath ]
-        local w = bitmap.width
-        local h = bitmap.height
-
-        if (attributes//varfont)
-          local characters = Convert.extract_varfont_characters( this, bitmap )
-          print "  # character".pluralized( characters.count )
-          print " [$x$] -> " (w,h)
-          forEach (ch in characters) ch.resize( ch.width*rescale, ch.height*rescale )
-          bitmap = Convert.pack_varfont_characters( this, characters )
-          println " [$x$]" (bitmap.width,bitmap.height)
-          save_bitmap( bitmap, to_filepath )
-
-        elseIf (attributes//split)
-          local size = Convert.parse_dimensions( this, attributes//split )
-          local tiles_wide = size//width->Int32
-          local tiles_high = size//height->Int32
-          if (tiles_wide * tiles_high == 0)
-            throw error( ''Illegal 'split' size of $x$ for "$".'' (tiles_wide,tiles_high,from_filepath) )
-          endIf
-          local tiles = Convert.bitmap_to_tiles( this, bitmap, tiles_wide, tiles_high )
-          print "  $x$ tiles" (tiles_wide,tiles_high)
-          print " [$x$] -> " (w,h)
-          forEach (tile in tiles) tile.resize( tile.width*rescale, tile.height*rescale )
-          bitmap = Convert.tiles_to_bitmap( this, tiles, tiles_wide, tiles_high )
-          println " [$x$]" (bitmap.width,bitmap.height)
-          save_bitmap( bitmap, to_filepath )
-
-        else
-          local new_w = (w * rescale)->Int32
-          local new_h = (h * rescale)->Int32
-          if (resize)
-            if (w == from_size.min and h == from_size.max)     new_w = to_size.min; new_h = to_size.max
-            elseIf (w == from_size.max and h == from_size.min) new_w = to_size.max; new_h = to_size.min
-          endIf
-          bitmap.resize( new_w, new_h )
-          println "  [$x$] -> [$x$]" (w,h,bitmap.width,bitmap.height)
-
-          save_bitmap( bitmap, to_filepath )
-        endIf
-      endIf
-      }#
 
     method must_consume( ch:Character )->Logical
       if (consume(ch)) return true

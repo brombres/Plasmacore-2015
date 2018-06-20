@@ -7,7 +7,7 @@ public class ByteList
 
   public ByteList()
   {
-    this( 1 );//28 );
+    this( 128 );
   }
 
   public ByteList( int initialCapacity )
