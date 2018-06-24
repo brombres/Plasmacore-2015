@@ -225,12 +225,15 @@ public class Plasmacore
   {
     log( "Plasmacore.pause()" );
     if (soundManager != null) soundManager.pauseAll();
+    PlasmacoreMessage.create( "Application.on_save" ).send();
+    PlasmacoreMessage.create( "Application.on_stop" ).send();
   }
 
   static public void resume()
   {
     log( "Plasmacore.resume()" );
     if (soundManager != null) soundManager.resumeAll();
+    PlasmacoreMessage.create( "Application.on_start" ).post();
   }
 
   static public void post( PlasmacoreMessage m )
