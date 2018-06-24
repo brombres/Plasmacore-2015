@@ -9,6 +9,8 @@ import org.plasmacore.*;
 
 public class MainActivity extends Activity
 {
+  public PlasmacoreView plasmacoreView;
+
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
@@ -18,19 +20,22 @@ public class MainActivity extends Activity
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-    setContentView( PlasmacoreView.builder(this).build() );
+    plasmacoreView = PlasmacoreView.builder(this).build();
+    setContentView( plasmacoreView );
   }
 
-  //@Override
-  //protected void onStart()
-  //{
-  //  super.onStart();
-  //}
+  @Override
+  protected void onPause()
+  {
+    super.onPause();
+    plasmacoreView.onPause();
+  }
 
-  //@Override
-  //protected void onResume()
-  //{
-  //  super.onStart();
-  //}
+  @Override
+  protected void onResume()
+  {
+    super.onResume();
+    plasmacoreView.onResume();
+  }
 }
 

@@ -221,6 +221,18 @@ public class Plasmacore
     Log.e( "Plasmacore", message );
   }
 
+  static public void pause()
+  {
+    log( "Plasmacore.pause()" );
+    if (soundManager != null) soundManager.pauseAll();
+  }
+
+  static public void resume()
+  {
+    log( "Plasmacore.resume()" );
+    if (soundManager != null) soundManager.resumeAll();
+  }
+
   static public void post( PlasmacoreMessage m )
   {
     synchronized (mutex)

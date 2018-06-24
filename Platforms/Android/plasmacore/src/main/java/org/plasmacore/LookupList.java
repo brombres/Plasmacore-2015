@@ -9,7 +9,7 @@ class LookupList<ValueType>
   // - add() and get() items with the speed of a list.
   // - contains() and locate() with the speed of a table.
   // - id(value)->Int32 gives an integer ID that is fixed as long as the value is in the lookup.
-  // - get_by_id(id)->ValueType returns the value associated with an integer ID.
+  // - getByID(id)->ValueType returns the value associated with an integer ID.
   // - remove(value), removeAt(index), removeID(id), removeFirst(), removeLast().
 
   // PROPERTIES
@@ -76,7 +76,7 @@ class LookupList<ValueType>
     return values.get( index );
   }
 
-  public ValueType get_by_id( int id )
+  public ValueType getByID( int id )
   {
     return values.get( indices.get(id) );
   }

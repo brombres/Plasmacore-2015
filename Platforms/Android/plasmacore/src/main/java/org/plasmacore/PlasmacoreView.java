@@ -110,6 +110,14 @@ public class PlasmacoreView extends GLSurfaceView
   {
     isChangingConfiguration = activity.isChangingConfigurations();
     super.onPause();
+    Plasmacore.pause();
+  }
+
+  @Override
+  public void onResume()
+  {
+    super.onResume();
+    Plasmacore.resume();
   }
 
 
@@ -232,9 +240,12 @@ public class PlasmacoreView extends GLSurfaceView
 
     public void onSurfaceChanged( GL10 gl, int width, int height )
     {
-      Plasmacore.log( "Display surface size changed: " + width + "x" + height );
-      displayWidth = width;
-      displayHeight = height;
+      if (width != displayWidth || height != displayHeight)
+      {
+        Plasmacore.log( "Display surface size changed: " + width + "x" + height );
+        displayWidth = width;
+        displayHeight = height;
+      }
     }
 
     public void onSurfaceCreated( GL10 gl, EGLConfig config )

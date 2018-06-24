@@ -76,7 +76,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
           public void on( PlasmacoreMessage m )
           {
             int id = m.getInt( "id" );
-            // return: duration:Real64
+            PlasmacoreSound sound = sounds.getByID( id );
+            if (sound != null) m.reply().set( "duration", sound.duration() );
           }
         }
     );
@@ -88,7 +89,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
           public void on( PlasmacoreMessage m )
           {
             int id = m.getInt( "id" );
-            // return: is_playing
+            PlasmacoreSound sound = sounds.getByID( id );
+            if (sound != null) m.reply().set( "is_playing", sound.isPlaying() );
           }
         }
     );
@@ -100,6 +102,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
           public void on( PlasmacoreMessage m )
           {
             int id = m.getInt( "id" );
+            PlasmacoreSound sound = sounds.getByID( id );
+            if (sound != null) sound.pause();
           }
         }
     );
@@ -112,7 +116,7 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
           {
             int id = m.getInt( "id" );
             boolean is_repeating = m.getBoolean( "is_repeating" );
-            PlasmacoreSound sound = sounds.get_by_id( id );
+            PlasmacoreSound sound = sounds.getByID( id );
             if (sound != null) sound.play( is_repeating );
           }
         }
@@ -125,7 +129,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
           public void on( PlasmacoreMessage m )
           {
             int id = m.getInt( "id" );
-            // return: position:Real64
+            PlasmacoreSound sound = sounds.getByID( id );
+            if (sound != null) m.reply().set( "position", sound.position() );
           }
         }
     );
@@ -138,6 +143,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
           {
             int id = m.getInt( "id" );
             double position = m.getDouble( "position" );
+            PlasmacoreSound sound = sounds.getByID( id );
+            if (sound != null) sound.setPosition( position );
           }
         }
     );
@@ -150,6 +157,8 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
           {
             int id = m.getInt( "id" );
             double volume = m.getDouble( "volume" );
+            PlasmacoreSound sound = sounds.getByID( id );
+            if (sound != null) sound.setVolume( volume );
           }
         }
     );
@@ -187,10 +196,26 @@ class PlasmacoreSoundManager implements SoundPool.OnLoadCompleteListener
 
   public void pauseAll()
   {
+    if (allSoundsPaused) return;
+    allSoundsPaused = true;
+
+    soundPool.autoPause();
+    for (int i=0; i<sounds.count(); ++i)
+    {
+      sounds.get( i ).systemPause();
+    }
   }
 
   public void resumeAll()
   {
+    if ( !allSoundsPaused ) return;
+    allSoundsPaused = false;
+
+    soundPool.autoResume();
+    for (int i=0; i<sounds.count(); ++i)
+    {
+      sounds.get( i ).systemResume();
+    }
   }
 }
 
