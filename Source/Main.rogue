@@ -4,9 +4,6 @@ Display( "Main" ).screen = MainScreen
 
 class MainScreen : Screen [singleton]
   PROPERTIES
-    img = Image( "pcore.png" )
-    sound = Sound( "Hit.mp3", 10 )
-    music = Sound( "Billionaire_Joker_Slots_music.mp3", &is_repeating )
 
   METHODS
     method on_start
@@ -23,7 +20,6 @@ class MainScreen : Screen [singleton]
 
     method on_update
       # Called 60 times a second
-      img.draw( Display.center )
 endClass
 
 
@@ -43,7 +39,6 @@ class InitialState : State<<MainScreen>>
     method on_start
       # Called when this state becomes the active state
       println "Hello World"
-      screen.music.play
 
     method after_draw
       # This happens after the current screen's on_draw()
@@ -53,7 +48,6 @@ class InitialState : State<<MainScreen>>
 
     method on( e:PointerEvent )
       if (e.is_press or e.is_release) trace e
-      if (e.is_press) screen.sound.play
 
     method on( e:TextEvent )
       trace e

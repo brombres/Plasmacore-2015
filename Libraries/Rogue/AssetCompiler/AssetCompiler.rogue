@@ -13,7 +13,7 @@ routine asset_folder( platform:String, subfolder:String )->String
   if (platform == "Android")
     result = "Platforms/Android/app/src/main/assets/"
   else
-    result = "Build/$/Assets/"
+    result = "Build/$/Assets/" (platform)
   endIf
   File.create_folder( result )
   result += subfolder
