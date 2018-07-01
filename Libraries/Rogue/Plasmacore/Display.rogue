@@ -614,6 +614,9 @@ class Display [singleton]
     method world_transform->Matrix
       return render_target.update_transform.world_transform
 
+    method offset->XY
+      return render_target.offset
+
     method perspective_center->XY
       return render_target.perspective_center
 
@@ -843,11 +846,11 @@ class Display [singleton]
       if (vertex_count + n > VERTEX_BUFFER_SIZE) flush
       vertex_count += n
 
-    method scale_to_fit( w:Int32, h:Int32 )->this
-      return scale_to_fit( XY(w,h) )
+    method scale_to_fit( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
+      return scale_to_fit( XY(w,h), anchor )
 
-    method scale_to_fit( target_display_size:XY )->this
-      render_target.scale_to_fit( target_display_size )
+    method scale_to_fit( target_display_size:XY, anchor=Anchor.TOP_LEFT:Anchor )->this
+      render_target.scale_to_fit( target_display_size, anchor )
       return this
 
     method set_clipping_region( new_clipping_region:Box? )->this
@@ -859,6 +862,10 @@ class Display [singleton]
       flush
       active_primitive_type = primitive_type
       active_front_face = front_face
+      return this
+
+    method set_offset( new_offset:XY )->this
+      render_target.set_offset( new_offset )
       return this
 
     method set_perspective_center( new_center:XY )->this

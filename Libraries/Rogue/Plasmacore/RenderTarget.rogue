@@ -9,6 +9,14 @@ class RenderTarget
     target_display_size : XY?
     display_scale       : Real64
 
+    target_anchor = Anchor.TOP_LEFT : Anchor
+
+    offset : XY
+    # All drawing is offset by adding this value to the coordinates.
+    # All pointer coordinates are offset by subtracting this value.
+    # Coordinates are relative to the top-left corner (0,0).
+    # (0,0) by default. Automatically set as part of scale_to_fit().
+
     perspective_center : XY
     # The "origin" for 3D perspective and the vanishing point for polygons
     # parallel to the camera axis.  Automatically reset to Display.center at
@@ -83,7 +91,7 @@ class RenderTarget
       endIf
 
       clear_transforms
-      scale_to_fit( target_display_size )
+      scale_to_fit( target_display_size, target_anchor )
       <ui_hook>
 
     method pop_clipping_region
@@ -135,20 +143,23 @@ class RenderTarget
         endIf
       endForEach
 
-    method scale_to_fit( w:Int32, h:Int32 )
-      scale_to_fit( XY(w,h) )
+    method scale_to_fit( w:Int32, h:Int32, target_anchor )
+      scale_to_fit( XY(w,h), target_anchor )
 
-    method scale_to_fit( @target_display_size )
+    method scale_to_fit( @target_display_size, target_anchor )
       local new_display_scale : Real64
       local new_size          : XY
+      local new_offset        : XY
       if (target_display_size.exists)
         new_display_scale = (target_display_size.value / true_size).max
         new_size = true_size * new_display_scale
+        offset = (new_size - target_display_size.value) * target_anchor.position
       else
         new_display_scale = 1.0
         new_size = true_size
+        new_offset = XY(0,0)
       endIf
-      if (new_display_scale != display_scale or new_size != size)
+      if (new_display_scale != display_scale or new_size != size or new_offset != offset)
         Display.flush
         display_scale = new_display_scale
         size = new_size
@@ -195,6 +206,12 @@ class RenderTarget
                 |glScissor( $x, $y, $w, $h );
       else
         native @|glDisable( GL_SCISSOR_TEST );
+      endIf
+
+    method set_offset( new_offset:XY )
+      if (new_offset != offset)
+        @offset = new_offset
+        projection_mode.update
       endIf
 
     method set_perspective_center( new_center:XY )

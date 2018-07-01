@@ -158,7 +158,7 @@ class Plasmacore [essential singleton]
           local index = m.int32( "index" )
           local type = m.int32( "type" )
 
-          local pos   = XY( m.int32("x"), m.int32("y") ) * scale
+          local pos   = XY( m.int32("x"), m.int32("y") ) * scale - Display.offset
           local e = PointerEvent( type, pos, delta, index )
           e.timestamp = m.timestamp
           Pointer.on( e )
@@ -185,7 +185,7 @@ class Plasmacore [essential singleton]
           local index = m.int32( "index" )
           forEach (display in Plasmacore.displays)
             if (display.is_configured)
-              local e = PointerEvent( type, pos*Display.size, XY(0,0), index )
+              local e = PointerEvent( type, pos*Display.size-Display.offset, XY(0,0), index )
               e.timestamp = m.timestamp
               Pointer.on( e )
               display.handle( e )
