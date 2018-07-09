@@ -263,6 +263,9 @@ class PlasmacoreMessage
   func send()->PlasmacoreMessage?
   {
     Plasmacore.singleton.update()  // transmit any post()ed messages
+
+    objc_sync_enter(Plasmacore.singleton); defer { objc_sync_exit(Plasmacore.singleton) }
+
     if let result_data = RogueInterface_send_message( data, Int32(data.count) )
     {
       return PlasmacoreMessage( data:[UInt8](result_data) )

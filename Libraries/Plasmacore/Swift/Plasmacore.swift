@@ -75,7 +75,6 @@ class Plasmacore
   var io_buffer = [UInt8]()
 
   var is_sending = false
-  var update_requested = false
 
   var listeners       = [String:PlasmacoreMessageListener]()
   var reply_listeners = [Int:PlasmacoreMessageListener]()
@@ -310,83 +309,56 @@ class Plasmacore
   {
     objc_sync_enter( self ); defer { objc_sync_exit(self) }   // @synchronized (self)
 
-    if (is_sending)
-    {
-      update_requested = true
-      return
-    }
-
+    if (is_sending) { return }
     is_sending = true
 
-    // Execute a small burst of message dispatching and receiving.  Stop after
-    // 10 iterations or when there are no new messages.  Global state updates
-    // are frequency capped to 1/60 second intervals and draws are synced to
-    // the display refresh so this isn't triggering large amounts of extra work.
-    for _ in 1...10
-    {
-      update_requested = false
+    // Swap pending data with io_buffer data
+    let temp = io_buffer
+    io_buffer = pending_message_data
+    pending_message_data = temp
 
-      // Swap pending data with io_buffer data
-      let temp = io_buffer
-      io_buffer = pending_message_data
-      pending_message_data = temp
+    let received_data = RogueInterface_post_messages( io_buffer, Int32(io_buffer.count) )
+    let count = received_data!.count
+    received_data!.withUnsafeBytes
+    { (bytes:UnsafePointer<UInt8>)->Void in
+      //Use `bytes` inside this closure
+      //...
 
-      let received_data = RogueInterface_post_messages( io_buffer, Int32(io_buffer.count) )
-      let count = received_data!.count
-      received_data!.withUnsafeBytes
-      { (bytes:UnsafePointer<UInt8>)->Void in
-        //Use `bytes` inside this closure
-        //...
-
-        var read_pos = 0
-        while (read_pos+4 <= count)
-        {
-          var size = Int( bytes[read_pos] ) << 24
-          size |= Int( bytes[read_pos+1] ) << 16
-          size |= Int( bytes[read_pos+2] ) << 8
-          size |= Int( bytes[read_pos+3] )
-          read_pos += 4;
-
-          if (read_pos + size <= count)
-          {
-            var message_data = [UInt8]()
-            message_data.reserveCapacity( size )
-            for i in 0..<size
-            {
-              message_data.append( bytes[read_pos+i] )
-            }
-
-            let m = PlasmacoreMessage( data:message_data )
-            dispatch( m )
-            if let reply = m._reply
-            {
-              reply.post()
-            }
-          }
-          else
-          {
-            NSLog( "*** Skipping message due to invalid size." )
-          }
-          read_pos += size
-        }
-      }
-
-      io_buffer.removeAll()
-
-      if ( !update_requested )
+      var read_pos = 0
+      while (read_pos+4 <= count)
       {
-        break
+        var size = Int( bytes[read_pos] ) << 24
+        size |= Int( bytes[read_pos+1] ) << 16
+        size |= Int( bytes[read_pos+2] ) << 8
+        size |= Int( bytes[read_pos+3] )
+        read_pos += 4;
+
+        if (read_pos + size <= count)
+        {
+          var message_data = [UInt8]()
+          message_data.reserveCapacity( size )
+          for i in 0..<size
+          {
+            message_data.append( bytes[read_pos+i] )
+          }
+
+          let m = PlasmacoreMessage( data:message_data )
+          dispatch( m )
+          if let reply = m._reply
+          {
+            reply.post()
+          }
+        }
+        else
+        {
+          NSLog( "*** Skipping message due to invalid size." )
+        }
+        read_pos += size
       }
     }
 
+    io_buffer.removeAll()
     is_sending = false
-
-    if (update_requested)
-    {
-      // There are still some pending messages after 10 iterations.  Schedule another round
-      // in 1/60 second instead of the usual 1.0 seconds.
-      Timer.scheduledTimer( timeInterval: 1.0/60.0, target:self, selector: #selector(Plasmacore.update), userInfo:nil, repeats:false )
-    }
   }
 }
 
