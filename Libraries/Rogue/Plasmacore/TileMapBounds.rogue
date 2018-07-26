@@ -7,11 +7,12 @@ class TileMapBounds
     offscreen_padding = 1     # number of tiles beyond visible edges to include in draw
 
     # Properties expressed in world/tile coordinates
-    width, height     : Int32
+    tiles_wide        : Int32
+    tiles_high        : Int32
     camera            : XY  # tile position of camera
 
     # Properties expressed in screen/pixel coordinates
-    viewport          : Box
+    bounds            : Box
     origin            : XY      # screen position of camera
     scale             = 1.0
     tile_size         = XY(1,1) # in nominal pixels
@@ -22,9 +23,9 @@ class TileMapBounds
     screen_bounds     : Box
 
   METHODS
-    method init( width, height, tile_size=XY(1,1) )
+    method init( tiles_wide, tiles_high, tile_size=XY(1,1) )
       needs_update = true
-      viewport = Display.bounds
+      bounds = Display.bounds
 
     method draw( callback:Function(index:Int32,ij:XY,bounds:Box) )
       update_bounds
@@ -54,13 +55,13 @@ class TileMapBounds
         y1 += diff * ts.y
       endIf
 
-      local map_bottom_right = screen_to_world( viewport.bottom_right ).floor + XY(offscreen_padding,offscreen_padding)
-      local i2 = map_bottom_right.x->Int32.or_smaller( width-1 )
-      local j2 = map_bottom_right.y->Int32.or_smaller( height-1 )
+      local map_bottom_right = screen_to_world( bounds.bottom_right ).floor + XY(offscreen_padding,offscreen_padding)
+      local i2 = map_bottom_right.x->Int32.or_smaller( tiles_wide-1 )
+      local j2 = map_bottom_right.y->Int32.or_smaller( tiles_high-1 )
 
       block
         local y = y1
-        local index_start = j1*width + i1
+        local index_start = j1*tiles_wide + i1
         forEach (j in j1..j2)
           local x = x1
           local index = index_start
@@ -70,9 +71,12 @@ class TileMapBounds
             ++index
           endForEach
           y += ts.y
-          index_start += width
+          index_start += tiles_wide
         endForEach
       endBlock
+
+    method height->Real64
+      return screen_bounds.size.y
 
     method screen_to_world( xy:XY )->XY
       update_bounds
@@ -87,47 +91,53 @@ class TileMapBounds
     method set_origin( @origin )
       needs_update = true
 
-    method set_viewport( viewport:Box )
-      set_viewport( viewport, viewport.center )
+    method set_bounds( bounds:Box )
+      set_bounds( bounds, bounds.center )
 
-    method set_viewport( @viewport, @origin )
+    method set_bounds( @bounds, @origin )
       needs_update = true
+
+    method size->XY
+      return screen_bounds.size
 
     method update_bounds
       if (not needs_update) return
       needs_update = false
 
       scaled_tile_size = tile_size * scale
-      screen_bounds = Box( origin-camera*scaled_tile_size, XY(width,height)*scaled_tile_size )
-      local underflow = (viewport.size - screen_bounds.size)
+      screen_bounds = Box( origin-camera*scaled_tile_size, XY(tiles_wide,tiles_high)*scaled_tile_size )
+      local underflow = (bounds.size - screen_bounds.size)
       if (underflow.x > 0)
         if (clamp_edges)
-          local new_pos = viewport.position + XY( underflow.x/2, screen_bounds.y )
+          local new_pos = bounds.position + XY( underflow.x/2, screen_bounds.y )
           screen_bounds = Box( new_pos, screen_bounds.size )
         endIf
       else
         if (clamp_edges)
-          if (screen_bounds.x > viewport.x)
-            screen_bounds -= XY(screen_bounds.x - viewport.x,0)
-          elseIf (screen_bounds.x2 < viewport.x2)
-            screen_bounds += XY(viewport.x2 - screen_bounds.x2,0)
+          if (screen_bounds.x > bounds.x)
+            screen_bounds -= XY(screen_bounds.x - bounds.x,0)
+          elseIf (screen_bounds.x2 < bounds.x2)
+            screen_bounds += XY(bounds.x2 - screen_bounds.x2,0)
           endIf
         endIf
       endIf
       if (underflow.y > 0)
         if (clamp_edges)
-          local new_pos = viewport.position + XY( screen_bounds.x, underflow.y/2 )
+          local new_pos = bounds.position + XY( screen_bounds.x, underflow.y/2 )
           screen_bounds = Box( new_pos, screen_bounds.size )
         endIf
       else
         if (clamp_edges)
-          if (screen_bounds.y > viewport.y)
-            screen_bounds -= XY(0,screen_bounds.y - viewport.y)
-          elseIf (screen_bounds.y2 < viewport.y2)
-            screen_bounds += XY(0,viewport.y2 - screen_bounds.y2)
+          if (screen_bounds.y > bounds.y)
+            screen_bounds -= XY(0,screen_bounds.y - bounds.y)
+          elseIf (screen_bounds.y2 < bounds.y2)
+            screen_bounds += XY(0,bounds.y2 - screen_bounds.y2)
           endIf
         endIf
       endIf
+
+    method width->Real64
+      return screen_bounds.size.x
 
     method world_to_screen( xy:XY )->XY
       update_bounds
