@@ -23,17 +23,6 @@ class MainScreen : Screen [singleton]
 endClass
 
 
-class LoadState : State<<MainScreen>>
-  PROPERTIES
-  METHODS
-    method on_draw
-      Display.clear( Color.YELLOW )
-
-    method on_update
-      if (not SoundManager.is_loading) change_state( InitialState() )
-endClass
-
-
 class InitialState : State<<MainScreen>>
   METHODS
     method on_start
