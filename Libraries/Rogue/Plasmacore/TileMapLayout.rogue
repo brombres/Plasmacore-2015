@@ -78,6 +78,12 @@ class TileMapLayout
     method height->Real64
       return screen_bounds.size.y
 
+    method ij_to_index( i:Int32, j:Int32 )->Int32
+      return j * width + i
+
+    method index_to_ij( index:Int32 )->XY
+      return XY( index%tiles_wide, index/tiles_wide )
+
     method screen_to_map( xy:XY )->XY
       update_bounds
       return (xy - screen_bounds.position) / scaled_tile_size
