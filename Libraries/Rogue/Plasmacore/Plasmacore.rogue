@@ -106,9 +106,9 @@ class Plasmacore [essential singleton]
           if (m.contains("application_data_folder")) Plasmacore.application_data_folder = m.string("application_data_folder")
           if (m.contains("user_data_folder"))        Plasmacore.user_data_folder = m.string("user_data_folder")
           if (m.contains("cache_folder"))            Plasmacore.cache_folder = m.string("cache_folder")
-          trace Plasmacore.application_data_folder
-          trace Plasmacore.user_data_folder
-          trace Plasmacore.cache_folder
+          #trace Plasmacore.application_data_folder
+          #trace Plasmacore.user_data_folder
+          #trace Plasmacore.cache_folder
         endFunction
       )
 
