@@ -104,6 +104,9 @@ class Font
       if (snap) result = result.floor
       return result
 
+    method set_height( h:Real64 )
+      set_scale( h / data.height )
+
     method set_scale( s:Real64 )->this
       @scale = XY( s, s )
       return this
