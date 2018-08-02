@@ -2,14 +2,14 @@
 
 About     | &nbsp;
 ----------|-----------------------
-Version   | v0.9.0
-Date      | May 16, 2018
+Version   | v0.9.1
+Date      | August 1, 2018
 Platforms | macOS, Linux
 Targets   | macOS, iOS, Linux, Web
 
 
 ## Requirements
-- The Rogue language must be installed separately from: 
+- The Rogue language must be installed separately from:
     - [https://github.com/AbePralle/Rogue](https://github.com/AbePralle/Rogue)
 - macOS & iOS targets require Xcode.
 
