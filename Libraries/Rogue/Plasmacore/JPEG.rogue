@@ -160,8 +160,8 @@ class JPEGEncoder
               |$this->jpeg_info.in_color_space   = JCS_RGB;
               |
               |jpeg_set_defaults( &$this->jpeg_info );
-              |jpeg_set_quality( &$this->jpeg_info, $quality, TRUE );  // 0..100
-              |jpeg_start_compress( &$this->jpeg_info, TRUE );
+              |jpeg_set_quality( &$this->jpeg_info, $quality, (boolean)1 );  // 0..100
+              |jpeg_start_compress( &$this->jpeg_info, (boolean)1 );
               |
               |RogueByte* buffer = new RogueByte[ $width*3 ];
               |row_pointer = buffer;
