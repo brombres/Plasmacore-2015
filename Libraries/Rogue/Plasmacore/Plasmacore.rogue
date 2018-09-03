@@ -154,16 +154,19 @@ class Plasmacore [essential singleton]
       MessageManager.set_listener( "Display.on_pointer_event",
         function(m:Message)
           local display = Display( m.string("display_name") )
-          local scale = display.display_scale
-          local delta = XY( m.real64("dx"), m.real64("dy") ) * scale
-          local index = m.int32( "index" )
-          local type = m.int32( "type" )
-
-          local pos   = XY( m.int32("x"), m.int32("y") ) * scale - Display.offset
-          local e = PointerEvent( type, pos, delta, index )
-          e.timestamp = m.timestamp
-          Pointer.on( e )
-          display.handle( e )
+          local x = m.int32("x")
+          local y = m.int32("y")
+          if (x or y)
+            # On mobile web, SDL sends mouse (pointer) events at (0,0) followed by finger (stylus) events
+            # at actual (x,y) coordinates. As a kludge we'll ignore pointer events at (0,0)
+            local scale = display.display_scale
+            local pos = XY(x,y) * scale - Display.offset
+            local delta = XY( m.real64("dx"), m.real64("dy") ) * scale
+            local e = PointerEvent( m.int32("type"), pos, delta, m.int32("index") )
+            e.timestamp = m.timestamp
+            Pointer.on( e )
+            display.handle( e )
+          endIf
         endFunction )
 
       MessageManager.set_listener( "Display.on_scroll_event",
