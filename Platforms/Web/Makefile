@@ -1,9 +1,8 @@
 OPT_CFLAGS += -O3
 OPT_CFLAGS += -s ASSERTIONS=0 -s PRECISE_I64_MATH=0 --closure 0
 
-# 160 MiB by default (asm.js wants a multiple of 16 MiB)
-RUNTIME_MEMORY = 167772160
-RUNTIME_MEMORY = $(shell echo 16777216*4 | bc)
+# asm.js wants a multiple of 16 MB
+RUNTIME_MEMORY = 16MB
 
 PROJECT_ROOT = ../..
 
