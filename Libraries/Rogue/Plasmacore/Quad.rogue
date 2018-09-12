@@ -118,7 +118,7 @@ $endIf
       return Quad( a/scale, b/scale, c/scale, d/scale )
 
     method rotated( angle:Degrees )->Quad [macro]
-      this.rotated( angle->Radians )
+      return this.rotated( angle->Radians )
 
     method rotated( angle:Radians )->Quad
       return Quad( a.rotated(angle), b.rotated(angle), c.rotated(angle), d.rotated(angle) )

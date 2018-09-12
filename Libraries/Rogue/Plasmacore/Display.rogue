@@ -166,7 +166,7 @@ class Display [singleton]
       return Box(size)
 
     method center->XY [macro]
-      (size/2)
+      return (size/2)
 
     method clear->this
       native "int gl_flags = GL_COLOR_BUFFER_BIT;"
@@ -579,7 +579,7 @@ class Display [singleton]
       screen.state.handle( e )
 
     method height->Int32 [macro]
-      this.size.y->Int32
+      return this.size.y->Int32
 
     method is_landscape->Logical
       return (width > height)
@@ -909,7 +909,7 @@ class Display [singleton]
 
     method state->State [macro]
       # Obtains the state of this Display's current screen.
-      this.screen.state
+      return this.screen.state
 
     method transform->Matrix
       return render_target.update_transform.transform
@@ -934,22 +934,22 @@ class Display [singleton]
       return Triangle<<XYZW>>( t*XYZ(triangle.a,_z), t*XYZ(triangle.b,_z), t*XYZ(triangle.c,_z) )
 
     method true_height->Int32 [macro]
-      this.true_size.y->Int32
+      return this.true_size.y->Int32
 
     method true_size->XY [macro]
-      this.render_target.true_size
+      return this.render_target.true_size
 
     method true_width->Int32 [macro]
-      this.true_size.x->Int32
+      return this.true_size.x->Int32
 
     method view_transform->Matrix
       return render_target.update_transform.view_transform
 
     method viewport_size->XY [macro]
-      this.render_target.viewport_size
+      return this.render_target.viewport_size
 
     method width->Int32 [macro]
-      this.size.x->Int32
+      return this.size.x->Int32
 
 endClass
 

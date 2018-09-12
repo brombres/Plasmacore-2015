@@ -105,10 +105,10 @@ class Texture
       return ImageShader.TEXTURE
 
     method image_height->Int32 [macro]
-      this.image_size.y
+      return this.image_size.y
 
     method image_width->Int32 [macro]
-      this.image_size.x
+      return this.image_size.x
 
     method is_loaded->Logical
       return id?
@@ -167,10 +167,10 @@ class Texture
       return @should_unload and reference_count == 0
 
     method texture_height->Int32 [macro]
-      this.texture_size.y
+      return this.texture_size.y
 
     method texture_width->Int32 [macro]
-      this.texture_size.x
+      return this.texture_size.x
 
     method unload->this
       should_unload = false
@@ -189,10 +189,10 @@ class Texture
       return this
 
     method uv_height->Real64 [macro]
-      this.uv_size.y
+      return this.uv_size.y
 
     method uv_width->Real64 [macro]
-      this.uv_size.x
+      return this.uv_size.x
 endClass
 
 

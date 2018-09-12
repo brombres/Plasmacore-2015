@@ -20,7 +20,7 @@ class Keyboard [singleton]
       return state
 
     method is_key_pressed( keycode:Int32 )->Logical [macro]
-      this.key_pressed[ keycode & 255 ]
+      return this.key_pressed[ keycode & 255 ]
 
     method is_alt_pressed->Logical
       return is_key_pressed(Keycode.LEFT_ALT) or is_key_pressed(Keycode.RIGHT_ALT)

@@ -37,39 +37,39 @@ class RenderMode( value=0:Int32 ) [compound]
 
   METHODS
     method operator&( flags:Int32 )->RenderMode [macro]
-      RenderMode( this.value & flags )
+      return RenderMode( this.value & flags )
 
     method operator|( flags:Int32 )->RenderMode [macro]
-      RenderMode( this.value | flags )
+      return RenderMode( this.value | flags )
 
     method operator&( other:RenderMode )->RenderMode [macro]
-      RenderMode( this.value & other.value )
+      return RenderMode( this.value & other.value )
 
     method operator|( other:RenderMode )->RenderMode [macro]
-      RenderMode( this.value | other.value )
+      return RenderMode( this.value | other.value )
 
-    method dest_blend->Logical [macro]
-      ((this.value :>>>: 28) & 15)
+    method dest_blend->Int32 [macro]
+      return ((this.value :>>>: 28) & 15)
 
     method has_blend_mode->Logical [macro]
-      ((this.value & RenderMode.BLEND_MASK) != 0)
+      return ((this.value & RenderMode.BLEND_MASK) != 0)
 
     method is_blended->Logical [macro]
-      (this.value & RenderMode.BLENDED)
+      return (this.value & RenderMode.BLENDED)
 
     method is_point_filtered->Logical [macro]
-      (this.value & RenderMode.POINT_FILTER)
+      return (this.value & RenderMode.POINT_FILTER)
 
     method is_textured->Logical [macro]
-      (this.value & RenderMode.TEXTURED)
+      return (this.value & RenderMode.TEXTURED)
 
     method source_blend->Int32 [macro]
-      ((this.value :>>>: 24) & 15)
+      return ((this.value :>>>: 24) & 15)
 
     method wrap_x->Logical [macro]
-      (this.value & RenderMode.WRAP_X)
+      return (this.value & RenderMode.WRAP_X)
 
     method wrap_y->Logical [macro]
-      (this.value & RenderMode.WRAP_Y)
+      return (this.value & RenderMode.WRAP_Y)
 
 endClass

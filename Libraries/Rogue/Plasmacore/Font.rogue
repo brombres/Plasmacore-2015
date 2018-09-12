@@ -452,9 +452,9 @@ class FontCharacter
       advance = size.xv
 
     method height->Int32 [macro]
-      Int32(size.y)
+      return Int32(size.y)
 
     method width->Int32 [macro]
-      Int32(size.x)
+      return Int32(size.x)
 endClass
 

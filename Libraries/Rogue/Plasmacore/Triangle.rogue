@@ -103,7 +103,7 @@ $endIf
       return Triangle( a/scale, b/scale, c/scale )
 
     method rotated( angle:Degrees )->Triangle [macro]
-      this.rotated( angle->Radians )
+      return this.rotated( angle->Radians )
 
     method rotated( angle:Radians )->Triangle
       return Triangle( a.rotated(angle), b.rotated(angle), c.rotated(angle) )

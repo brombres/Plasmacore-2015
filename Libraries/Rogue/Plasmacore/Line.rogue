@@ -144,7 +144,7 @@ $endIf
       return intersection( other )
 
     method rotated( angle:Degrees )->Line [macro]
-      this.rotated( angle->Radians )
+      return this.rotated( angle->Radians )
 
     method rotated( angle:Radians )->Line
       return Line( a.rotated(angle), b.rotated(angle) )

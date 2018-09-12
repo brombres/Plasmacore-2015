@@ -132,10 +132,10 @@ class Matrix( ...
 
     METHODS
       method count->Int32 [macro]
-        16
+        return 16
 
       method get( index:Int32 )->Real64 [macro]
-        native( "(&$this.r1c1)[ $index ]" )
+        return native( "(&$this.r1c1)[ $index ]" )->Real64
 
       method operator*( other:Matrix )->Matrix
         local result = Matrix()
@@ -280,7 +280,7 @@ class Matrix( ...
         )
 
       method set( index:Int32, value:Real64 ) [macro]
-        native( "(&$this.r1c1)[ $index ] = $value" )
+        native( "(&$this.r1c1)[ $index ] = $value;" )
 
       method to->String
         local min_whole_digits = 0

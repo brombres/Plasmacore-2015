@@ -49,10 +49,10 @@ class Anchor( position:XY ) [compound]
       lookup[ "RIGHT_BOTTOM" ]  = RIGHT_BOTTOM
 
     method create->Anchor [macro]
-      Anchor(XY(0,0))
+      return Anchor(XY(0,0))
 
     method create( x:Real64, y:Real64 )->Anchor [macro]
-      Anchor(XY(x,y))
+      return Anchor(XY(x,y))
 
     method create( value:Value )->Anchor
       if (not value) return Anchor.TOP_LEFT

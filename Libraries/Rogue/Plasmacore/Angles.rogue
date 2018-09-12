@@ -19,22 +19,22 @@ class Angles( x:Degrees, y:Degrees, z:Degrees ) [compound]
       return Angles( Radians(x)->Degrees, Radians(y)->Degrees, Radians(z)->Degrees )
 
     method x( value:Degrees )->Angles [macro]
-      Angles( value, Degrees(0), Degrees(0) )
+      return Angles( value, Degrees(0), Degrees(0) )
 
     method y( value:Degrees )->Angles [macro]
-      Angles( Degrees(0), value, Degrees(0) )
+      return Angles( Degrees(0), value, Degrees(0) )
 
     method z( value:Degrees )->Angles [macro]
-      Angles( Degrees(0), Degrees(0), value)
+      return Angles( Degrees(0), Degrees(0), value)
 
     method x( r:Radians )->Angles [macro]
-      Angles.radians( r.value, 0, 0 )
+      return Angles.radians( r.value, 0, 0 )
 
     method y( r:Radians )->Angles [macro]
-      Angles.radians( 0, r.value, 0 )
+      return Angles.radians( 0, r.value, 0 )
 
     method z( r:Radians )->Angles [macro]
-      Angles.radians( 0, 0, r.value )
+      return Angles.radians( 0, 0, r.value )
 
   METHODS
     method is_rotated->Logical

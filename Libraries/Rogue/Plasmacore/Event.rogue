@@ -38,7 +38,7 @@ class KeyEvent : Event
       return keycode == _keycode and is_repeat
 
     method is_release->Logical [macro]
-      not this.is_press
+      return not this.is_press
 
     method is_release( _keycode:Int32 )->Logical
       return keycode == _keycode and not is_press
@@ -127,16 +127,16 @@ class PointerEvent : Event
     method init( type, position, delta, index )
 
     method is_move->Logical [macro]
-      (this.type == PointerEvent.MOVE)
+      return (this.type == PointerEvent.MOVE)
 
     method is_press->Logical [macro]
-      (this.type == PointerEvent.PRESS)
+      return (this.type == PointerEvent.PRESS)
 
     method is_press( button_index:Int32 )->Logical
       return (this.type == PRESS and index == button_index)
 
     method is_release->Logical [macro]
-      (this.type == PointerEvent.RELEASE)
+      return (this.type == PointerEvent.RELEASE)
 
     method is_release( button_index:Int32 )->Logical
       return (this.type == RELEASE and index == button_index)
