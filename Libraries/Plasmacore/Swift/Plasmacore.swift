@@ -12,6 +12,7 @@ import Foundation
     Plasmacore.singleton.dispatch( m )
     if let reply = m._reply
     {
+      reply._block_transmission = false
       return NSData( bytes:reply.data, length:reply.data.count )
     }
     else
@@ -301,7 +302,7 @@ class Plasmacore
     if let listener = listeners[ m.type ]
     {
       listener.callback( m )
-      listeners.removeValue( forKey:listener.type )
+      if (listener.once) { listeners.removeValue( forKey:listener.type ) }
     }
   }
 
@@ -346,6 +347,7 @@ class Plasmacore
           dispatch( m )
           if let reply = m._reply
           {
+            reply._block_transmission = false
             reply.post()
           }
         }

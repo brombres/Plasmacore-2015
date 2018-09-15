@@ -127,8 +127,10 @@ class MessageManager [essential singleton]
     method dispatch_incoming_message( m:Message )
       local listener = one_time_listeners[ m.type ]
       if (listener)
+        one_time_listeners.remove( m.type )
         listener( m )
-        if (m.@reply and not m.reply.sent)
+        if (m.@reply)
+          m.@reply.blocks_transmission = false
           m.reply.post  # adds to message pool
           m.@reply = null
         endIf
@@ -137,7 +139,8 @@ class MessageManager [essential singleton]
       listener = listeners[ m.type ]
       if (listener)
         listener( m )
-        if (m.@reply and not m.reply.sent)
+        if (m.@reply)
+          m.@reply.blocks_transmission = false
           m.reply.post  # adds to message pool
           m.@reply = null
         endIf
@@ -159,7 +162,8 @@ class MessageManager [essential singleton]
       m.init( direct_message_buffer )
       dispatch_incoming_messages  # dispatch queued posts
       dispatch_incoming_message( m )
-      if (m.@reply and not m.@reply.sent)
+      if (m.@reply)
+        m.@reply.blocks_transmission = false
         direct_message_buffer.clear.add( m.@reply.data )
         m.@reply.recycle
         m.@reply = null
@@ -217,7 +221,8 @@ class Message
     keys       = String[]
     offsets    = Int32[]
 
-    sent       : Logical  # Sent or posted
+    sent                : Logical  # Sent or posted
+    blocks_transmission : Logical
 
     reply      : Message
 
@@ -267,7 +272,9 @@ class Message
 
     method reply->Message
       if (@reply) return @reply
-      return MessageManager.create_message( "", message_id )
+      @reply = MessageManager.create_message( "", message_id )
+      @reply.blocks_transmission = true
+      return @reply
 
     method get( name:String )->Value
       local i = keys.locate_last( name )
@@ -473,12 +480,14 @@ class Message
       return set( name, _value.to_json )
 
     method post
+      if (blocks_transmission) return
       MessageManager.post( this )
       sent = true
 
     method post_rsvp( callback:Function(Message) )
       # This form of post_rsvp waits for the native layer to reply() directly to this
       # message.
+      if (blocks_transmission) return
       MessageManager.post_rsvp( this, callback )
       sent = true
 
@@ -486,12 +495,15 @@ class Message
       # Rather than awaiting a reply to this specific message, this form of post_rsvp
       # installs a global one-time message listener that calls the given callback
       # when a new message (not a reply) of the given response type comes through.
+      if (blocks_transmission) return
       MessageManager.set_listener( response_message_type, callback, &once )
       MessageManager.post( this )
       sent = true
 
     method send->Message
       # Synchronously sends message to native layer, can get message in response
+      if (blocks_transmission) return null
+
       nativeHeader struct RogueByte_List;
       nativeHeader bool PlasmacoreMessage_send( RogueByte_List* data );
 

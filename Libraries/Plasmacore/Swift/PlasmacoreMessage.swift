@@ -51,6 +51,7 @@ class PlasmacoreMessage
   var position = 0
 
   var _reply:PlasmacoreMessage? = nil
+  var _block_transmission = false
 
   convenience init( type:String )
   {
@@ -92,7 +93,11 @@ class PlasmacoreMessage
 
   func reply()->PlasmacoreMessage
   {
-    if (_reply == nil) { _reply = PlasmacoreMessage( type:"", message_id:message_id ) }
+    if (_reply == nil)
+    {
+      _reply = PlasmacoreMessage( type:"", message_id:message_id )
+      _reply!._block_transmission = true
+    }
     return _reply!
   }
 
@@ -251,17 +256,21 @@ class PlasmacoreMessage
 
   func post()
   {
+    if (_block_transmission) { return }
     Plasmacore.singleton.post( self );
   }
 
   func post_rsvp( _ callback:@escaping ((PlasmacoreMessage)->Void) )
   {
+    if (_block_transmission) { return }
     Plasmacore.singleton.post_rsvp( self, callback:callback );
   }
 
   @discardableResult
   func send()->PlasmacoreMessage?
   {
+    if (_block_transmission) { return nil }
+
     Plasmacore.singleton.update()  // transmit any post()ed messages
 
     objc_sync_enter(Plasmacore.singleton); defer { objc_sync_exit(Plasmacore.singleton) }
