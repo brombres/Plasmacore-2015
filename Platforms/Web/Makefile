@@ -17,7 +17,7 @@ SDLCORE_FOLDER = $(PROJECT_ROOT)/Libraries/Plasmacore/SDL
 
 BUILD_FOLDER    := $(PROJECT_ROOT)/Build/$(TARGET)
 
-#CFLAGS += --shell-file $(PROJECT_ROOT)/Source/shell.html
+CFLAGS += --shell-file index.html
 
 CFLAGS += --emrun
 
@@ -68,7 +68,7 @@ $(BUILD_FOLDER)/$(PROJECT_NAME).html: $(BUILD_FOLDER)/Source/RogueProgram.cpp $(
 	       $(CFLAGS) \
 	       $(BUILD_FOLDER)/Source/RogueProgram.cpp \
 	       $(SDLCORE_FILES) \
-	       -o $(BUILD_FOLDER)/$(PROJECT_NAME).html
+	       -o $(BUILD_FOLDER)/index.html
 
 index_html:
 	@test -f index.html && make $(BUILD_FOLDER)/index.html || true
