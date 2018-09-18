@@ -25,7 +25,7 @@ class Image
     image_info    : ImageInfo
     data          : ImageData
     position      : XY
-    z             = 1.0  # A proportion of Display.z - 0.5 is half the distance, 2.0 is 2x the distance, etc.
+    z             = 0.0  # Offset from Display.z - set to -0.5*Display.z to be closer to the camera, Display.z to be twice as far, etc.
     size          : XY
     original_size : XY
     scale         = XY(1,1)
@@ -475,7 +475,7 @@ class ColorFillImageData : ImageData [singleton]
     method draw( image:Image )
       local size = image.@size * image.scale
       local handle = XYZ( (image.anchor.position * size), 0 )
-      local z = Display.z * image.z
+      local z = image.z
 
       local pos = image.position
       local has_rotation = not image.rotation.is_zero
@@ -487,13 +487,15 @@ class ColorFillImageData : ImageData [singleton]
 
       local transform = Display.transform
 
+      z += Display.z
+
       local w = size.x
       local h = size.y
       local quad = Quad<<XYZW>>(
-        transform * XYZ( 0, 0, 0 ),
-        transform * XYZ( w, 0, 0 ),
-        transform * XYZ( w, h, 0 ),
-        transform * XYZ( 0, h, 0 ) )
+        transform * XYZ( 0, 0, z ),
+        transform * XYZ( w, 0, z ),
+        transform * XYZ( w, h, z ),
+        transform * XYZ( 0, h, z ) )
 
       Display.fill_solid_quad( quad, image.colors.with_opacity(image.opacity), image.selected_render_mode, image.selected_shader )
 
@@ -524,7 +526,7 @@ class TextureImageData : ImageData
     method draw( image:Image )
       local size = image.@size * image.scale
       local handle = XYZ( (image.anchor.position * size), 0 )
-      local z = Display.z * image.z
+      local z = image.z
 
       local pos = image.position
       local has_rotation = not image.rotation.is_zero
@@ -536,13 +538,15 @@ class TextureImageData : ImageData
 
       local transform = Display.transform
 
+      z += Display.z
+
       local w = size.x
       local h = size.y
       local quad = Quad<<XYZW>>(
-        transform * XYZ( 0, 0, 0 ),
-        transform * XYZ( w, 0, 0 ),
-        transform * XYZ( w, h, 0 ),
-        transform * XYZ( 0, h, 0 ) )
+        transform * XYZ( 0, 0, z ),
+        transform * XYZ( w, 0, z ),
+        transform * XYZ( w, h, z ),
+        transform * XYZ( 0, h, z ) )
 
       local _uv = Quad( uv1, XY(uv2.x,uv1.y), uv2, XY(uv1.x,uv2.y) )
       if (image.hflip) _uv = Quad( _uv.b, _uv.a, _uv.d, _uv.c )

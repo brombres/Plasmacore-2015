@@ -56,7 +56,7 @@ class Display [singleton]
 
     background_color = Color.BLACK : Color
 
-    z                 = default_z : Real64
+    z                      = default_z : Real64
 
     custom_shader          : Shader
     active_render_mode     : RenderMode

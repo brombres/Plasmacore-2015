@@ -1,0 +1,122 @@
+module Plasmacore
+
+class Entity
+  PROPERTIES
+    parent     : Entity
+    children   : Entity[]
+    name       = ""
+    position   : XY
+    size       : XY
+    scale      = XY(1,1)
+    z          = 0.0
+    rotation   : Angles
+    opacity    = 1.0
+    is_active  = true
+    components = Component[]
+
+  METHODS
+    method init
+
+    method init( parent )
+
+    method add( component:Component )
+      component.entity = this
+      components.add( component )
+      component.on_attach
+
+    method draw
+      if (not is_active) return
+
+      (forEach in components).on_layout
+
+      if (opacity > 0)
+        (forEach in components).on_draw
+      endIf
+
+      local effective_size = scale * @size
+      local anchor = Anchor.CENTER
+      local handle = XYZ( (anchor.position * effective_size), 0 )
+
+      Display.push_view_transform( Matrix.scale(XYZ(scale,z)) )
+
+      local has_rotation = not rotation.is_zero
+      if (has_rotation)
+        Display.push_view_transform( Quaternion(rotation)->Matrix( handle, XYZ(position,0)) )
+      else
+        Display.push_view_transform( Matrix.translate(XYZ(position,0)-handle) )
+      endIf
+
+      if (children)
+        (forEach in children).draw
+      endIf
+
+      Display.pop_view_transform
+      Display.pop_view_transform
+
+    method remove( component:Component )
+      components.remove( component )
+
+endClass
+
+
+class Component
+  PROPERTIES
+    entity : Entity
+
+  METHODS
+    method on_attach
+
+    method on_draw
+      noAction
+
+    method on_layout
+      noAction
+endClass
+
+
+class ImageComponent : Component
+  PROPERTIES
+    image : Image
+
+  METHODS
+    method init( image )
+
+    method on_attach
+      entity.size = image.size
+
+    method image->Image
+      return @image
+
+    method on_draw
+      local img = image
+      img.position = entity.position
+      img.z = entity.z
+      img.rotation = Angles()
+      img.size = entity.size
+      img.anchor = Anchor.CENTER
+      img.opacity = entity.opacity
+      img.draw
+endClass
+
+
+class ScaleToFitComponent : Component
+  METHODS
+    method on_layout
+      local parent_size = select{ entity.parent:entity.parent.size || Display.size }
+      entity.scale = (parent_size / entity.@size).max
+      entity.position = parent_size / 2
+endClass
+
+
+class ScaleToFillComponent : Component
+  METHODS
+    method on_layout
+      local parent_size = select{ entity.parent:entity.parent.size || Display.size }
+      entity.scale = (parent_size / entity.@size).min
+      entity.position = parent_size / 2
+endClass
+
+
+class ScriptComponent : Component
+  METHODS
+endClass
