@@ -3,7 +3,7 @@ module Plasmacore
 class Screen
   PROPERTIES
     state                 = State(this)
-    layers                = Layer[]
+    #layers                = Layer[]
 
     display               : Display
     is_active             : Logical
@@ -19,9 +19,9 @@ class Screen
     actions  : ActionCmd
 
   METHODS
-    method add( layer:Layer )->this
-      layers.add( layer )
-      return this
+    #method add( layer:Layer )->this
+    #  layers.add( layer )
+    #  return this
 
     method after( e:KeyEvent )
 
@@ -55,13 +55,13 @@ class Screen
     method change_screen( new_screen:Screen )
       new_screen.display = display
       new_screen.on_prepare
-      forEach (layer in new_screen.layers)
-        if (layer.is_visible) layer.on_prepare
-      endForEach
+      #forEach (layer in new_screen.layers)
+      #  if (layer.is_visible) layer.on_prepare
+      #endForEach
       this.on_finish
-      forEach (layer in new_screen.layers)
-        if (layer.is_visible) layer.on_finish
-      endForEach
+      #forEach (layer in new_screen.layers)
+      #  if (layer.is_visible) layer.on_finish
+      #endForEach
       this.is_active = false
       display.screen.mark_images_unused
       display.screen = new_screen
@@ -69,7 +69,7 @@ class Screen
     method collect_texture_names( texture_names=null:StringTable<<Logical>> )->String[]
       ensure texture_names
       collect_texture_names( this, texture_names )
-      collect_texture_names( (forEach in layers), texture_names )
+      #collect_texture_names( (forEach in layers), texture_names )
       return texture_names.keys
 
     method collect_texture_names( obj:Object, texture_names:StringTable<<Logical>> )->String[]
@@ -138,14 +138,14 @@ class Screen
       on( e )
       if (e.is_consumed) return
 
-      if (layers.count)
-        forEach (layer in layers step -1)
-          if (layer.is_visible)
-            layer.on( e )
-            if (e.is_consumed) return
-          endIf
-        endForEach
-      endIf
+      #if (layers.count)
+      #  forEach (layer in layers step -1)
+      #    if (layer.is_visible)
+      #      layer.on( e )
+      #      if (e.is_consumed) return
+      #    endIf
+      #  endForEach
+      #endIf
 
       after( e )
 
@@ -153,14 +153,14 @@ class Screen
       on( e )
       if (e.is_consumed) return
 
-      if (layers.count)
-        forEach (layer in layers step -1)
-          if (layer.is_visible)
-            layer.on( e )
-            if (e.is_consumed) return
-          endIf
-        endForEach
-      endIf
+      #if (layers.count)
+      #  forEach (layer in layers step -1)
+      #    if (layer.is_visible)
+      #      layer.on( e )
+      #      if (e.is_consumed) return
+      #    endIf
+      #  endForEach
+      #endIf
 
       after( e )
 
@@ -168,14 +168,14 @@ class Screen
       on( e )
       if (e.is_consumed) return
 
-      if (layers.count)
-        forEach (layer in layers step -1)
-          if (layer.is_visible)
-            layer.on( e )
-            if (e.is_consumed) return
-          endIf
-        endForEach
-      endIf
+      #if (layers.count)
+      #  forEach (layer in layers step -1)
+      #    if (layer.is_visible)
+      #      layer.on( e )
+      #      if (e.is_consumed) return
+      #    endIf
+      #  endForEach
+      #endIf
 
       after( e )
 
@@ -183,44 +183,44 @@ class Screen
       on( e )
       if (e.is_consumed) return
 
-      if (layers.count)
-        forEach (layer in layers step -1)
-          if (layer.is_visible)
-            layer.on( e )
-            if (e.is_consumed) return
-          endIf
-        endForEach
-      endIf
+      #if (layers.count)
+      #  forEach (layer in layers step -1)
+      #    if (layer.is_visible)
+      #      layer.on( e )
+      #      if (e.is_consumed) return
+      #    endIf
+      #  endForEach
+      #endIf
 
       after( e )
 
     method handle_draw
       on_draw
-      if (layers.count)
-        forEach (layer in layers)
-          if (layer.is_visible) layer.on_draw
-        endForEach
-      endIf
+      #if (layers.count)
+      #  forEach (layer in layers)
+      #    if (layer.is_visible) layer.on_draw
+      #  endForEach
+      #endIf
       after_draw
 
     method handle_resize
       on_resize
-      if (layers.count)
-        forEach (layer in layers)
-          if (layer.is_visible) layer.on_resize
-        endForEach
-      endIf
+      #if (layers.count)
+      #  forEach (layer in layers)
+      #    if (layer.is_visible) layer.on_resize
+      #  endForEach
+      #endIf
       after_resize
 
     method handle_update
       if (actions) actions = actions.update
       on_update
-      if (layers.count)
-        forEach (layer in layers)
-          if (layer.actions) layer.actions = layer.actions.update
-          if (layer.is_visible) layer.on_update
-        endForEach
-      endIf
+      #if (layers.count)
+      #  forEach (layer in layers)
+      #    if (layer.actions) layer.actions = layer.actions.update
+      #    if (layer.is_visible) layer.on_update
+      #  endForEach
+      #endIf
       after_update
 
     method lighting->Lighting
@@ -275,7 +275,7 @@ class Screen
     method mark_images_unused
       (forEach in collect_textures).should_unload = true
       mark_fonts_unloaded( this )
-      mark_fonts_unloaded( forEach in layers )
+      #mark_fonts_unloaded( forEach in layers )
 
     method mark_fonts_unloaded( obj:Object )
       local type_Font = <<Plasmacore::Font>>
@@ -330,7 +330,7 @@ class Screen
       texture_name_set[ forEach in texture_names ] = false
 
       reload_images( this )
-      reload_images( (forEach in layers) )
+      #reload_images( (forEach in layers) )
 
       # Update used textures
       texture_names = collect_texture_names( texture_name_set )
