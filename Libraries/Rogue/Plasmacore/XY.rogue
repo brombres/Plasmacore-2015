@@ -251,7 +251,7 @@ class XY( x:Real64, y:Real64 ) [compound]
       return this - 2 * (this.dot(surface_normal) * surface_normal)
 
     method rotated( angle:Degrees )->XY [macro]
-      XY( this.magnitude, angle->Radians )
+      XY( this.magnitude, radians + angle->Radians )
 
     method rotated( angle:Radians )->XY
       return XY( magnitude, radians + angle )
