@@ -2,12 +2,96 @@ uses Plasmacore
 
 Display( "Main" ).screen = MainScreen
 
+class Plot : Sprite
+  METHODS
+    method init_object
+      #draggable
+
+    method on( e:PointerEvent )
+
+    method on_drag
+      println position
+endClass
+
+class MainScreen : Screen [singleton]
+  PROPERTIES
+    scene = Scene()
+
+  METHODS
+    method on_start
+      local bg = Background( "background.png", XY(0.60,0.60) ).[ attach(scene) ]
+      local p1 = Plot("plot.png").[position=bg.size/2]
+      local p2 = Plot("plot.png").[position=p1.size]
+      bg.add( p1 )
+      p1.add( p2 )
+      #{
+      local sz = bg.size / 4
+      local holder = Entity( Box(Display.center-sz/2,sz) ).[ attach(bg), draggable ]
+      local start_x = 314
+      local start_y = 620
+      forEach (j in 0..2)
+        local x = start_x
+        local y = start_y
+        forEach (i in 0..2)
+          holder.add( Plot("plot.png").[position=XY(x,y)] )
+          x += 140
+          y += 70
+        endForEach
+        start_x += 140
+        start_y -= 70
+      endForEach
+      }#
+      change_state( IdleState() )
+
+    method on_draw
+      Display.clear( Color.BLUE )
+      scene.draw
+      #scene.apply( (entity)=>entity.bounding_quad.draw(Color.RED) )
+
+    method on_resize
+      # Called when the Display.size changes
+
+    method on_update
+      # Called 60 times a second
+endClass
+
+class MainState : State<<MainScreen>>;
+
+class IdleState : MainState
+  METHODS
+    method on( e:PointerEvent )
+      screen.scene.handle( e )
+      #{
+      if (e.is_press)
+        local entity = screen.scene.find( e.position, &selectable )
+        if (entity) change_state( DragState(entity,e.position) )
+      endIf
+      }#
+endClass
+
+class DragState : MainState
+  PROPERTIES
+    entity : Entity
+    offset : XY
+
+  METHODS
+    method init( entity, position:XY )
+      offset = entity.position - entity.to_parent_local(position)
+
+    method on( e:PointerEvent )
+      if (e.is_move)
+        entity.position = entity.to_parent_local(e.position) + offset
+      elseIf (e.is_release)
+        change_state( IdleState() )
+      endIf
+endClass
+
+#{
 class MainScreen : Screen [singleton]
   PROPERTIES
 
   METHODS
     method on_start
-      trace
       change_state( InitialState() )
 
     method on( e:PointerEvent )
@@ -16,7 +100,6 @@ class MainScreen : Screen [singleton]
 
     method on_resize
       # Called when the Display.size changes
-      trace Display.size
 
     method on_update
       # Called 60 times a second
@@ -46,10 +129,10 @@ class InitialState : State<<MainScreen>>
       Display.clear( Color.BLUE )
 
     method on_resize
-      trace
       # Called when the Display.size changes
 
     method on_update
       # Called 60 times a second
 endClass
 
+}#

@@ -1,122 +1,358 @@
 module Plasmacore
 
 class Entity
+  DEFINITIONS
+    ENABLED    = 1
+    PRESSABLE  = 2
+    SELECTABLE = 4
+    DRAGGABLE  = 8
+
+    DRAG_THRESHOLD = 4
+
+  GLOBAL PROPERTIES
+    selected          : Entity
+    press_position    : XY
+    original_position : XY
+    drag_offset       : XY
+    is_dragging       : Logical
+
   PROPERTIES
-    parent     : Entity
-    children   : Entity[]
-    name       = ""
-    position   : XY
-    size       : XY
-    scale      = XY(1,1)
-    z          = 0.0
-    rotation   : Angles
-    opacity    = 1.0
-    is_active  = true
-    components = Component[]
+    parent        : Entity
+    child         : Entity
+    sibling       : Entity
+    name          = ""
+    position      : XY
+    size          : XY
+    scale         = XY(1,1)
+    z             = 0.0
+    rotation      : Angles
+    opacity       = 1.0
+    attributes    = Entity.ENABLED : Int32
+    anchor        = Anchor.CENTER : Anchor
+    bounding_quad : Quad
+    bounding_box  : Box
 
   METHODS
     method init
 
-    method init( parent )
+    method init( bounds:Box )
+      position = bounds.center
+      size = bounds.size
 
-    method add( component:Component )
-      component.entity = this
-      components.add( component )
-      component.on_attach
+    method add( entity:Entity )
+      if (entity.parent is this) return
 
-    method draw
-      if (not is_active) return
-
-      (forEach in components).on_layout
-
-      if (opacity > 0)
-        (forEach in components).on_draw
+      entity.detach
+      entity.parent = this
+      if (child)
+        local cur = child
+        while (cur.sibling) cur = cur.sibling
+        cur.sibling = entity
+      else
+        child = entity
       endIf
 
-      local effective_size = scale * @size
-      local anchor = Anchor.CENTER
-      local handle = XYZ( (anchor.position * effective_size), 0 )
+    method apply( fn:Function(Entity) )
+      fn( this )
+      local cur = child
+      while (cur)
+        cur.apply( fn )
+        cur = cur.sibling
+      endWhile
 
-      Display.push_view_transform( Matrix.scale(XYZ(scale,z)) )
+    method attach( parent:Entity )
+      parent.add( this )
+
+    method detach
+      if (not parent) return
+
+      if (parent.child is this)
+        parent.child = this.sibling
+      else
+        local cur = parent.child
+        while (cur.sibling)
+          if (cur.sibling is this)
+            cur.sibling = this.sibling
+            escapeWhile
+          endIf
+          cur = cur.sibling
+        endWhile
+      endIf
+
+      parent = null
+      sibling = null
+
+    method draggable
+      attributes |= DRAGGABLE
+      if (not (attributes & (PRESSABLE | SELECTABLE))) attributes |= SELECTABLE
+
+    method draw
+      if (not is_enabled) return
+
+      on_draw
+
+      if (child)
+        push_transform
+
+        local cur = child
+        while (cur)
+          cur.draw
+          cur = cur.sibling
+        endWhile
+
+        pop_transform
+      endIf
+
+    method handle( e:PointerEvent )
+      if (not bounding_box.contains(e.position)) return
+
+      if (child)
+        local cur = child
+        while (cur)
+          cur.handle( e )
+          if (e.is_consumed) return
+          cur = cur.sibling
+        endWhile
+      endIf
+
+      if (not bounding_quad.contains(e.position)) return
+
+      if (Entity.selected is null and e.is_press)
+        if (this.is_pressable or this.is_selectable)
+          Entity.selected = this
+          Entity.press_position = e.position
+          Entity.original_position = this.position
+          Entity.drag_offset = position - this.to_parent_local(e.position)
+          if (this.is_pressable)
+            # 'pressable' starts dragging right away; 'selectable' waits until threshold exceeded
+            Entity.is_dragging = true
+            Entity.selected.position = Entity.selected.to_parent_local( e.position ) + Entity.drag_offset
+            on_drag
+          else
+            Entity.is_dragging = false
+          endIf
+        endIf
+      endIf
+
+      on( e )
+
+    method is_enabled->Logical [macro]
+      return (attributes & ENABLED)
+
+    method is_draggable->Logical [macro]
+      return (attributes & DRAGGABLE)
+
+    method is_pressable->Logical [macro]
+      return (attributes & PRESSABLE)
+
+    method is_selectable->Logical [macro]
+      return (attributes & SELECTABLE)
+
+    method on( e:PointerEvent )
+
+    method on_drag
+
+    method on_draw
+      bounding_box = Box( position, size ).relative_to( anchor )
+      bounding_quad = bounding_box->Quad
+
+    method pressable
+      attributes |= PRESSABLE
+
+    method push_transform
+      local handle = XYZ( (anchor.position * scale * size), 0 )
 
       local has_rotation = not rotation.is_zero
       if (has_rotation)
-        Display.push_view_transform( Quaternion(rotation)->Matrix( handle, XYZ(position,0)) )
+        Display.push_view_transform( Quaternion(rotation)->Matrix( handle, XYZ(position,z)) )
       else
-        Display.push_view_transform( Matrix.translate(XYZ(position,0)-handle) )
+        Display.push_view_transform( Matrix.translate(XYZ(position,z)-handle) )
       endIf
 
-      if (children)
-        (forEach in children).draw
-      endIf
+      Display.push_view_transform( Matrix.scale(XYZ(scale,1)) )
 
+    method pop_transform
       Display.pop_view_transform
       Display.pop_view_transform
 
-    method remove( component:Component )
-      components.remove( component )
+      #{
+    method find( xy:XY, &selectable )->Entity
+      if (not bounding_box.contains(xy)) return null
+
+      if (child)
+        local cur = child
+        while (cur)
+          local result = cur.find( xy, &=selectable )
+          if (result) return result
+          cur = cur.sibling
+        endWhile
+      endIf
+
+      if (selectable and not is_selectable) return null
+      if (not bounding_quad.contains(xy)) return null
+      return this
+      }#
+
+    method replace_with( other:Entity )
+      if (child) other.add( child ); child = null
+
+      local cur = other
+      while (cur.sibling) cur = cur.sibling
+      cur.sibling = sibling
+      sibling = null
+
+      if (parent)
+        if (parent.child is this)
+          parent.child = other
+        else
+          cur = parent.child
+          while (cur.sibling and cur.sibling is not this) cur = cur.sibling
+          cur.sibling = this
+        endIf
+        parent = null
+      endIf
+
+
+    method selectable
+      attributes |= SELECTABLE
+
+    method set_rotation( @rotation )
+
+    method set_rotation( new_angle:Radians )
+      @rotation = Angles( rotation.x, rotation.y, new_angle )
+
+    method set_rotation( new_angle:Degrees )
+      @rotation = Angles( rotation.x, rotation.y, new_angle )
+
+    method to->String
+      if (name.count) return name
+      return type_name
+
+    method to_local( xy:XY )->XY
+      if (parent) xy = parent.to_local( xy )
+      xy = (xy - position) / scale
+      if (rotation.z.value) xy = xy.rotated( -rotation.z )
+      return xy + anchor.position * size
+
+    method to_parent_local( xy:XY )->XY
+      if (parent) return parent.to_local( xy )
+      return to_local( xy )
 
 endClass
 
 
-class Component
+class DragAndDrop
+endClass
+
+
+class Scene : Entity
   PROPERTIES
-    entity : Entity
+    is_fullscreen : Logical
 
   METHODS
-    method on_attach
+    method init
+      is_fullscreen = true
+
+    method handle( e:PointerEvent )
+      if (Entity.selected)
+        if (e.is_move)
+          contingent
+            sufficient (Entity.is_dragging)
+            necessary (Entity.selected.is_draggable)
+            necessary ((e.position - press_position).has_magnitude_greater_than(DRAG_THRESHOLD))
+          satisfied
+            Entity.is_dragging = true
+            Entity.selected.position = Entity.selected.to_parent_local( e.position ) + Entity.drag_offset
+            Entity.selected.on_drag
+          endContingent
+        elseIf (e.is_release)
+          Entity.selected = null
+        endIf
+      endIf
+
+      prior.handle( e )
 
     method on_draw
-      noAction
+      if (is_fullscreen)
+        size = Display.size
+        position = Display.center
+      endIf
+      prior.on_draw
 
-    method on_layout
-      noAction
+      bounding_box  = Box( 0, 0, Display.size )
+      bounding_quad = bounding_box->Quad
+
 endClass
 
 
-class ImageComponent : Component
+class Sprite : Entity
   PROPERTIES
     image : Image
 
   METHODS
     method init( image )
+      size = image.size
 
-    method on_attach
-      entity.size = image.size
+    method init( image_name:String )
+      init( Image(image_name) )
 
     method image->Image
       return @image
 
+    method on( e:PointerEvent )
+
     method on_draw
       local img = image
-      img.position = entity.position
-      img.z = entity.z
-      img.rotation = Angles()
-      img.size = entity.size
-      img.anchor = Anchor.CENTER
-      img.opacity = entity.opacity
+      prepare_image( img )
       img.draw
+      bounding_quad = Image.last_rendered_quad
+      bounding_box  = bounding_quad->Box
+
+    method prepare_image( img:Image )
+      img.position = position
+      img.z = z
+      img.rotation = rotation
+      img.size = size
+      img.scale = scale
+      img.anchor = anchor
+      img.opacity = opacity
+
 endClass
 
 
-class ScaleToFitComponent : Component
+class Background : Sprite
+  ENUMERATE
+    FIT
+    FILL
+
+  PROPERTIES
+    style : Int32
+    essential_content = XY(1.0,1.0)
+
   METHODS
-    method on_layout
-      local parent_size = select{ entity.parent:entity.parent.size || Display.size }
-      entity.scale = (parent_size / entity.@size).max
-      entity.position = parent_size / 2
+    method init( image, essential_content=XY(1,1), style=Background.FILL )
+      size = image.original_size
+
+    method init( image_name:String, essential_content=XY(1,1), style=Background.FILL )
+      init( Image(image_name), essential_content, style )
+
+    method prepare_image( img:Image )
+      which (style)
+        case FIT
+          local parent_size = select{ parent:parent.size || Display.size }
+          position = parent_size / 2
+          scale = (parent_size / img.original_size).min
+
+        case FILL
+          local parent_size = select{ parent:parent.size || Display.size }
+          position = parent_size / 2
+          local essential_scale = (parent_size / (img.original_size*essential_content)).min
+          local whole_scale = (parent_size / img.original_size).max
+          scale = essential_scale.or_larger( whole_scale )
+      endWhich
+
+      anchor = Anchor.CENTER
+      prior.prepare_image( img )
 endClass
 
 
-class ScaleToFillComponent : Component
-  METHODS
-    method on_layout
-      local parent_size = select{ entity.parent:entity.parent.size || Display.size }
-      entity.scale = (parent_size / entity.@size).min
-      entity.position = parent_size / 2
-endClass
-
-
-class ScriptComponent : Component
-  METHODS
-endClass

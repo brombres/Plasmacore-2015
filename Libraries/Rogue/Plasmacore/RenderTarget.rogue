@@ -112,7 +112,7 @@ class RenderTarget
 
     method push_object_transform( m:Matrix )
       if (object_transforms.count)
-        object_transforms.add( object_transforms.first * m )
+        object_transforms.add( object_transforms.last * m )
       else
         object_transforms.add( m )
       endIf
@@ -229,9 +229,9 @@ class RenderTarget
         if (view_transform_modified)
           view_transform_modified = false
           if (view_transforms.count)
-            view_transform = view_transforms.last
-            forEach (i in view_transforms.count-2 downTo 0)
-              view_transform = view_transform * view_transforms[i]
+            view_transform = view_transforms.first
+            forEach (t in view_transforms from 1)
+              view_transform *= t
             endForEach
           endIf
         endIf

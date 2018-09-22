@@ -20,6 +20,9 @@ class ImageShader
 endClass
 
 class Image
+  GLOBAL PROPERTIES
+    last_rendered_quad : Quad
+
   PROPERTIES
     name          : String
     image_info    : ImageInfo
@@ -499,6 +502,9 @@ class ColorFillImageData : ImageData [singleton]
 
       Display.fill_solid_quad( quad, image.colors.with_opacity(image.opacity), image.selected_render_mode, image.selected_shader )
 
+      local m = Display.world_transform
+      Image.last_rendered_quad = Quad( m*XY(0,0), m*XY(w,0), m*XY(w,h), m*XY(0,h) )
+
       Display.pop_object_transform
 
 endClass
@@ -554,6 +560,9 @@ class TextureImageData : ImageData
 
       Display.fill_textured_quad( @texture, quad, image.colors.with_opacity(image.opacity),
         _uv, image.selected_render_mode, image.selected_shader )
+
+      local m = Display.world_transform
+      Image.last_rendered_quad = Quad( m*XY(0,0), m*XY(w,0), m*XY(w,h), m*XY(0,h) )
 
       Display.pop_object_transform
 
