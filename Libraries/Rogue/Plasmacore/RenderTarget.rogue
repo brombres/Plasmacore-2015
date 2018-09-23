@@ -121,7 +121,12 @@ class RenderTarget
       transform_modified = true
 
     method push_view_transform( m:Matrix )
-      view_transforms.add( m )
+      if (view_transforms.count)
+        view_transforms.add( view_transforms.last * m )
+      else
+        view_transforms.add( m )
+      endIf
+      @view_transform = view_transforms.last
       view_transform_modified = true
       transform_modified = true
 
@@ -135,13 +140,13 @@ class RenderTarget
       else                         object_transform = Matrix.identity
 
     method pop_view_transform( n=1:Int32 )
-      forEach (1..n)
-        if (view_transforms.count)
-          view_transforms.remove_last
-          view_transform_modified = true
-          transform_modified = true
-        endIf
+      forEach (1..n.or_smaller(view_transforms.count))
+        view_transforms.remove_last
       endForEach
+      view_transform_modified = true
+      transform_modified = true
+      if (view_transforms.count) view_transform = view_transforms.last
+      else                       view_transform = Matrix.identity
 
     method scale_to_fit( w:Int32, h:Int32, target_anchor )
       scale_to_fit( XY(w,h), target_anchor )
@@ -225,17 +230,6 @@ class RenderTarget
 
       if (view_transform_modified or object_transform_modified)
         object_transform_modified = false
-
-        if (view_transform_modified)
-          view_transform_modified = false
-          if (view_transforms.count)
-            view_transform = view_transforms.first
-            forEach (t in view_transforms from 1)
-              view_transform *= t
-            endForEach
-          endIf
-        endIf
-
         if (view_transforms.count)
           if (object_transforms.count)
             world_transform = view_transform * object_transform
