@@ -590,9 +590,6 @@ class Display [singleton]
     method is_rendering_offscreen->Logical
       return (render_target is not default_render_target)
 
-    method object_transform->Matrix
-      return render_target.update_transform.object_transform
-
     method on_graphics_lost
       # Unload all textures
       forEach (texture in texture_list step -1) texture.unload
@@ -610,9 +607,6 @@ class Display [singleton]
           if (shader) type_info.set_property<<Shader>>( this, p, null )
         endIf
       endForEach
-
-    method world_transform->Matrix
-      return render_target.update_transform.world_transform
 
     method offset->XY
       return render_target.offset
@@ -911,8 +905,8 @@ class Display [singleton]
       # Obtains the state of this Display's current screen.
       return this.screen.state
 
-    method transform->Matrix
-      return render_target.update_transform.transform
+    method transform->Matrix [macro]
+      return this.render_target.transform
 
     method transform( quad:Quad )->Quad<<XYZW>>
       local t = transform
@@ -942,14 +936,14 @@ class Display [singleton]
     method true_width->Int32 [macro]
       return this.true_size.x->Int32
 
-    method view_transform->Matrix
-      return render_target.update_transform.view_transform
-
     method viewport_size->XY [macro]
       return this.render_target.viewport_size
 
     method width->Int32 [macro]
       return this.size.x->Int32
+
+    method world_transform->Matrix [macro]
+      return this.render_target.world_transform
 
 endClass
 

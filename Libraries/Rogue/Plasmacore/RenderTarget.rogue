@@ -37,7 +37,7 @@ class RenderTarget
 
     transform_modified        : Logical
     view_transform_modified   : Logical
-    object_transform_modified : Logical
+    world_transform_modified : Logical
 
     is_offscreen          : Logical
 
@@ -55,8 +55,7 @@ class RenderTarget
       Display.flush
       object_transforms.clear
       view_transforms.clear
-      view_transform_modified = true
-      object_transform_modified = true
+      world_transform_modified = true
       transform_modified = true
 
     method activate
@@ -117,7 +116,7 @@ class RenderTarget
         object_transforms.add( m )
       endIf
       @object_transform = object_transforms.last
-      object_transform_modified = true
+      world_transform_modified = true
       transform_modified = true
 
     method push_view_transform( m:Matrix )
@@ -127,26 +126,26 @@ class RenderTarget
         view_transforms.add( m )
       endIf
       @view_transform = view_transforms.last
-      view_transform_modified = true
+      world_transform_modified = true
       transform_modified = true
 
     method pop_object_transform( n=1:Int32 )
       forEach (1..n.or_smaller(object_transforms.count))
         object_transforms.remove_last
       endForEach
-      object_transform_modified = true
-      transform_modified = true
       if (object_transforms.count) object_transform = object_transforms.last
       else                         object_transform = Matrix.identity
+      world_transform_modified = true
+      transform_modified = true
 
     method pop_view_transform( n=1:Int32 )
       forEach (1..n.or_smaller(view_transforms.count))
         view_transforms.remove_last
       endForEach
-      view_transform_modified = true
-      transform_modified = true
       if (view_transforms.count) view_transform = view_transforms.last
       else                       view_transform = Matrix.identity
+      world_transform_modified = true
+      transform_modified = true
 
     method scale_to_fit( w:Int32, h:Int32, target_anchor )
       scale_to_fit( XY(w,h), target_anchor )
@@ -225,28 +224,31 @@ class RenderTarget
         projection_mode.update
       endIf
 
-    method update_transform->this
-      if (not transform_modified) return this
+    method transform->Matrix
+      if (transform_modified)
+        transform_modified = false
+        transform = projection_transform * world_transform
+      endIf
+      return @transform
 
-      if (view_transform_modified or object_transform_modified)
-        object_transform_modified = false
-        if (view_transforms.count)
-          if (object_transforms.count)
-            world_transform = view_transform * object_transform
-          else
-            world_transform = view_transform
-          endIf
+    method world_transform->Matrix
+      if (not world_transform_modified) return @world_transform
+
+      world_transform_modified = false
+      if (view_transforms.count)
+        if (object_transforms.count)
+          world_transform = view_transform * object_transform
         else
-          if (object_transforms.count)
-            world_transform = object_transform
-          else
-            world_transform = Matrix.identity
-          endIf
+          world_transform = view_transform
+        endIf
+      else
+        if (object_transforms.count)
+          world_transform = object_transform
+        else
+          world_transform = Matrix.identity
         endIf
       endIf
 
-      transform = projection_transform * world_transform
-      transform_modified = false
-      return this
+      return @world_transform
 
 endClass
