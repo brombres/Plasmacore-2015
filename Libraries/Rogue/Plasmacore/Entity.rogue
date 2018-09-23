@@ -39,8 +39,10 @@ class Entity
       position = bounds.center
       size = bounds.size
 
-    method add( entity:Entity )
+    method add( entity:Entity, &translate )
       if (entity.parent is this) return
+
+      if (translate) entity.position = entity.to_parent_screen( entity.position )
 
       entity.detach
       entity.parent = this
@@ -52,16 +54,21 @@ class Entity
         child = entity
       endIf
 
+      if (translate) entity.position = entity.to_parent_local( entity.position )
+
     method apply( fn:Function(Entity) )
       fn( this )
+      apply_to_children( fn )
+
+    method apply_to_children( fn:Function(Entity) )
       local cur = child
       while (cur)
         cur.apply( fn )
         cur = cur.sibling
       endWhile
 
-    method attach( parent:Entity )
-      parent.add( this )
+    method attach( parent:Entity, &translate )
+      parent.add( this, &=translate )
 
     method detach
       if (not parent) return
@@ -137,24 +144,22 @@ class Entity
       on( e )
 
     method is_enabled->Logical [macro]
-      return (attributes & ENABLED)
+      return (this.attributes & Entity.ENABLED)
 
     method is_draggable->Logical [macro]
-      return (attributes & DRAGGABLE)
+      return (this.attributes & Entity.DRAGGABLE)
 
     method is_pressable->Logical [macro]
-      return (attributes & PRESSABLE)
+      return (this.attributes & Entity.PRESSABLE)
 
     method is_selectable->Logical [macro]
-      return (attributes & SELECTABLE)
+      return (this.attributes & Entity.SELECTABLE)
 
     method on( e:PointerEvent )
 
     method on_drag
 
     method on_draw
-      bounding_box = Box( position, size ).relative_to( anchor )
-      bounding_quad = bounding_box->Quad
 
     method pressable
       attributes |= PRESSABLE
@@ -216,6 +221,10 @@ class Entity
     method selectable
       attributes |= SELECTABLE
 
+    method set_enabled( setting:Logical )
+      if (setting) attributes |=  Entity.ENABLED
+      else         attributes &= !Entity.ENABLED
+
     method set_rotation( @rotation )
 
     method set_rotation( new_angle:Radians )
@@ -236,7 +245,37 @@ class Entity
 
     method to_parent_local( xy:XY )->XY
       if (parent) return parent.to_local( xy )
-      return to_local( xy )
+      return xy
+
+    method to_screen( xy:XY )->XY
+      xy -= anchor.position * size
+      if (rotation.z.value) xy = xy.rotated( rotation.z )
+      xy *= scale
+      xy += position
+      if (parent) xy = parent.to_screen( xy )
+      return xy
+
+    method to_parent_screen( xy:XY )->XY
+      if (parent) return parent.to_screen( xy )
+      return xy
+
+    method _update_bounds
+      if (not is_enabled) return
+
+      push_transform
+
+      bounding_quad = Box( 0, 0, size ).transform( Display.world_transform )
+      bounding_box  = bounding_quad->Box
+
+      if (child)
+        local cur = child
+        while (cur)
+          cur._update_bounds
+          cur = cur.sibling
+        endWhile
+      endIf
+
+      pop_transform
 
 endClass
 
@@ -279,9 +318,8 @@ class Scene : Entity
       endIf
       prior.on_draw
 
-      bounding_box  = Box( 0, 0, Display.size )
-      bounding_quad = bounding_box->Quad
-
+    method update_bounds
+      _update_bounds
 endClass
 
 
@@ -305,8 +343,6 @@ class Sprite : Entity
       local img = image
       prepare_image( img )
       img.draw
-      bounding_quad = Image.last_rendered_quad
-      bounding_box  = bounding_quad->Box
 
     method prepare_image( img:Image )
       img.position = position
@@ -331,6 +367,7 @@ class Background : Sprite
 
   METHODS
     method init( image, essential_content=XY(1,1), style=Background.FILL )
+      prior.init( image )
       size = image.original_size
 
     method init( image_name:String, essential_content=XY(1,1), style=Background.FILL )

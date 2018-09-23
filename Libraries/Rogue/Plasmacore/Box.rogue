@@ -220,7 +220,7 @@ $endIf
       return Quad( this )
 
     method to->String
-      return "[@$,$ $x$]" (x.format,y.format,width.format,height.format)
+      return "[@$,$ $x$]" (x.format(".2"),y.format(".2"),width.format(".2"),height.format(".2"))
 
     method to->Value( &integer )
       if (integer)

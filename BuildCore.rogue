@@ -1,4 +1,4 @@
-$define PLASMACORE_VERSION "0.9.3 (5)"
+$define PLASMACORE_VERSION "0.9.3 (6)"
 
 #$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
 
@@ -567,6 +567,7 @@ try
     endWhile
     println "ERROR: No such command '$'." (args.first)
     println
+    System.command_line_arguments.clear
     rogo_help
   else
     rogo_default

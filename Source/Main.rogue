@@ -19,29 +19,47 @@ class MainScreen : Screen [singleton]
 
   METHODS
     method on_start
-      local bg = Background( "background.png", XY(0.60,0.60) ).[ attach(scene) ]
-      local p1 = Plot("plot.png").[position=bg.size/2]
-      local p2 = Plot("plot.png").[position=p1.size]
-      bg.add( p1 )
-      p1.add( p2 )
-      #{
+      local bg = Background( "background_reference.png", XY(0.60,0.60) ).[ attach(scene) ]
       local sz = bg.size / 4
-      local holder = Entity( Box(Display.center-sz/2,sz) ).[ attach(bg), draggable ]
-      local start_x = 314
-      local start_y = 620
+      local start_x = 614
+      local start_y = 759
       forEach (j in 0..2)
         local x = start_x
         local y = start_y
         forEach (i in 0..2)
-          holder.add( Plot("plot.png").[position=XY(x,y)] )
-          x += 140
-          y += 70
+          bg.add( Plot("plot_blocked.png").[position=XY(x,y)] )
+          x -= 134
+          y -= 72
         endForEach
-        start_x += 140
-        start_y -= 70
+        start_x += 134
+        start_y -= 72
       endForEach
-      }#
+
+      scene.update_bounds
+
+      local box = Boxed<<Box>>( scene.child.child.bounding_box )
+      scene.child.apply_to_children( (entity) with (box) => box.value |= entity.bounding_box )
+
+      local holder = Entity( box.value ).[ draggable ]
+trace box.value
+      bg.add( holder, &translate )
+trace holder.position
+      holder.add( scene.child.child, &translate )
+
       change_state( IdleState() )
+
+    method on( e:KeyEvent )
+      if (e.is_press(Keycode.LEFT_ARROW))  shift_plots( XY(-1,0) )
+      if (e.is_press(Keycode.RIGHT_ARROW)) shift_plots( XY(1,0) )
+      if (e.is_press(Keycode.UP_ARROW))    shift_plots( XY(0,-1) )
+      if (e.is_press(Keycode.DOWN_ARROW))  shift_plots( XY(0,1) )
+      if (e.is_press(Keycode.V))
+        local setting = not scene.child.child.is_enabled
+        scene.child.apply_to_children( (entity) with (setting) => entity.enabled = setting )
+      endIf
+
+    method shift_plots( delta:XY )
+      scene.child.apply_to_children( (entity) with (delta) => entity.position += delta )
 
     method on_draw
       Display.clear( Color.BLUE )

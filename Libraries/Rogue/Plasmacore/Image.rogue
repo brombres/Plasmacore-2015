@@ -447,8 +447,6 @@ class CompositeImageData : ImageData
       local size = image.scale * image.@size
       local handle = XYZ( (image.anchor.position * size), 0 )
 
-      Display.push_view_transform( Matrix.scale(XYZ(image.scale,1)) )
-
       local pos = image.position
       local has_rotation = not image.rotation.is_zero
       if (has_rotation)
@@ -456,6 +454,8 @@ class CompositeImageData : ImageData
       else
         Display.push_view_transform( Matrix.translate(XYZ(pos,0)-handle) )
       endIf
+
+      Display.push_view_transform( Matrix.scale(XYZ(image.scale,1)) )
 
       if (images)
         forEach (piece in images) piece.draw
