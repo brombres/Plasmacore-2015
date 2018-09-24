@@ -2,35 +2,36 @@ module Plasmacore
 
 class Entity
   DEFINITIONS
-    ENABLED    = 1
-    PRESSABLE  = 2
-    SELECTABLE = 4
-    DRAGGABLE  = 8
+    ENABLED         = 1
+    PRESSABLE       = 2
+    SELECTABLE      = 4
+    DRAGGABLE       = 8
 
     DRAG_THRESHOLD = 4
 
   GLOBAL PROPERTIES
-    selected          : Entity
-    press_position    : XY
-    original_position : XY
-    drag_offset       : XY
-    is_dragging       : Logical
+    selected            : Entity
+    press_position      : XY
+    original_position   : XY
+    drag_offset         : XY
+    is_dragging         : Logical
+    any_bounds_modified : Logical
 
   PROPERTIES
-    parent        : Entity
-    child         : Entity
-    sibling       : Entity
-    name          = ""
-    position      : XY
-    size          : XY
-    scale         = XY(1,1)
-    z             = 0.0
-    rotation      : Angles
-    opacity       = 1.0
-    attributes    = Entity.ENABLED : Int32
-    anchor        = Anchor.CENTER : Anchor
-    bounding_quad : Quad
-    bounding_box  : Box
+    parent          : Entity
+    child           : Entity
+    sibling         : Entity
+    name            = ""
+    position        : XY
+    size            : XY
+    scale           = XY(1,1)
+    rotation        : Angles
+    z               = 0.0
+    opacity         = 1.0
+    attributes      = Entity.ENABLED : Int32
+    anchor          = Anchor.CENTER : Anchor
+    bounding_quad   : Quad
+    bounding_box    : Box
 
   METHODS
     method init
@@ -69,6 +70,27 @@ class Entity
 
     method attach( parent:Entity, &translate )
       parent.add( this, &=translate )
+
+    method bounding_box->Box
+      if (any_bounds_modified) update_bounds
+      return @bounding_box
+
+    method bounding_quad->Quad
+      if (any_bounds_modified) update_bounds
+      return @bounding_quad
+
+    method child_bounds->Box?
+      if (not child) return null
+      return child.child_bounds( null )
+
+    method child_bounds( box:Box? )->Box?
+      if (not size.is_zero)
+        if (box.exists) box = box.value | bounding_box
+        else            box = bounding_box
+      endIf
+      if (sibling) box = sibling.child_bounds( box )
+      if (child) box = child.child_bounds( box )
+      return box
 
     method detach
       if (not parent) return
@@ -217,7 +239,6 @@ class Entity
         parent = null
       endIf
 
-
     method selectable
       attributes |= SELECTABLE
 
@@ -225,13 +246,53 @@ class Entity
       if (setting) attributes |=  Entity.ENABLED
       else         attributes &= !Entity.ENABLED
 
-    method set_rotation( @rotation )
+    method set_anchor( new_anchor:Anchor )
+      if (new_anchor != anchor)
+        @anchor = new_anchor
+        any_bounds_modified = true
+      endIf
+
+    method set_position( new_position:XY )
+      if (new_position != position)
+        @position = new_position
+        any_bounds_modified = true
+      endIf
+
+    method set_rotation( new_rotation:Angles )
+      if (new_rotation != rotation)
+        @rotation = new_rotation
+        any_bounds_modified = true
+      endIf
 
     method set_rotation( new_angle:Radians )
-      @rotation = Angles( rotation.x, rotation.y, new_angle )
+      set_rotation( new_angle->Degrees )
 
     method set_rotation( new_angle:Degrees )
-      @rotation = Angles( rotation.x, rotation.y, new_angle )
+      if (new_angle != rotation.z)
+        @rotation = Angles( rotation.x, rotation.y, new_angle )
+        any_bounds_modified = true
+      endIf
+
+    method set_scale( new_scale:Real64 )
+      set_scale( XY(new_scale,new_scale) )
+
+    method set_scale( new_scale:XY )
+      if (new_scale != scale)
+        @scale = new_scale
+        any_bounds_modified = true
+      endIf
+
+    method set_size( new_size:XY )
+      if (new_size != size)
+        @size = new_size
+        any_bounds_modified = true
+      endIf
+
+    method set_z( new_z:Real64 )
+      if (new_z != z)
+        @z = new_z
+        any_bounds_modified = true
+      endIf
 
     method to->String
       if (name.count) return name
@@ -259,13 +320,26 @@ class Entity
       if (parent) return parent.to_screen( xy )
       return xy
 
+    method update_bounds
+      if (parent)
+        parent.update_bounds
+      elseIf (any_bounds_modified)
+        any_bounds_modified = false
+        _update_bounds
+      endIf
+
     method _update_bounds
       if (not is_enabled) return
 
-      push_transform
+      if (size.is_zero)
+        bounding_box = Box(0,0,0,0)
+        bounding_quad = @bounding_box->Quad
+      else
+        bounding_quad = Box( position, size ).relative_to( anchor ).transform( Display.world_transform )
+        bounding_box  = @bounding_quad->Box
+      endIf
 
-      bounding_quad = Box( 0, 0, size ).transform( Display.world_transform )
-      bounding_box  = bounding_quad->Box
+      push_transform
 
       if (child)
         local cur = child
@@ -276,7 +350,6 @@ class Entity
       endIf
 
       pop_transform
-
 endClass
 
 
@@ -317,9 +390,6 @@ class Scene : Entity
         position = Display.center
       endIf
       prior.on_draw
-
-    method update_bounds
-      _update_bounds
 endClass
 
 
@@ -369,26 +439,30 @@ class Background : Sprite
     method init( image, essential_content=XY(1,1), style=Background.FILL )
       prior.init( image )
       size = image.original_size
+      compute_bounds
 
     method init( image_name:String, essential_content=XY(1,1), style=Background.FILL )
       init( Image(image_name), essential_content, style )
 
-    method prepare_image( img:Image )
+    method compute_bounds
       which (style)
         case FIT
           local parent_size = select{ parent:parent.size || Display.size }
           position = parent_size / 2
-          scale = (parent_size / img.original_size).min
+          scale = (parent_size / size).min
 
         case FILL
           local parent_size = select{ parent:parent.size || Display.size }
           position = parent_size / 2
-          local essential_scale = (parent_size / (img.original_size*essential_content)).min
-          local whole_scale = (parent_size / img.original_size).max
+          local essential_scale = (parent_size / (size*essential_content)).min
+          local whole_scale = (parent_size / size).max
           scale = essential_scale.or_larger( whole_scale )
       endWhich
 
       anchor = Anchor.CENTER
+
+    method prepare_image( img:Image )
+      compute_bounds
       prior.prepare_image( img )
 endClass
 

@@ -16,11 +16,11 @@ endClass
 class MainScreen : Screen [singleton]
   PROPERTIES
     scene = Scene()
+    holder : Entity
 
   METHODS
     method on_start
       local bg = Background( "background_reference.png", XY(0.60,0.60) ).[ attach(scene) ]
-      local sz = bg.size / 4
       local start_x = 614
       local start_y = 759
       forEach (j in 0..2)
@@ -35,16 +35,9 @@ class MainScreen : Screen [singleton]
         start_y -= 72
       endForEach
 
-      scene.update_bounds
-
-      local box = Boxed<<Box>>( scene.child.child.bounding_box )
-      scene.child.apply_to_children( (entity) with (box) => box.value |= entity.bounding_box )
-
-      local holder = Entity( box.value ).[ draggable ]
-trace box.value
+      holder = Entity( bg.child_bounds.value ).[ draggable ]
       bg.add( holder, &translate )
-trace holder.position
-      holder.add( scene.child.child, &translate )
+      loop (9) holder.add( scene.child.child, &translate )
 
       change_state( IdleState() )
 
@@ -65,6 +58,8 @@ trace holder.position
       Display.clear( Color.BLUE )
       scene.draw
       #scene.apply( (entity)=>entity.bounding_quad.draw(Color.RED) )
+      #scene.child.child.bounding_box.draw( Color.RED )
+      #holder.bounding_box.draw( Color.RED )
 
     method on_resize
       # Called when the Display.size changes

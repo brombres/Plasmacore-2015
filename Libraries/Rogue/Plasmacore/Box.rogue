@@ -208,8 +208,8 @@ $if (not target("Console"))
       return Quad(
         m * top_left,
         m * top_right,
-        m * bottom_left,
-        m * bottom_right
+        m * bottom_right,
+        m * bottom_left
       )
 
     method transformed( m:Matrix )->Box
