@@ -46,6 +46,9 @@ class Angles( x:Degrees, y:Degrees, z:Degrees ) [compound]
     method operator-()->Angles
       return Angles( -x, -y, -z )
 
+    method operator==( other:Angles )->Logical
+      return (x == other.x and y == other.y and z == other.z)
+
     method rotated_x( degrees:Degrees )->Angles
       return (Quaternion(this) * Quaternion(Angles.x(degrees)))->Angles
 
