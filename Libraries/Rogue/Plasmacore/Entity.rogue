@@ -32,6 +32,7 @@ class Entity
     anchor          = Anchor.CENTER : Anchor
     bounding_quad   : Quad
     bounding_box    : Box
+    layer_mask      : Int32
 
   METHODS
     method init
@@ -39,6 +40,16 @@ class Entity
     method init( bounds:Box )
       position = bounds.center
       size = bounds.size
+
+    method init_object
+      if (this not instanceOf Scene)
+        if (Scene.current and (Scene.current.default_layer or Scene.current.layers.count <= 1))
+          if (Scene.current.layers.is_empty) Scene.current.add( Layer("default") )
+
+          if (Scene.current.default_layer)   layer_mask = Scene.current.default_layer.mask
+          else                               layer_mask = Scene.current.layers.first.mask
+        endIf
+      endIf
 
     method add( entity:Entity, &translate )
       if (entity.parent is this) return
@@ -115,36 +126,43 @@ class Entity
       attributes |= DRAGGABLE
       if (not (attributes & (PRESSABLE | SELECTABLE))) attributes |= SELECTABLE
 
-    method draw
+    method draw( layer:Layer )
       if (not is_enabled) return
 
-      on_draw
+      if (layer_mask & layer.mask) on_draw( layer )
 
       if (child)
         push_transform
 
         local cur = child
         while (cur)
-          cur.draw
+          cur.draw( layer )
           cur = cur.sibling
         endWhile
 
         pop_transform
       endIf
 
-    method handle( e:PointerEvent )
-      if (not bounding_box.contains(e.position)) return
-
-      if (child)
-        local cur = child
-        while (cur)
-          cur.handle( e )
-          if (e.is_consumed) return
-          cur = cur.sibling
-        endWhile
+    method handle( e:PointerEvent, mask:Int32 )
+      if (sibling)
+        sibling.handle( e, mask )
+        if (e.is_consumed) return
       endIf
 
+      if (child)
+        child.handle( e, mask )
+        if (e.is_consumed) return
+      endIf
+
+      if (not (mask & layer_mask))
+        return
+      endIf
+
+      if (not bounding_box.contains(e.position)) return
       if (not bounding_quad.contains(e.position)) return
+
+      on( e )
+      if (e.is_consumed) return
 
       if (Entity.selected is null and e.is_press)
         if (this.is_pressable or this.is_selectable)
@@ -160,10 +178,12 @@ class Entity
           else
             Entity.is_dragging = false
           endIf
+          e.consume
         endIf
       endIf
 
-      on( e )
+    method layer->LayerMask
+      return LayerMask(layer_mask)
 
     method is_enabled->Logical [macro]
       return (this.attributes & Entity.ENABLED)
@@ -177,11 +197,15 @@ class Entity
     method is_selectable->Logical [macro]
       return (this.attributes & Entity.SELECTABLE)
 
+    method name->String
+      if (@name is null or @name.count == 0) name = type_name.after_any("::")
+      return @name
+
     method on( e:PointerEvent )
 
     method on_drag
 
-    method on_draw
+    method on_draw( layer:Layer )
 
     method pressable
       attributes |= PRESSABLE
@@ -250,6 +274,18 @@ class Entity
       if (new_anchor != anchor)
         @anchor = new_anchor
         any_bounds_modified = true
+      endIf
+
+    method set_layer( new_layer:Layer )
+      layer_mask = new_layer.mask
+
+    method set_layer( mask:LayerMask )
+      layer_mask = mask.value
+
+    method set_layer( layer_name:String )
+      if (Scene.current)
+        local layer = Scene.current.layer( layer_name )
+        if (layer) layer_mask = layer.mask
       endIf
 
     method set_position( new_position:XY )
@@ -352,18 +388,87 @@ class Entity
       pop_transform
 endClass
 
+class LayerMask( value:Int32 ) [compound]
+  METHODS
+    method operator+( layer:Layer )->LayerMask
+      return LayerMask( value | layer.mask )
+
+    method operator+( layer_name:String )->LayerMask
+      if (Scene.current)
+        local layer = Scene.current.layer( layer_name )
+        if (layer) return LayerMask( value | layer.mask )
+      endIf
+      return this
+
+    method operator-( layer:Layer )->LayerMask
+      return LayerMask( value & !layer.mask )
+
+    method operator-( layer_name:String )->LayerMask
+      if (Scene.current)
+        local layer = Scene.current.layer( layer_name )
+        if (layer) return LayerMask( value & !layer.mask )
+      endIf
+      return this
+
+endClass
 
 class DragAndDrop
 endClass
 
+class Layer
+  PROPERTIES
+    scene : Scene
+    name  : String
+    mask  : Int32
+
+  METHODS
+    method init( name )
+
+    method draw( image:Image )
+      image.draw
+
+    method set_name( new_name:String )
+      if (scene)
+        scene.layer_lookup.remove( name )
+        scene.layer_lookup[ new_name ] = this
+      endIf
+      @name = new_name
+endClass
+
 
 class Scene : Entity
+  GLOBAL PROPERTIES
+    current : Scene
+
   PROPERTIES
     is_fullscreen : Logical
+    layers        = Layer[]
+    layer_lookup  = StringTable<<Layer>>()
+    default_layer : Layer
 
   METHODS
     method init
       is_fullscreen = true
+      current = this
+
+    method activate
+      current = this
+
+    method add( layer:Layer )
+      require layers.count < 32
+
+      local layer_mask = 0
+      layer_mask |= (forEach in layers).mask
+      forEach (bit_pos in 0..31)
+        if (0 == (layer_mask & (1:<<:bit_pos)))
+          layer.mask = (1:<<:bit_pos)
+          escapeForEach
+        endIf
+      endForEach
+
+      layer.scene = this
+      layers.add( layer )
+      layer_lookup[ layer.name ] = layer
 
     method handle( e:PointerEvent )
       if (Entity.selected)
@@ -376,20 +481,40 @@ class Scene : Entity
             Entity.is_dragging = true
             Entity.selected.position = Entity.selected.to_parent_local( e.position ) + Entity.drag_offset
             Entity.selected.on_drag
+            return
           endContingent
         elseIf (e.is_release)
           Entity.selected = null
+          return
         endIf
       endIf
 
-      prior.handle( e )
+      forEach (layer in layers step -1)
+        handle( e, layer.mask )
+        if (e.is_consumed) return
+      endForEach
 
-    method on_draw
+    method draw
+      if (layers.is_empty) return
+
       if (is_fullscreen)
         size = Display.size
         position = Display.center
       endIf
-      prior.on_draw
+
+      forEach (layer in layers)
+        draw( layer )
+      endForEach
+
+
+    method layer( name:String )->Layer
+      return layer_lookup[ name ]
+
+    method set_default_layer( @default_layer )
+
+    method set_default_layer( layer_name:String )
+      @default_layer = layer( layer_name )
+
 endClass
 
 
@@ -409,10 +534,10 @@ class Sprite : Entity
 
     method on( e:PointerEvent )
 
-    method on_draw
+    method on_draw( layer:Layer )
       local img = image
       prepare_image( img )
-      img.draw
+      layer.draw( img )
 
     method prepare_image( img:Image )
       img.position = position

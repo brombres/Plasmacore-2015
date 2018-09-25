@@ -5,12 +5,11 @@ Display( "Main" ).screen = MainScreen
 class Plot : Sprite
   METHODS
     method init_object
-      #draggable
+      draggable
 
     method on( e:PointerEvent )
 
     method on_drag
-      println position
 endClass
 
 class MainScreen : Screen [singleton]
@@ -20,14 +19,32 @@ class MainScreen : Screen [singleton]
 
   METHODS
     method on_start
-      local bg = Background( "background_reference.png", XY(0.60,0.60) ).[ attach(scene) ]
+      scene.add( Layer("under") )
+
+      local bg = Background( "background_reference.png", XY(0.60,0.60) ).[ attach(scene), name="bg" ]
+
+      scene.add( Layer("shadow") subclass
+        METHODS
+          method draw( image:Image )
+            local old_colors = image.colors
+            #local old_shader = image.shader
+            image.color = Color.BLACK
+            #image.shader = ImageShader.TEXTURE_WITH_COLOR_FILL
+            image.draw( image.position + XY(4,4) )
+            #image.shader = old_shader
+            image.colors = old_colors
+      endSubclass )
+
+      scene.add( Layer("over") )
+      scene.default_layer = "over"
+
       local start_x = 614
       local start_y = 759
       forEach (j in 0..2)
         local x = start_x
         local y = start_y
         forEach (i in 0..2)
-          bg.add( Plot("plot_blocked.png").[position=XY(x,y)] )
+          bg.add( Plot("plot_blocked.png").[name="plot",position=XY(x,y),layer+="shadow"] )
           x -= 134
           y -= 72
         endForEach
@@ -35,9 +52,16 @@ class MainScreen : Screen [singleton]
         start_y -= 72
       endForEach
 
-      holder = Entity( bg.child_bounds.value ).[ draggable ]
+      holder = Entity( bg.child_bounds.value ).[ name="holder" ]
       bg.add( holder, &translate )
+      scene.child.child.layer = "under"
       loop (9) holder.add( scene.child.child, &translate )
+
+      local carrot = Sprite("carrot.png").[draggable,position=bg.size/2,layer += "shadow",name="carrot"]
+#trace scene.layer("under").mask->String(&binary,4)
+#trace scene.layer("shadow").mask->String(&binary,4)
+#trace scene.layer("over").mask->String(&binary,4)
+      bg.add( carrot )
 
       change_state( IdleState() )
 
@@ -58,6 +82,7 @@ class MainScreen : Screen [singleton]
       Display.clear( Color.BLUE )
       scene.draw
       #scene.apply( (entity)=>entity.bounding_quad.draw(Color.RED) )
+      #scene.apply( (entity)=>entity.bounding_box.draw(Color.RED) )
       #scene.child.child.bounding_box.draw( Color.RED )
       #holder.bounding_box.draw( Color.RED )
 
