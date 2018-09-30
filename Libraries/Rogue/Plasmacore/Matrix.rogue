@@ -222,6 +222,25 @@ class Matrix( ...
 
         return result
 
+    method operator==( other:Matrix )->Logical
+      native @|return $this.r1c1 == $other.r1c1
+              |    && $this.r2c1 == $other.r2c1
+              |    && $this.r3c1 == $other.r3c1
+              |    && $this.r4c1 == $other.r4c1
+              |    && $this.r1c2 == $other.r1c2
+              |    && $this.r2c2 == $other.r2c2
+              |    && $this.r3c2 == $other.r3c2
+              |    && $this.r4c2 == $other.r4c2
+              |    && $this.r1c3 == $other.r1c3
+              |    && $this.r2c3 == $other.r2c3
+              |    && $this.r3c3 == $other.r3c3
+              |    && $this.r4c3 == $other.r4c3
+              |    && $this.r1c4 == $other.r1c4
+              |    && $this.r2c4 == $other.r2c4
+              |    && $this.r3c4 == $other.r3c4
+              |    && $this.r4c4 == $other.r4c4;
+      # Memcmp won't work properly for floating point numbers.
+
       method operator*( v:XY )->XY
         return XY(
           this[0]   * v.x +

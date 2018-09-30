@@ -160,24 +160,13 @@ $endIf
 
     method operator|( rhs:Box )->Box
       # Returns the union of this box with another box.
-      local a_x1 = position.x
-      local a_y1 = position.y
-      local a_x2 = position.x + size.x
-      local a_y2 = position.y + size.y
-      if (a_x2 == a_x1 or a_y2 == a_y1) return rhs
+      if (size.is_zero) return rhs
+      if (rhs.size.is_zero) return this
 
-      local b_x1 = rhs.position.x
-      local b_y1 = rhs.position.y
-      local b_x2 = rhs.position.x + rhs.size.x
-      local b_y2 = rhs.position.y + rhs.size.y
-      if (b_x2 == b_x1 or b_y2 == b_y1) return this
+      local tl = position.min( rhs.position )
+      local br = bottom_right.max( rhs.bottom_right )
 
-      if (b_x1 < a_x1) a_x1 = b_x1
-      if (b_y1 < a_y1) a_y1 = b_y1
-      if (b_x2 > a_x2) a_x2 = b_x2
-      if (b_y2 > a_y2) a_y2 = b_y2
-
-      return Box( a_x1, a_y1, a_x2-a_x1, a_y2-a_y1 )
+      return Box( tl, br-tl )
 
 $if not target("Console")
     method draw( color:Color, thickness=1:Int32 )->this

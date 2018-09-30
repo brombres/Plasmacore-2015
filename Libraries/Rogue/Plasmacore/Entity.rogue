@@ -7,7 +7,7 @@ class Entity
     SELECTABLE      = 4
     DRAGGABLE       = 8
 
-    DRAG_THRESHOLD = 4
+    DRAG_THRESHOLD  = 4
 
   GLOBAL PROPERTIES
     selected            : Entity
@@ -25,17 +25,19 @@ class Entity
     position        : XY
     size            : XY
     scale           = XY(1,1)
+    anchor          = Anchor.CENTER : Anchor
     rotation        : Angles
     z               = 0.0
     opacity         = 1.0
+    order           = 0
     attributes      = Entity.ENABLED : Int32
-    anchor          = Anchor.CENTER : Anchor
-    bounding_quad   : Quad
-    bounding_box    : Box
     layer_mask      : Int32
+    _transform      : Matrix
 
   METHODS
     method init
+
+    method init( size )
 
     method init( bounds:Box )
       position = bounds.center
@@ -43,16 +45,19 @@ class Entity
 
     method init_object
       if (this not instanceOf Scene)
-        if (Scene.current and (Scene.current.default_layer or Scene.current.layers.count <= 1))
-          if (Scene.current.layers.is_empty) Scene.current.add( Layer("default") )
+        if (Scene.current and (Scene.current.default_layer or Scene.current.@layers.count <= 1))
+          if (Scene.current.@layers.is_empty) Scene.current.add( Layer("default") )
 
           if (Scene.current.default_layer)   layer_mask = Scene.current.default_layer.mask
-          else                               layer_mask = Scene.current.layers.first.mask
+          else                               layer_mask = Scene.current.@layers.first.mask
         endIf
       endIf
 
-    method add( entity:Entity, &translate )
+    method add( entity:Entity, at_position=null:XY?, &translate, &center )
       if (entity.parent is this) return
+
+      if (at_position.exists) entity.position = at_position.value
+      elseIf (center)         entity.position = size/2
 
       if (translate) entity.position = entity.to_parent_screen( entity.position )
 
@@ -83,24 +88,41 @@ class Entity
       parent.add( this, &=translate )
 
     method bounding_box->Box
-      if (any_bounds_modified) update_bounds
-      return @bounding_box
+      if (size.is_zero)
+        return Box(0,0,0,0)
+      else
+        return Box( position, size ).relative_to( anchor ).transform( transform )->Box
+      endIf
 
     method bounding_quad->Quad
-      if (any_bounds_modified) update_bounds
-      return @bounding_quad
-
-    method child_bounds->Box?
-      if (not child) return null
-      return child.child_bounds( null )
-
-    method child_bounds( box:Box? )->Box?
-      if (not size.is_zero)
-        if (box.exists) box = box.value | bounding_box
-        else            box = bounding_box
+      if (size.is_zero)
+        return Box(0,0,0,0)->Quad
+      else
+        return Box( position, size ).relative_to( anchor ).transform( transform )
       endIf
-      if (sibling) box = sibling.child_bounds( box )
-      if (child) box = child.child_bounds( box )
+
+    method collect_active_entities( entities:Entity[] )
+      if (not is_enabled) return
+      entities.add( this )
+
+      local cur = child
+      while (cur)
+        cur.collect_active_entities( entities )
+        cur = cur.sibling
+      endWhile
+
+    method subtree_bounds->Box
+      return subtree_bounds( Box(0,0,0,0) )
+
+    method subtree_bounds( box:Box )->Box
+      box |= bounding_box
+
+      local cur = child
+      while (cur)
+        box |= cur.subtree_bounds( box )
+        cur = cur.sibling
+      endWhile
+
       return box
 
     method detach
@@ -126,22 +148,17 @@ class Entity
       attributes |= DRAGGABLE
       if (not (attributes & (PRESSABLE | SELECTABLE))) attributes |= SELECTABLE
 
-    method draw( layer:Layer )
-      if (not is_enabled) return
+    method get( entity_name:String )->Entity
+      if (name == entity_name) return this
 
-      if (layer_mask & layer.mask) on_draw( layer )
+      local cur = child
+      while (cur)
+        local result = cur[ entity_name ]
+        if (result) return result
+        cur = cur.sibling
+      endWhile
 
-      if (child)
-        push_transform
-
-        local cur = child
-        while (cur)
-          cur.draw( layer )
-          cur = cur.sibling
-        endWhile
-
-        pop_transform
-      endIf
+      return null
 
     method handle( e:PointerEvent, mask:Int32 )
       if (sibling)
@@ -158,7 +175,6 @@ class Entity
         return
       endIf
 
-      if (not bounding_box.contains(e.position)) return
       if (not bounding_quad.contains(e.position)) return
 
       on( e )
@@ -182,7 +198,7 @@ class Entity
         endIf
       endIf
 
-    method layer->LayerMask
+    method layers->LayerMask
       return LayerMask(layer_mask)
 
     method is_enabled->Logical [macro]
@@ -210,21 +226,6 @@ class Entity
     method pressable
       attributes |= PRESSABLE
 
-    method push_transform
-      local handle = XYZ( (anchor.position * scale * size), 0 )
-
-      local has_rotation = not rotation.is_zero
-      if (has_rotation)
-        Display.push_view_transform( Quaternion(rotation)->Matrix( handle, XYZ(position,z)) )
-      else
-        Display.push_view_transform( Matrix.translate(XYZ(position,z)-handle) )
-      endIf
-
-      Display.push_view_transform( Matrix.scale(XYZ(scale,1)) )
-
-    method pop_transform
-      Display.pop_view_transform
-      Display.pop_view_transform
 
       #{
     method find( xy:XY, &selectable )->Entity
@@ -276,13 +277,13 @@ class Entity
         any_bounds_modified = true
       endIf
 
-    method set_layer( new_layer:Layer )
+    method set_layers( new_layer:Layer )
       layer_mask = new_layer.mask
 
-    method set_layer( mask:LayerMask )
+    method set_layers( mask:LayerMask )
       layer_mask = mask.value
 
-    method set_layer( layer_name:String )
+    method set_layers( layer_name:String )
       if (Scene.current)
         local layer = Scene.current.layer( layer_name )
         if (layer) layer_mask = layer.mask
@@ -356,36 +357,44 @@ class Entity
       if (parent) return parent.to_screen( xy )
       return xy
 
-    method update_bounds
+    method transform->Matrix
+      if (any_bounds_modified) _update_transforms
+      return @_transform
+
+    method _update_transforms
       if (parent)
-        parent.update_bounds
-      elseIf (any_bounds_modified)
+        parent._update_transforms
+      else
         any_bounds_modified = false
-        _update_bounds
+        _update_transform
       endIf
 
-    method _update_bounds
+    method _update_transform
       if (not is_enabled) return
 
-      if (size.is_zero)
-        bounding_box = Box(0,0,0,0)
-        bounding_quad = @bounding_box->Quad
+      _transform = Display.world_transform
+
+      local handle = XYZ( (anchor.position * scale * size), 0 )
+
+      local has_rotation = not rotation.is_zero
+      if (has_rotation)
+        Display.push_view_transform( Quaternion(rotation)->Matrix( handle, XYZ(position,z)) )
       else
-        bounding_quad = Box( position, size ).relative_to( anchor ).transform( Display.world_transform )
-        bounding_box  = @bounding_quad->Box
+        Display.push_view_transform( Matrix.translate(XYZ(position,z)-handle) )
       endIf
 
-      push_transform
+      Display.push_view_transform( Matrix.scale(XYZ(scale,1)) )
+
 
       if (child)
         local cur = child
         while (cur)
-          cur._update_bounds
+          cur._update_transform
           cur = cur.sibling
         endWhile
       endIf
 
-      pop_transform
+      Display.pop_view_transform( 2 )
 endClass
 
 class LayerMask( value:Int32 ) [compound]
@@ -445,6 +454,7 @@ class Scene : Entity
     layers        = Layer[]
     layer_lookup  = StringTable<<Layer>>()
     default_layer : Layer
+    entities      = Entity[]
 
   METHODS
     method init
@@ -454,11 +464,11 @@ class Scene : Entity
     method activate
       current = this
 
-    method add( layer:Layer )
-      require layers.count < 32
+    method add( layer:Layer, &make_default )
+      require @layers.count < 32
 
       local layer_mask = 0
-      layer_mask |= (forEach in layers).mask
+      layer_mask |= (forEach in @layers).mask
       forEach (bit_pos in 0..31)
         if (0 == (layer_mask & (1:<<:bit_pos)))
           layer.mask = (1:<<:bit_pos)
@@ -467,8 +477,10 @@ class Scene : Entity
       endForEach
 
       layer.scene = this
-      layers.add( layer )
+      @layers.add( layer )
       layer_lookup[ layer.name ] = layer
+
+      if (make_default or @layers.count == 1) @default_layer = layer
 
     method handle( e:PointerEvent )
       if (Entity.selected)
@@ -489,21 +501,30 @@ class Scene : Entity
         endIf
       endIf
 
-      forEach (layer in layers step -1)
+      forEach (layer in @layers step -1)
         handle( e, layer.mask )
         if (e.is_consumed) return
       endForEach
 
     method draw
-      if (layers.is_empty) return
+      if (@layers.is_empty) return
 
       if (is_fullscreen)
         size = Display.size
         position = Display.center
       endIf
 
-      forEach (layer in layers)
-        draw( layer )
+      entities.clear
+      collect_active_entities( entities )
+      entities.sort( (a,b)=>a.order <= b.order )
+      forEach (layer in @layers)
+        forEach (entity in entities)
+          if (entity.layer_mask & layer.mask)
+            Display.push_view_transform( entity.transform, &override )
+            entity.on_draw( layer )
+            Display.pop_view_transform
+          endIf
+        endForEach
       endForEach
 
 

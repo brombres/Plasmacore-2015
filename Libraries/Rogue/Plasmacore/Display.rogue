@@ -168,7 +168,7 @@ class Display [singleton]
     method center->XY [macro]
       return (size/2)
 
-    method clear->this
+    method clear
       native "int gl_flags = GL_COLOR_BUFFER_BIT;"
       native @|int c = $background_color.argb;
               |gl_flags |= GL_COLOR_BUFFER_BIT;
@@ -176,10 +176,8 @@ class Display [singleton]
 
       native "glClear( gl_flags );"
 
-      return this
-
-    method clear( background_color )->this
-      return clear
+    method clear( background_color )
+      clear
 
     method clear_transforms
       render_target.clear_transforms
@@ -551,9 +549,8 @@ class Display [singleton]
       vertex_colors.add( colors.b.argb )
       vertex_colors.add( colors.c.argb )
 
-    method flush->this
+    method flush
       render_2dx
-      return this
 
     method handle( e:KeyEvent )
       activate_screen_and_state
@@ -614,17 +611,14 @@ class Display [singleton]
     method perspective_center->XY
       return render_target.perspective_center
 
-    method pop_clipping_region->this
+    method pop_clipping_region
       render_target.pop_clipping_region
-      return this
 
-    method pop_object_transform( n=1:Int32 )->this
+    method pop_object_transform( n=1:Int32 )
       render_target.pop_object_transform( n )
-      return this
 
-    method pop_view_transform( n=1:Int32 )->this
+    method pop_view_transform( n=1:Int32 )
       render_target.pop_view_transform( n )
-      return this
 
     method set_render_target( canvas:Canvas )
       if (canvas)
@@ -643,17 +637,14 @@ class Display [singleton]
       @render_target.activate
       clipping_region = clipping_region  # Reset clipping region
 
-    method push_clipping_region( box:Box?, &replace )->this
+    method push_clipping_region( box:Box?, &replace )
       render_target.push_clipping_region( box, replace )
-      return this
 
-    method push_object_transform( m:Matrix )->this
+    method push_object_transform( m:Matrix )
       render_target.push_object_transform( m )
-      return this
 
-    method push_view_transform( m:Matrix )->this
-      render_target.push_view_transform( m )
-      return this
+    method push_view_transform( m:Matrix, &override )
+      render_target.push_view_transform( m, &=override )
 
     method render( _true_size:XY, _viewport_size:XY, refresh_rate )
       Display = this  # set the singleton reference to be this display
@@ -840,63 +831,52 @@ class Display [singleton]
       if (vertex_count + n > VERTEX_BUFFER_SIZE) flush
       vertex_count += n
 
-    method scale_to_fit( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
-      return scale_to_fit( XY(w,h), anchor )
+    method scale_to_fit( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )
+      scale_to_fit( XY(w,h), anchor )
 
-    method scale_to_fit( target_display_size:XY, anchor=Anchor.TOP_LEFT:Anchor )->this
+    method scale_to_fit( target_display_size:XY, anchor=Anchor.TOP_LEFT:Anchor )
       render_target.scale_to_fit( target_display_size, anchor )
-      return this
 
-    method set_clipping_region( new_clipping_region:Box? )->this
+    method set_clipping_region( new_clipping_region:Box? )
       render_target.set_clipping_region( new_clipping_region )
-      return this
 
-    method set_primitive_type( primitive_type:Int32, front_face=Display.CLOCKWISE:Int32 )->this
-      if (primitive_type == active_primitive_type and front_face == active_front_face) return this
+    method set_primitive_type( primitive_type:Int32, front_face=Display.CLOCKWISE:Int32 )
+      if (primitive_type == active_primitive_type and front_face == active_front_face) return
       flush
       active_primitive_type = primitive_type
       active_front_face = front_face
-      return this
 
-    method set_offset( new_offset:XY )->this
+    method set_offset( new_offset:XY )
       render_target.set_offset( new_offset )
-      return this
 
-    method set_perspective_center( new_center:XY )->this
+    method set_perspective_center( new_center:XY )
       render_target.set_perspective_center( new_center )
-      return this
 
-    method set_projection_mode( _projection_mode:ProjectionMode )->this
+    method set_projection_mode( _projection_mode:ProjectionMode )
       render_target.projection_mode = _projection_mode
       render_target.projection_mode.update
-      return this
 
-    method set_projection_transform( _projection_transform:Matrix )->this
+    method set_projection_transform( _projection_transform:Matrix )
       render_target.projection_transform = _projection_transform
       render_target.transform_modified = true
-      return this
 
-    method set_render_mode( render_mode:RenderMode, shader=null:Shader )->this
-      if (render_mode.value == active_render_mode.value and custom_shader is shader) return this
+    method set_render_mode( render_mode:RenderMode, shader=null:Shader )
+      if (render_mode.value == active_render_mode.value and custom_shader is shader) return
       flush
       active_render_mode = render_mode
       custom_shader = shader
-      return this
 
-    method set_texture( index:Int32, texture:Texture )->this
-      if (index < active_textures.count and active_textures[index] is texture) return this
-      flush
-      active_textures.expand_to_include( index )[ index ] = texture
-      return this
+    method set_screen( @screen )
+      screen.display = this
 
-    method set_state( new_state:State )->this
+    method set_state( new_state:State )
       # Sets the state of this Display's current screen.
       screen.@state = new_state
-      return this
 
-    method set_screen( @screen )->this
-      screen.display = this
-      return this
+    method set_texture( index:Int32, texture:Texture )
+      if (index < active_textures.count and active_textures[index] is texture) return
+      flush
+      active_textures.expand_to_include( index )[ index ] = texture
 
     method size->XY
       return render_target.size
@@ -906,7 +886,7 @@ class Display [singleton]
       return this.screen.state
 
     method transform->Matrix [macro]
-      return this.render_target.transform
+      return this.render_target.display_transform
 
     method transform( quad:Quad )->Quad<<XYZW>>
       local t = transform
@@ -935,6 +915,9 @@ class Display [singleton]
 
     method true_width->Int32 [macro]
       return this.true_size.x->Int32
+
+    method view_transform->Matrix [macro]
+      return this.render_target.view_transform
 
     method viewport_size->XY [macro]
       return this.render_target.viewport_size
