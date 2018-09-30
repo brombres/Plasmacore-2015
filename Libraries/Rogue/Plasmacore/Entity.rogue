@@ -101,6 +101,9 @@ class Entity
         return Box( position, size ).relative_to( anchor ).transform( transform )
       endIf
 
+    method child->Entity
+      return @child
+
     method collect_active_entities( entities:Entity[] )
       if (not is_enabled) return
       entities.add( this )
@@ -111,19 +114,8 @@ class Entity
         cur = cur.sibling
       endWhile
 
-    method subtree_bounds->Box
-      return subtree_bounds( Box(0,0,0,0) )
-
-    method subtree_bounds( box:Box )->Box
-      box |= bounding_box
-
-      local cur = child
-      while (cur)
-        box |= cur.subtree_bounds( box )
-        cur = cur.sibling
-      endWhile
-
-      return box
+    method contains( xy:XY )->Logical
+      return bounding_quad.contains(xy)
 
     method detach
       if (not parent) return
@@ -227,23 +219,24 @@ class Entity
       attributes |= PRESSABLE
 
 
-      #{
-    method find( xy:XY, &selectable )->Entity
-      if (not bounding_box.contains(xy)) return null
+    method find( xy:XY, &selectable_only )->Entity
+      if (not is_enabled) return null
+
+      local best : Entity
 
       if (child)
         local cur = child
         while (cur)
-          local result = cur.find( xy, &=selectable )
-          if (result) return result
+          local result = cur.find( xy, &=selectable_only )
+          if (result and (not best or best.order < result.order)) best = result
           cur = cur.sibling
         endWhile
       endIf
 
-      if (selectable and not is_selectable) return null
-      if (not bounding_quad.contains(xy)) return null
+      if (best and best.order >= this.order)     return best
+      if (selectable_only and not is_selectable) return best
+      if (not this.contains(xy)) return best
       return this
-      }#
 
     method replace_with( other:Entity )
       if (child) other.add( child ); child = null
@@ -330,6 +323,20 @@ class Entity
         @z = new_z
         any_bounds_modified = true
       endIf
+
+    method subtree_bounds->Box
+      return subtree_bounds( Box(0,0,0,0) )
+
+    method subtree_bounds( box:Box )->Box
+      box |= bounding_box
+
+      local cur = child
+      while (cur)
+        box |= cur.subtree_bounds( box )
+        cur = cur.sibling
+      endWhile
+
+      return box
 
     method to->String
       if (name.count) return name
@@ -436,6 +443,9 @@ class Layer
     method draw( image:Image )
       image.draw
 
+    method draw( font:Font, text:String, position:XY )
+      font.draw( text, position )
+
     method set_name( new_name:String )
       if (scene)
         scene.layer_lookup.remove( name )
@@ -520,9 +530,11 @@ class Scene : Entity
       forEach (layer in @layers)
         forEach (entity in entities)
           if (entity.layer_mask & layer.mask)
-            Display.push_view_transform( entity.transform, &override )
-            entity.on_draw( layer )
-            Display.pop_view_transform
+            if (entity.opacity)
+              Display.push_view_transform( entity.transform, &override )
+              entity.on_draw( layer )
+              Display.pop_view_transform
+            endIf
           endIf
         endForEach
       endForEach
@@ -539,7 +551,7 @@ class Scene : Entity
 endClass
 
 
-class Sprite : Entity
+class Actor : Entity
   PROPERTIES
     image : Image
 
@@ -572,7 +584,7 @@ class Sprite : Entity
 endClass
 
 
-class Background : Sprite
+class Background : Actor
   ENUMERATE
     FIT
     FILL
@@ -612,4 +624,55 @@ class Background : Sprite
       prior.prepare_image( img )
 endClass
 
+class TextField : Entity
+  GLOBAL PROPERTIES
+    default_font : Font
 
+  PROPERTIES
+    font : Font
+    text : String
+
+  METHODS
+    method init( text:String )
+      init( text, default_font )
+
+    method init( text, font )
+      size = font.measure( text )
+
+    method on_draw( layer:Layer )
+      layer.draw( font, text, position )
+
+endClass
+
+
+class SceneEditor : Scene
+  PROPERTIES
+    scene         : Scene
+    active_entity : Entity
+
+  METHODS
+    method init( scene )
+
+    method draw
+      scene.draw
+      prior.draw
+      if (active_entity)
+        local bounds = active_entity.bounding_quad
+        bounds.draw( Color.RED )
+        SystemFont.anchor = Anchor.TOP
+        SystemFont.draw( active_entity.position->String, bounds->Box.at(0.5,1) )
+      endIf
+
+    method handle( e:KeyEvent )
+      if (e.is_press(Keycode.LEFT_ARROW) and active_entity)  active_entity.position += XY(-1,0)
+      if (e.is_press(Keycode.RIGHT_ARROW) and active_entity) active_entity.position += XY(1,0)
+      if (e.is_press(Keycode.UP_ARROW) and active_entity)    active_entity.position += XY(0,-1)
+      if (e.is_press(Keycode.DOWN_ARROW) and active_entity)  active_entity.position += XY(0,1)
+      if (e.is_press(Keycode.V) and active_entity)           active_entity.enabled = not active_entity.is_enabled
+
+    method handle( e:PointerEvent )
+      if (e.is_press)
+        active_entity = scene.find( e.position )
+      endIf
+
+endClass

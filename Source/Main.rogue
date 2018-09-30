@@ -2,18 +2,34 @@ uses Plasmacore
 
 Display( "Main" ).screen = MainScreen
 
-class Plot : Sprite
+class Plot : Actor
   METHODS
-    method init_object
-
     method on( e:PointerEvent )
 
     method on_drag
 endClass
 
+class Carrot : Actor
+  METHODS
+    method init( position )
+      prior.init( "carrot.png" )
+      anchor = Anchor.BOTTOM
+endClass
+
+class GameTextField : TextField
+  METHODS
+    method on_draw( layer:Layer )
+      local old_color = font.color
+      font.color = Color.BLACK
+      layer.draw( font, text, position+XY(2,2) )
+      font.color = old_color
+      prior.on_draw( layer )
+endClass
+
 class MainScreen : Screen [singleton]
   PROPERTIES
     scene = Scene()
+    editor = SceneEditor( scene )
     holder : Entity
 
   METHODS
@@ -42,47 +58,37 @@ class MainScreen : Screen [singleton]
       entities.reverse
       bg.add( forEach in entities )
 
+      TextField.default_font = Font( "Font-GameFont-36.png" ).[ height=34 ]
+
+      bg//plot5.add( GameTextField("3.1B"), XY(108,71) )
+      bg//plot5.add( Actor("coin.png"), XY(109,41) )
+
       scene.add( Layer("crops"), &make_default )
 
-      entities.clear
       local carrots = Entity( bg//plot0.size ).[ name="carrots" ]
       bg//plot0.add( carrots, &center )
       local top    = XY( 109,   25.5 )
       local left   = XY( 46.5,  56.5 )
       local right  = XY( 171.5, 56.5 )
       local bottom = XY( 109,   88.5 )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ name="carrot", position=top ] )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ position=(top+left)/2 ] )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ position=(top+right)/2 ] )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ position=left ] )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ position=(top+bottom)/2 ] )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ position=right ] )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ position=(left+bottom)/2 ] )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ position=(right+bottom)/2 ] )
-      entities.add( Sprite("carrot.png").[anchor=Anchor.BOTTOM].[ position=bottom ] )
-      forEach (entity at i in entities) entity.order = i
-      entities.reverse
-      carrots.add( forEach in entities )
+      carrots.add( Carrot( top ).[ order=1 ] )
+      carrots.add( Carrot( (top+left)/2 ).[ order=2 ] )
+      carrots.add( Carrot( (top+right)/2 ).[ order=3 ] )
+      carrots.add( Carrot( left ).[ order=4 ] )
+      carrots.add( Carrot( (top+bottom)/2 ).[ order=5 ] )
+      carrots.add( Carrot( right ).[ order=6 ] )
+      carrots.add( Carrot( (left+bottom)/2 ).[ order=7 ] )
+      carrots.add( Carrot( (right+bottom)/2 ).[ order=8 ] )
+      carrots.add( Carrot( bottom ).[ order=9 ] )
 
-      scene._update_transforms
       change_state( IdleState() )
 
     method on( e:KeyEvent )
-      if (e.is_press(Keycode.LEFT_ARROW))  shift_plots( XY(-1,0) )
-      if (e.is_press(Keycode.RIGHT_ARROW)) shift_plots( XY(1,0) )
-      if (e.is_press(Keycode.UP_ARROW))    shift_plots( XY(0,-1) )
-      if (e.is_press(Keycode.DOWN_ARROW))  shift_plots( XY(0,1) )
-      if (e.is_press(Keycode.V))
-        local setting = not scene.child.child.is_enabled
-        scene.child.apply_to_children( (entity) with (setting) => entity.enabled = setting )
-      endIf
-
-    method shift_plots( delta:XY )
-      scene.child.apply_to_children( (entity) with (delta) => entity.position += delta )
+      editor.handle( e )
 
     method on_draw
       Display.clear( Color.BLUE )
-      scene.draw
+      editor.draw
       #SystemFont.anchor = Anchor.TOP_RIGHT
       #SystemFont.draw( scene//carrot.position->String, Display.at(1,0) )
 
@@ -103,7 +109,7 @@ class MainState : State<<MainScreen>>;
 class IdleState : MainState
   METHODS
     method on( e:PointerEvent )
-      screen.scene.handle( e )
+      screen.editor.handle( e )
       #{
       if (e.is_press)
         local entity = screen.scene.find( e.position, &selectable )
