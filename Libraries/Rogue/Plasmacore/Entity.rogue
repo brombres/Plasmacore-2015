@@ -1,8 +1,56 @@
 module Plasmacore
 
+class Scene : Entity
+  PROPERTIES
+    is_fullscreen = true
+    types         = StringTable<<EntityType>>()
+    type_list     = EntityType[]
+    draw_list     = Entity[]
+
+  METHODS
+    method init
+      noAction
+
+    method draw
+      draw_list.clear
+      if (children)
+        (forEach in children).draw
+      endIf
+      forEach (entity in draw_list)
+        entity.on_draw
+      endForEach
+
+    method type( name:String )->EntityType
+      local type = types[ name ]
+      if (type) return type
+
+      ensure type( this, name, type_list.count )
+      types[ name ] = type
+      type_list.add( type )
+      return type
+endClass
+
+class EntityType
+  PROPERTIES
+    scene  : Scene
+    name   : String
+    index  : Int32
+    images = Image[]
+    sounds = Sound[]
+
+  METHODS
+    method init( scene, name, index )
+
+    method spawn( parent:Entity, intial_position=XY(0,0):XY )->Entity
+      return parent.add( Entity(this).[ position=intial_position ] )
+
+    method to->String
+      return name
+endClass
+
 class Entity
   DEFINITIONS
-    ENABLED         = 1
+    DISABLED        = 1
     PRESSABLE       = 2
     SELECTABLE      = 4
     DRAGGABLE       = 8
@@ -18,63 +66,46 @@ class Entity
     any_bounds_modified : Logical
 
   PROPERTIES
-    parent          : Entity
-    child           : Entity
-    sibling         : Entity
-    name            = ""
-    position        : XY
-    size            : XY
-    scale           = XY(1,1)
-    anchor          = Anchor.CENTER : Anchor
-    rotation        : Angles
-    z               = 0.0
-    opacity         = 1.0
-    order           = 0
-    attributes      = Entity.ENABLED : Int32
-    layer_mask      : Int32
-    _transform      : Matrix
+    type       : EntityType
+    parent     : Entity
+    children   : Entity[]
+    image      : Image
+    name       = ""
+    position   : XY
+    size       : XY
+    scale      = XY(1,1)
+    anchor     = Anchor.CENTER : Anchor
+    rotation   : Angles
+    z          = 0.0
+    opacity    = 1.0
+    attributes : Int32
+    state      : Int32
+    frame      : Int32
+    transform  : Matrix
 
   METHODS
-    method init
+    method init( type )
 
+      #{
     method init( size )
 
     method init( bounds:Box )
       position = bounds.center
       size = bounds.size
+      }#
 
-    method init_object
-      if (this not instanceOf Scene)
-        if (Scene.current and (Scene.current.default_layer or Scene.current.@layers.count <= 1))
-          if (Scene.current.@layers.is_empty) Scene.current.add( Layer("default") )
-
-          if (Scene.current.default_layer)   layer_mask = Scene.current.default_layer.mask
-          else                               layer_mask = Scene.current.@layers.first.mask
-        endIf
-      endIf
-
-    method add( entity:Entity, at_position=null:XY?, &translate, &center )->Entity
+    method add( entity:Entity )->Entity
       if (entity.parent is this) return entity
 
-      if (at_position.exists) entity.position = at_position.value
-      elseIf (center)         entity.position = size/2
-
-      if (translate) entity.position = entity.to_parent_screen( entity.position )
-
-      entity.detach
+      if (entity.parent) entity.parent.remove( entity )
       entity.parent = this
-      if (child)
-        local cur = child
-        while (cur.sibling) cur = cur.sibling
-        cur.sibling = entity
-      else
-        child = entity
-      endIf
 
-      if (translate) entity.position = entity.to_parent_local( entity.position )
+      ensure children(2)
+      children.add( entity )
 
       return entity
 
+      #{
     method apply( fn:Function(Entity) )
       fn( this )
       apply_to_children( fn )
@@ -107,7 +138,7 @@ class Entity
       return @child
 
     method collect_active_entities( entities:Entity[] )
-      if (not is_enabled) return
+      if (is_disabled) return
       entities.add( this )
 
       local cur = child
@@ -141,7 +172,15 @@ class Entity
     method draggable
       attributes |= DRAGGABLE
       if (not (attributes & (PRESSABLE | SELECTABLE))) attributes |= SELECTABLE
+      }#
 
+    method draw
+      type.scene.draw_list.add( this )
+      if (children)
+        (forEach in children).draw
+      endIf
+
+      #{
     method get( entity_name:String )->Entity
       if (name == entity_name) return this
 
@@ -195,8 +234,8 @@ class Entity
     method layers->LayerMask
       return LayerMask(layer_mask)
 
-    method is_enabled->Logical [macro]
-      return (this.attributes & Entity.ENABLED)
+    method is_disabled->Logical [macro]
+      return (this.attributes & Entity.DISABLED)
 
     method is_draggable->Logical [macro]
       return (this.attributes & Entity.DRAGGABLE)
@@ -214,15 +253,20 @@ class Entity
     method on( e:PointerEvent )
 
     method on_drag
+      }#
 
-    method on_draw( layer:Layer )
+    method on_draw
+      if (image)
+        image.draw
+      endIf
 
+      #{
     method pressable
       attributes |= PRESSABLE
 
 
     method find( xy:XY, &selectable_only )->Entity
-      if (not is_enabled) return null
+      if (is_disabled) return null
 
       local best : Entity
 
@@ -258,13 +302,19 @@ class Entity
         endIf
         parent = null
       endIf
+      }#
 
+    method remove( entity:Entity )->Entity
+      children.remove( entity )
+      return entity
+
+      #{
     method selectable
       attributes |= SELECTABLE
 
-    method set_enabled( setting:Logical )
-      if (setting) attributes |=  Entity.ENABLED
-      else         attributes &= !Entity.ENABLED
+    method set_disabled( setting:Logical )
+      if (setting) attributes |=  Entity.DISABLED
+      else         attributes &= !Entity.DISABLED
 
     method set_anchor( new_anchor:Anchor )
       if (new_anchor != anchor)
@@ -339,11 +389,12 @@ class Entity
       endWhile
 
       return box
+      }#
 
     method to->String
-      if (name.count) return name
-      return type_name
+      return "$:$" (name,type.name)
 
+      #{
     method to_local( xy:XY )->XY
       if (parent) xy = parent.to_local( xy )
       xy = (xy - position) / scale
@@ -379,7 +430,7 @@ class Entity
       endIf
 
     method _update_transform
-      if (not is_enabled) return
+      if (is_disabled) return
 
       _transform = Display.world_transform
 
@@ -404,99 +455,22 @@ class Entity
       endIf
 
       Display.pop_view_transform( 2 )
-endClass
-
-class LayerMask( value:Int32 ) [compound]
-  METHODS
-    method operator+( layer:Layer )->LayerMask
-      return LayerMask( value | layer.mask )
-
-    method operator+( layer_name:String )->LayerMask
-      if (Scene.current)
-        local layer = Scene.current.layer( layer_name )
-        if (layer) return LayerMask( value | layer.mask )
-      endIf
-      return this
-
-    method operator-( layer:Layer )->LayerMask
-      return LayerMask( value & !layer.mask )
-
-    method operator-( layer_name:String )->LayerMask
-      if (Scene.current)
-        local layer = Scene.current.layer( layer_name )
-        if (layer) return LayerMask( value & !layer.mask )
-      endIf
-      return this
-
-endClass
-
-class DragAndDrop
-endClass
-
-class Layer
-  PROPERTIES
-    scene : Scene
-    name  : String
-    mask  : Int32
-
-  METHODS
-    method init( name )
-
-    method draw( image:Image )
-      image.draw
-
-    method draw( font:Font, text:String, position:XY )
-      font.draw( text, position )
-
-    method set_name( new_name:String )
-      if (scene)
-        scene.layer_lookup.remove( name )
-        scene.layer_lookup[ new_name ] = this
-      endIf
-      @name = new_name
+}#
 endClass
 
 
-class Scene : Entity
-  GLOBAL PROPERTIES
-    current : Scene
-
+#{
+class Scene
   PROPERTIES
     is_fullscreen : Logical
-    layers        = Layer[]
-    layer_lookup  = StringTable<<Layer>>()
-    default_layer : Layer
     entities      = Entity[]
 
   METHODS
     method init
       is_fullscreen = true
-      current = this
-
-    method make_current
-      current = this
-
-    method add( layer:Layer, &make_default )->Layer
-      require @layers.count < 32
-
-      local layer_mask = 0
-      layer_mask |= (forEach in @layers).mask
-      forEach (bit_pos in 0..31)
-        if (0 == (layer_mask & (1:<<:bit_pos)))
-          layer.mask = (1:<<:bit_pos)
-          escapeForEach
-        endIf
-      endForEach
-
-      layer.scene = this
-      @layers.add( layer )
-      layer_lookup[ layer.name ] = layer
-
-      if (make_default or @layers.count == 1) @default_layer = layer
-
-      return layer
 
     method handle( e:PointerEvent )
+      #{
       if (Entity.selected)
         if (e.is_move)
           contingent
@@ -519,8 +493,10 @@ class Scene : Entity
         handle( e, layer.mask )
         if (e.is_consumed) return
       endForEach
+      }#
 
     method draw
+      #{
       if (@layers.is_empty) return
 
       if (is_fullscreen)
@@ -543,40 +519,14 @@ class Scene : Entity
           endIf
         endForEach
       endForEach
-
-
-    method layer( name:String )->Layer
-      return layer_lookup[ name ]
-
-    method set_default_layer( @default_layer )
-
-    method set_default_layer( layer_name:String )
-      @default_layer = layer( layer_name )
+      }#
 
 endClass
+}#
 
 
+#{
 class Actor : Entity
-  PROPERTIES
-    image : Image
-
-  METHODS
-    method init( image )
-      size = image.size
-
-    method init( image_name:String )
-      init( Image(image_name) )
-
-    method image->Image
-      return @image
-
-    method on( e:PointerEvent )
-
-    method on_draw( layer:Layer )
-      local img = image
-      prepare_image( img )
-      layer.draw( img )
-
     method prepare_image( img:Image )
       img.position = position
       img.z = z
@@ -585,10 +535,11 @@ class Actor : Entity
       img.scale = scale
       img.anchor = anchor
       img.opacity = opacity
-
 endClass
+}#
 
 
+#{
 class Background : Actor
   ENUMERATE
     FIT
@@ -674,7 +625,7 @@ class SceneEditor : Scene
       if (e.is_press(Keycode.RIGHT_ARROW) and active_entity) active_entity.position += XY(1,0)
       if (e.is_press(Keycode.UP_ARROW) and active_entity)    active_entity.position += XY(0,-1)
       if (e.is_press(Keycode.DOWN_ARROW) and active_entity)  active_entity.position += XY(0,1)
-      if (e.is_press(Keycode.V) and active_entity)           active_entity.enabled = not active_entity.is_enabled
+      if (e.is_press(Keycode.V) and active_entity)           active_entity.disabled = not active_entity.is_disabled
 
     method handle( e:PointerEvent )
       if (e.is_press)
@@ -682,3 +633,4 @@ class SceneEditor : Scene
       endIf
 
 endClass
+}#

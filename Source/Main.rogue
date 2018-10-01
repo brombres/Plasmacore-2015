@@ -2,6 +2,7 @@ uses Plasmacore
 
 Display( "Main" ).screen = MainScreen
 
+#{
 class Plot : Actor
   METHODS
     method on( e:PointerEvent )
@@ -25,15 +26,23 @@ class GameTextField : TextField
       font.color = old_color
       prior.on_draw( layer )
 endClass
+}#
 
 class MainScreen : Screen [singleton]
   PROPERTIES
     scene = Scene()
+    #{
     editor = SceneEditor( scene )
     holder : Entity
+    }#
 
   METHODS
     method on_start
+      local type_Background = scene.type( "Background" )
+      local entity = type_Background.spawn( scene )
+      entity.image = Image( "background_reference.png" )
+
+      #{
       scene.add( Layer("ground") )
 
       local bg = Background( "background_reference.png" ).[ attach(scene), name="bg" ]
@@ -82,13 +91,15 @@ class MainScreen : Screen [singleton]
       carrots.add( Carrot( bottom ).[ order=9 ] )
 
       change_state( IdleState() )
+      }#
 
     method on( e:KeyEvent )
-      editor.handle( e )
+      #editor.handle( e )
 
     method on_draw
       Display.clear( Color.BLUE )
-      editor.draw
+      scene.draw
+      #editor.draw
       #SystemFont.anchor = Anchor.TOP_RIGHT
       #SystemFont.draw( scene//carrot.position->String, Display.at(1,0) )
 
@@ -109,30 +120,13 @@ class MainState : State<<MainScreen>>;
 class IdleState : MainState
   METHODS
     method on( e:PointerEvent )
-      screen.editor.handle( e )
+      #screen.editor.handle( e )
       #{
       if (e.is_press)
         local entity = screen.scene.find( e.position, &selectable )
         if (entity) change_state( DragState(entity,e.position) )
       endIf
       }#
-endClass
-
-class DragState : MainState
-  PROPERTIES
-    entity : Entity
-    offset : XY
-
-  METHODS
-    method init( entity, position:XY )
-      offset = entity.position - entity.to_parent_local(position)
-
-    method on( e:PointerEvent )
-      if (e.is_move)
-        entity.position = entity.to_parent_local(e.position) + offset
-      elseIf (e.is_release)
-        change_state( IdleState() )
-      endIf
 endClass
 
 #{
