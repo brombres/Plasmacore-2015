@@ -53,8 +53,8 @@ class Entity
         endIf
       endIf
 
-    method add( entity:Entity, at_position=null:XY?, &translate, &center )
-      if (entity.parent is this) return
+    method add( entity:Entity, at_position=null:XY?, &translate, &center )->Entity
+      if (entity.parent is this) return entity
 
       if (at_position.exists) entity.position = at_position.value
       elseIf (center)         entity.position = size/2
@@ -72,6 +72,8 @@ class Entity
       endIf
 
       if (translate) entity.position = entity.to_parent_local( entity.position )
+
+      return entity
 
     method apply( fn:Function(Entity) )
       fn( this )
@@ -471,10 +473,10 @@ class Scene : Entity
       is_fullscreen = true
       current = this
 
-    method activate
+    method make_current
       current = this
 
-    method add( layer:Layer, &make_default )
+    method add( layer:Layer, &make_default )->Layer
       require @layers.count < 32
 
       local layer_mask = 0
@@ -491,6 +493,8 @@ class Scene : Entity
       layer_lookup[ layer.name ] = layer
 
       if (make_default or @layers.count == 1) @default_layer = layer
+
+      return layer
 
     method handle( e:PointerEvent )
       if (Entity.selected)
@@ -524,6 +528,7 @@ class Scene : Entity
         position = Display.center
       endIf
 
+      make_current
       entities.clear
       collect_active_entities( entities )
       entities.sort( (a,b)=>a.order <= b.order )
@@ -652,6 +657,7 @@ class SceneEditor : Scene
 
   METHODS
     method init( scene )
+      is_fullscreen = true
 
     method draw
       scene.draw
