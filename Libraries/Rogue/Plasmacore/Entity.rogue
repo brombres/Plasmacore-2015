@@ -6,15 +6,19 @@ class Scene : Entity
     types         = StringTable<<EntityType>>()
     type_list     = EntityType[]
     draw_list     = Entity[]
+    ids           = StringLookupList()
 
   METHODS
     method init
       noAction
 
     method draw
+      draw( ids.id("draw_default") )
+
+    method draw( m_draw_id:Int32 )
       draw_list.clear
       if (children)
-        (forEach in children).draw
+        (forEach in children).call( m_draw_id )
       endIf
       forEach (entity in draw_list)
         entity.on_draw
@@ -40,6 +44,15 @@ class EntityType
 
   METHODS
     method init( scene, name, index )
+
+    method call( context:Entity, m_id:Int32 )
+      println "$.$()" (name,m_id)
+      scene.draw_list.add( context )
+      if (context.children)
+        forEach (child in context.children)
+          child.call( m_id )
+        endForEach
+      endIf
 
     method spawn( parent:Entity, intial_position=XY(0,0):XY )->Entity
       return parent.add( Entity(this).[ position=intial_position ] )
@@ -133,7 +146,15 @@ class Entity
       else
         return Box( position, size ).relative_to( anchor ).transform( transform )
       endIf
+      }#
 
+    method call( method_name:String )
+      call( type.scene.ids.id(method_name) )
+
+    method call( m_id:Int32 )
+      type.call( this, m_id )
+
+      #{
     method child->Entity
       return @child
 
