@@ -1,24 +1,8 @@
-module Plasmacore
+uses Geometry
+uses Plasmacore
 
-class Circle( position:XY, radius:Real64 ) [compound]
+augment Circle
   METHODS
-    method at( angle:Radians )->XY
-      # Returns the point along the edge of the circle at the given angle.
-      #
-      # Example:
-      #   one_oclock = circle.at( 2*Radians(pi/12) )
-      return position + XY( radius, angle )
-
-    method at( angle:Degrees )->XY
-      # Returns the point along the edge of the circle at the given angle.
-      #
-      # Example:
-      #   one_oclock = circle.at( Degrees(360.0/12.0) )
-      return position + XY( radius, angle )
-
-    method contains( point:XY )->Logical
-      return (point - position).magnitude_squared <= radius^2
-
 $if (not target("Console"))
     method draw( color:Color, segments=(1.0/4.0):Real64 )->this
       # Draws an outline of the given circle in the given color.
@@ -83,36 +67,5 @@ $if (not target("Console"))
 
       return this
 $endIf
-
-    method intersects( box:Box )->Logical
-      return box.intersects( this )
-
-    method intersects( other:Circle )->Logical
-      local delta = (position - other.position).magnitude_squared
-      return (delta <= (radius + other.radius) ^ 2)
-
-    method intersects( quad:Quad )->Logical
-      return quad.intersects( this )
-
-    method intersects( line:Line )->Logical
-      return line.intersects( this )
-
-    method intersects( triangle:Triangle )->Logical
-      return triangle.intersects( this )
-
-    method operator+( delta:XY )->Circle
-      return Circle( position+delta, radius )
-
-    method operator-( delta:XY )->Circle
-      return Circle( position-delta, radius )
-
-    method operator*( scale:Real64 )->Circle
-      return Circle( position*scale, radius*scale )
-
-    method operator/( scale:Real64 )->Circle
-      return Circle( position/scale, radius/scale )
-
-    method to->String
-      return "(@$, r:$)" (position,radius)
-endClass
+endAugment
 
