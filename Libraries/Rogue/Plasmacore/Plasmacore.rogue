@@ -2,6 +2,8 @@
 # Plasmacore.rogue
 #==============================================================================
 
+$include "Geometry"
+
 $include "Anchor.rogue"
 $include "Bitmap.rogue"
 $include "BresenhamLineGenerator.rogue"
