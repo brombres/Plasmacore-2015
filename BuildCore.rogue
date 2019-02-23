@@ -1,4 +1,4 @@
-$define PLASMACORE_VERSION "0.9.3 (8)"
+$define PLASMACORE_VERSION "0.9.4"
 
 #$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
 
@@ -7,11 +7,11 @@ $define PLASMACORE_VERSION "0.9.3 (8)"
 #$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
 
 #$ LIBRARIES(macOS) = sox(install:"sox --with-libvorbis") libpng libjpeg(header:jpeglib.h)
-#$ LIBRARIES(macOS) = freetype(header:"ft2build.h")
+#$ LIBRARIES(macOS) = freetype(package:"freetype2")
 
-#$ LIBRARIES(Linux) = libsdl2-dev libsdl2-mixer-dev
-#$ LIBRARIES(Linux) = libfreetype6-dev( header:ft2build.h library:libfreetype.a )
-#$ LIBRARIES(Linux) = libpng12-dev libjpeg-dev
+#$ LIBRARIES(Linux) = libsdl2-dev(package:"sdl2") libsdl2-mixer-dev(package:"sdl2")
+#$ LIBRARIES(Linux) = libfreetype6-dev( package:freetype2 )
+#$ LIBRARIES(Linux) = libpng-dev libjpeg-dev
 
 #$ LINK             = -lpng -ljpeg -lfreetype
 
