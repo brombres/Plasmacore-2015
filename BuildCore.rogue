@@ -1,4 +1,4 @@
-$define PLASMACORE_VERSION "0.9.4"
+$define PLASMACORE_VERSION "0.9.6"
 
 #$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
 
@@ -6,14 +6,14 @@ $define PLASMACORE_VERSION "0.9.4"
 #$ ROGUEC(Linux)    = roguec
 #$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
 
-#$ LIBRARIES(macOS) = sox(install:"sox --with-libvorbis") libpng libjpeg(header:jpeglib.h)
-#$ LIBRARIES(macOS) = freetype(package:"freetype2")
+#$ LINK             = true
 
-#$ LIBRARIES(Linux) = libsdl2-dev(package:"sdl2") libsdl2-mixer-dev(package:"sdl2")
-#$ LIBRARIES(Linux) = libfreetype6-dev( package:freetype2 )
+#$ LIBRARIES(macOS) = sox libpng libjpeg
+#$ LIBRARIES(macOS) = freetype(freetype2)
+
+#$ LIBRARIES(Linux) = libsdl2-dev(sdl2) libsdl2-mixer-dev(SDL2_mixer)
+#$ LIBRARIES(Linux) = libfreetype6-dev(freetype2)
 #$ LIBRARIES(Linux) = libpng-dev libjpeg-dev
-
-#$ LINK             = -lpng -ljpeg -lfreetype
 
 $include "Plasmacore" [optional]
 uses Plasmacore
