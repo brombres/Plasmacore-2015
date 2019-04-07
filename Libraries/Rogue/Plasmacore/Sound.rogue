@@ -145,7 +145,7 @@ $endIf
       return this
 
     method set_volume( new_volume:Real64 )->this
-      if (System.os != "emscripten" and id) SoundManager[ id ].set_volume( new_volume )
+      if (not System.is_web and id) SoundManager[ id ].set_volume( new_volume )
       return this
 
     method resume->this
