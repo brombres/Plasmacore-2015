@@ -245,7 +245,7 @@ class SoundCommand
       local file_list = String[]
 
       if (File.is_folder(filepath))
-        forEach (f in File.listing(filepath,&ignore_hidden,&recursive))
+        forEach (f in File.listing(filepath,"**",&ignore_hidden))
           if (File.matches_wildcard_pattern(f,pattern)) file_list.add( f )
         endForEach
       else
@@ -322,7 +322,7 @@ class SoundCommand
       endWhich
 
     method include_sounds
-      if (not scom.all_sounds) scom.all_sounds = File.listing( "Assets/Sounds", &recursive, &ignore_hidden )
+      if (not scom.all_sounds) scom.all_sounds = File.listing( "Assets/Sounds", "**", &ignore_hidden )
 
       local pattern = parse_string( "Folder or file pattern expected." )
       if (pattern == ".")

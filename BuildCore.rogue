@@ -10,10 +10,13 @@ $define PLASMACORE_VERSION "0.9.6"
 
 #$ LIBRARIES(macOS) = sox libpng libjpeg
 #$ LIBRARIES(macOS) = freetype(freetype2)
+#$ LIBRARIES(macOS) = zlib
+#$ LINK(macOS)      = -lbz2
 
 #$ LIBRARIES(Linux) = libsdl2-dev(sdl2) libsdl2-mixer-dev(SDL2_mixer)
 #$ LIBRARIES(Linux) = libfreetype6-dev(freetype2)
 #$ LIBRARIES(Linux) = libpng-dev libjpeg-dev
+#$ LIBRARIES(Linux) = zlib
 
 $include "Plasmacore" [optional]
 uses Plasmacore
@@ -341,11 +344,11 @@ class Build [essential singleton]
       if (not File.exists(output_cpp)) return true
 
       local dependencies = String[]
-      dependencies.add( File.listing(ROGUE_STD_LIBS,&recursive,&absolute) )
+      dependencies.add( File.listing(ROGUE_STD_LIBS,"**",&absolute) )
       if (ROGUE_STD_LIBS != "Libraries/Rogue")
-        dependencies.add( File.listing("Libraries/Rogue",&recursive,&absolute) )
+        dependencies.add( File.listing("Libraries/Rogue","**",&absolute) )
       endIf
-      dependencies.add( File.listing("Source", &recursive, &absolute) )
+      dependencies.add( File.listing("Source", "**", &absolute) )
       dependencies.add( "Build.rogue" )
       dependencies.add( "BuildCore.rogue" )
       dependencies.add( "BuildLocal.rogue" )

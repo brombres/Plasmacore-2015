@@ -246,7 +246,7 @@ class ImageCommand
       local file_list = String[]
 
       if (File.is_folder(filepath))
-        forEach (f in File.listing(filepath,&ignore_hidden,&recursive))
+        forEach (f in File.listing(filepath,"**",&ignore_hidden))
           if (File.matches_wildcard_pattern(f,pattern)) file_list.add( f )
         endForEach
       else
@@ -353,11 +353,11 @@ class ImageCommand
       local cmd = parse_string( "Command expected." )
       which (cmd)
         case "group"
-          if (not icom.all_images) icom.all_images = File.listing( "Assets/Images", &recursive, &ignore_hidden )
+          if (not icom.all_images) icom.all_images = File.listing( "Assets/Images", "**", &ignore_hidden )
           compile_group
 
         case "include"
-          if (not icom.all_images) icom.all_images = File.listing( "Assets/Images", &recursive, &ignore_hidden )
+          if (not icom.all_images) icom.all_images = File.listing( "Assets/Images", "**", &ignore_hidden )
           include_standalone
 
         case "create"
@@ -808,7 +808,7 @@ class ImageCommand
 
     method add_standalone_images( src_name:String )
       if (File.is_folder(src_name))
-        include_standalone( forEach in File.listing(src_name,&recursive) )
+        include_standalone( forEach in File.listing(src_name,"**") )
       else
         include_standalone( src_name )
       endIf

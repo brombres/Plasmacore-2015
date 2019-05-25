@@ -2,109 +2,12 @@ uses Plasmacore
 
 Display( "Main" ).screen = MainScreen
 
-class Plot : Sprite
-  METHODS
-    method init_object
-      #draggable
-
-    method on( e:PointerEvent )
-
-    method on_drag
-      println position
-endClass
-
-class MainScreen : Screen [singleton]
-  PROPERTIES
-    scene = Scene()
-    holder : Entity
-
-  METHODS
-    method on_start
-      local bg = Background( "background_reference.png", XY(0.60,0.60) ).[ attach(scene) ]
-      local start_x = 614
-      local start_y = 759
-      forEach (j in 0..2)
-        local x = start_x
-        local y = start_y
-        forEach (i in 0..2)
-          bg.add( Plot("plot_blocked.png").[position=XY(x,y)] )
-          x -= 134
-          y -= 72
-        endForEach
-        start_x += 134
-        start_y -= 72
-      endForEach
-
-      holder = Entity( bg.child_bounds.value ).[ draggable ]
-      bg.add( holder, &translate )
-      loop (9) holder.add( scene.child.child, &translate )
-
-      change_state( IdleState() )
-
-    method on( e:KeyEvent )
-      if (e.is_press(Keycode.LEFT_ARROW))  shift_plots( XY(-1,0) )
-      if (e.is_press(Keycode.RIGHT_ARROW)) shift_plots( XY(1,0) )
-      if (e.is_press(Keycode.UP_ARROW))    shift_plots( XY(0,-1) )
-      if (e.is_press(Keycode.DOWN_ARROW))  shift_plots( XY(0,1) )
-      if (e.is_press(Keycode.V))
-        local setting = not scene.child.child.is_enabled
-        scene.child.apply_to_children( (entity) with (setting) => entity.enabled = setting )
-      endIf
-
-    method shift_plots( delta:XY )
-      scene.child.apply_to_children( (entity) with (delta) => entity.position += delta )
-
-    method on_draw
-      Display.clear( Color.BLUE )
-      scene.draw
-      #scene.apply( (entity)=>entity.bounding_quad.draw(Color.RED) )
-      #scene.child.child.bounding_box.draw( Color.RED )
-      #holder.bounding_box.draw( Color.RED )
-
-    method on_resize
-      # Called when the Display.size changes
-
-    method on_update
-      # Called 60 times a second
-endClass
-
-class MainState : State<<MainScreen>>;
-
-class IdleState : MainState
-  METHODS
-    method on( e:PointerEvent )
-      screen.scene.handle( e )
-      #{
-      if (e.is_press)
-        local entity = screen.scene.find( e.position, &selectable )
-        if (entity) change_state( DragState(entity,e.position) )
-      endIf
-      }#
-endClass
-
-class DragState : MainState
-  PROPERTIES
-    entity : Entity
-    offset : XY
-
-  METHODS
-    method init( entity, position:XY )
-      offset = entity.position - entity.to_parent_local(position)
-
-    method on( e:PointerEvent )
-      if (e.is_move)
-        entity.position = entity.to_parent_local(e.position) + offset
-      elseIf (e.is_release)
-        change_state( IdleState() )
-      endIf
-endClass
-
-#{
 class MainScreen : Screen [singleton]
   PROPERTIES
 
   METHODS
     method on_start
+      trace
       change_state( InitialState() )
 
     method on( e:PointerEvent )
@@ -113,6 +16,7 @@ class MainScreen : Screen [singleton]
 
     method on_resize
       # Called when the Display.size changes
+      trace Display.size
 
     method on_update
       # Called 60 times a second
@@ -142,10 +46,10 @@ class InitialState : State<<MainScreen>>
       Display.clear( Color.BLUE )
 
     method on_resize
+      trace
       # Called when the Display.size changes
 
     method on_update
       # Called 60 times a second
 endClass
 
-}#
