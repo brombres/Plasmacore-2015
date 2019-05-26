@@ -1,4 +1,4 @@
-$define PLASMACORE_VERSION "0.9.7"
+$define PLASMACORE_VERSION "0.9.8"
 
 #$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
 
