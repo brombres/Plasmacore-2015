@@ -1,6 +1,7 @@
 module Plasmacore
   uses Geometry
 
+
 class Anchor( position:XY ) [compound]
   DEFINITIONS
     TOP_LEFT      = Anchor( XY(  0,  0) )

@@ -1,6 +1,7 @@
 module Plasmacore
   uses Geometry
 
+
 class PNGDecoder
   DEPENDENCIES
     $if (not target("Linux")) nativeHeader #include <setjmp.h>

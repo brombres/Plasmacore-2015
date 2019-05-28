@@ -1,5 +1,5 @@
 module Plasmacore
-  uses Geometry
+
 
 class RichText : PrintWriter<<print_buffer>>
   PROPERTIES

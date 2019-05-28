@@ -1,4 +1,3 @@
-uses Geometry
 uses Plasmacore
 
 augment Triangle<<>>

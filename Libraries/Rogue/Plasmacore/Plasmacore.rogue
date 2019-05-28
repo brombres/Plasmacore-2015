@@ -2,8 +2,6 @@
 # Plasmacore.rogue
 #==============================================================================
 
-$include "Geometry"
-
 $include "Anchor.rogue"
 $include "Bitmap.rogue"
 $include "BresenhamLineGenerator.rogue"
@@ -75,7 +73,7 @@ $include "XYZ.rogue"
 $include "XYZW.rogue"
 
 module Plasmacore
-  uses Geometry
+  uses Geometry [export]
 
 class Plasmacore [essential singleton]
   PROPERTIES

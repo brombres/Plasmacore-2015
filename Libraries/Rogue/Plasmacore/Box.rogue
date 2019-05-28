@@ -1,5 +1,5 @@
-uses Geometry
 uses Plasmacore
+uses Geometry
 
 augment Box
   METHODS

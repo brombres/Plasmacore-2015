@@ -1,5 +1,5 @@
 module Plasmacore
-  uses Geometry
+
 
 class Assets
   PROPERTIES

@@ -1,5 +1,5 @@
 module Plasmacore
-  uses Geometry
+
 
 class Polygon
   # The polygon is implicitly closed - the last vertex is always assumed to connect to the first vertex.

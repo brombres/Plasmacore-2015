@@ -1,6 +1,7 @@
 module Plasmacore
   uses Geometry
 
+
 class BresenhamLineGenerator
   PROPERTIES
     x1, x2, x, step_x, x_error : Int32

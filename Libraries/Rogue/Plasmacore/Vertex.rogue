@@ -1,5 +1,5 @@
 module Plasmacore
-  uses Geometry
+
 
 class Vertex( xyz:XYZ ) [compound]
   GLOBAL METHODS

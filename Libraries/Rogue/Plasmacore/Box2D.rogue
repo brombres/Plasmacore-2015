@@ -1,6 +1,6 @@
 module Box2D
   uses Plasmacore
-  uses Geometry
+
 
 class World
   DEPENDENCIES
