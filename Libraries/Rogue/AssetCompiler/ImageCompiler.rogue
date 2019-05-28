@@ -1,5 +1,8 @@
 uses Plasmacore
 
+$include "Geometry"
+uses Geometry
+
 routine launch_image_compiler( platform:String )
   try
     local config_file = File( "Assets/Images/ImageConfig.txt" )

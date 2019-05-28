@@ -75,6 +75,7 @@ $include "XYZ.rogue"
 $include "XYZW.rogue"
 
 module Plasmacore
+  uses Geometry
 
 class Plasmacore [essential singleton]
   PROPERTIES

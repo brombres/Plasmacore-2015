@@ -3,6 +3,7 @@ $include "XYZ.rogue"
 $include "XYZW.rogue"
 
 module Plasmacore
+  uses Geometry
 
 class Matrix( ...
     r1c1:Real64, r2c1:Real64, r3c1:Real64, r4c1:Real64,

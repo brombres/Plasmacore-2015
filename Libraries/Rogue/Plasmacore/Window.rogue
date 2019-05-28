@@ -2,6 +2,7 @@
 # Window.rogue
 #==============================================================================
 module Plasmacore
+  uses Geometry
 
 class Window
   PROPERTIES

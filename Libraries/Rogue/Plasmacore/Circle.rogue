@@ -1,5 +1,5 @@
-uses Geometry
-uses Plasmacore
+module Plasmacore
+  uses Geometry
 
 augment Circle
   METHODS

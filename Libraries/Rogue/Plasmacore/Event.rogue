@@ -1,4 +1,5 @@
 module Plasmacore
+  uses Geometry
 
 class Event
   PROPERTIES

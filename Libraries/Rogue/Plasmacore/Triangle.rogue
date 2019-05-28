@@ -1,7 +1,7 @@
 uses Geometry
 uses Plasmacore
 
-augment Triangle
+augment Triangle<<>>
   METHODS
 $if (not target("Console"))
     method draw( color:Color )->this

@@ -1,4 +1,5 @@
 module Plasmacore
+  uses Geometry
 
 class Log : PrintWriter<<output_buffer>> [singleton]
   PROPERTIES

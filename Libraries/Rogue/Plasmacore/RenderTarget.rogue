@@ -1,4 +1,5 @@
 uses Plasmacore
+uses Geometry
 
 class RenderTarget
   PROPERTIES

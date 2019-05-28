@@ -39,6 +39,7 @@
 #==============================================================================
 
 module Plasmacore
+  uses Geometry
 
 $essential Byte[].clear()
 $essential Byte[].reserve(Int32)

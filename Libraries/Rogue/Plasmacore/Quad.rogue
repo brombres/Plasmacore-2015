@@ -1,7 +1,7 @@
 uses Geometry
 uses Plasmacore
 
-augment Quad
+augment Quad<<>>
   METHODS
 $if (not target("Console"))
     method draw( color:Color )->this

@@ -1,4 +1,5 @@
 module Plasmacore
+  uses Geometry
 
 class Color( argb:Int32 ) [compound]
   DEFINITIONS

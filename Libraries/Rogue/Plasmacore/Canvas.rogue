@@ -1,4 +1,5 @@
-uses Plasmacore
+module Plasmacore
+  uses Geometry
 
 class Canvas : Image
   PROPERTIES

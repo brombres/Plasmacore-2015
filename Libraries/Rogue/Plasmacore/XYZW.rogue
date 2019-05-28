@@ -1,4 +1,5 @@
 module Plasmacore
+  uses Geometry
 
 class XYZW( x:Real64, y:Real64, z:Real64, w:Real64 ) [compound]
   GLOBAL METHODS

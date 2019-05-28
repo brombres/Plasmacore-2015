@@ -1,4 +1,5 @@
 module Plasmacore
+  uses Geometry
 
 routine SystemFont->Font
   if (not Display.system_font) Display.system_font = Font( "SystemFont", &options=@{snug,snap} )

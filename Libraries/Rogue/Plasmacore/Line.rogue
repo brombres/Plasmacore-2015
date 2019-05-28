@@ -1,7 +1,7 @@
 uses Geometry
 uses Plasmacore
 
-augment Line
+augment Line<<>>
   METHODS
 $if (not target("Console"))
     method draw( color:Color, thickness=1:Real64 )->this

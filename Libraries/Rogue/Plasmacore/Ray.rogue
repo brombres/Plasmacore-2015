@@ -1,4 +1,5 @@
-uses Geometry
+module Plasmacore
+  uses Geometry
 
 augment Ray
   METHODS

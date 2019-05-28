@@ -1,3 +1,6 @@
+module Plasmacore
+  uses Geometry
+
 class RenderMode( value=0:Int32 ) [compound]
   DEFINITIONS
     # dest_blend is (render_mode >> 28) & 15

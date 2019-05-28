@@ -1,7 +1,7 @@
 uses Geometry
 uses Plasmacore
 
-augment XY( x:Real64, y:Real64 )
+augment XY
   METHODS
 $if (not target("Console"))
     method transform( m:Matrix )->XY

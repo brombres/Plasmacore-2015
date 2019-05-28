@@ -1,4 +1,5 @@
 module Plasmacore
+  uses Geometry
 
 class Quaternion( x=0:Real64, y=0:Real64, z=0:Real64, w=1.0:Real64 ) [compound]
   # Adapted from the Iirlicht Quaternion by Nikolaus Gebhardt
