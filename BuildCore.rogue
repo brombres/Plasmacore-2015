@@ -1,4 +1,4 @@
-$define PLASMACORE_VERSION "0.9.9"
+$define PLASMACORE_VERSION "0.9.10"
 uses Geometry
 
 #$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue

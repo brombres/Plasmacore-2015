@@ -1,6 +1,4 @@
 uses Plasmacore
-
-$include "Geometry"
 uses Geometry
 
 routine launch_image_compiler( platform:String )
