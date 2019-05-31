@@ -10,6 +10,10 @@ class TileMapLayout
     # Properties expressed in world/tile coordinates
     tiles_wide        : Int32
     tiles_high        : Int32
+    clip_i1           : Int32
+    clip_j1           : Int32
+    clip_i2           : Int32
+    clip_j2           : Int32
     camera            : XY  # tile position of camera
 
     # Properties expressed in screen/pixel coordinates
@@ -27,6 +31,31 @@ class TileMapLayout
     method init( tiles_wide, tiles_high, tile_size=XY(1,1) )
       needs_update = true
       bounds = Display.bounds
+      clip_i1 = 0
+      clip_j1 = 0
+      clip_i2 = tiles_wide - 1
+      clip_j2 = tiles_high - 1
+
+    method draw_column( column_i:Int32, callback:Function(index:Int32,ij:XY,bounds:Box) )
+      draw_clip( column_i, 0, column_i, tiles_high-1, callback )
+
+    method draw_row( row_j:Int32, callback:Function(index:Int32,ij:XY,bounds:Box) )
+      draw_clip( 0, row_j, tiles_wide-1, row_j, callback )
+
+    method draw_clip( i1:Int32, j1:Int32, i2:Int32, j2:Int32, callback:Function(index:Int32,ij:XY,bounds:Box) )
+      local original_clip_i1 = clip_i1
+      local original_clip_j1 = clip_j1
+      local original_clip_i2 = clip_i2
+      local original_clip_j2 = clip_j2
+      clip_i1 = i1
+      clip_j1 = j1
+      clip_i2 = i2
+      clip_j2 = j2
+      draw( callback )
+      clip_i1 = original_clip_i1
+      clip_j1 = original_clip_j1
+      clip_i2 = original_clip_i2
+      clip_j2 = original_clip_j2
 
     method draw( callback:Function(index:Int32,ij:XY,bounds:Box) )
       update_bounds
@@ -37,13 +66,13 @@ class TileMapLayout
       local y1 = screen_bounds.y - ts.y*offscreen_padding
       local i1 = -offscreen_padding
       local j1 = -offscreen_padding
-      if (i1 < 0)
-        x1 += -i1 * ts.x
-        i1 = 0
+      if (i1 < clip_i1)
+        x1 += (clip_i1-i1) * ts.x
+        i1 = clip_i1
       endIf
-      if (j1 < 0)
-        y1 += -j1 * ts.y
-        j1 = 0
+      if (j1 < clip_j1)
+        y1 += (clip_j1-j1) * ts.y
+        j1 = clip_j1
       endIf
       if (x1 < -ts.x)
         local diff = ((-ts.x - x1) / ts.x).floor->Int32
@@ -57,8 +86,8 @@ class TileMapLayout
       endIf
 
       local map_bottom_right = screen_to_map( bounds.bottom_right ).floor + XY(offscreen_padding,offscreen_padding)
-      local i2 = map_bottom_right.x->Int32.or_smaller( tiles_wide-1 )
-      local j2 = map_bottom_right.y->Int32.or_smaller( tiles_high-1 )
+      local i2 = map_bottom_right.x->Int32.or_smaller( clip_i2 )
+      local j2 = map_bottom_right.y->Int32.or_smaller( clip_j2 )
 
       block
         local y = y1
