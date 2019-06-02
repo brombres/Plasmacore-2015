@@ -37,12 +37,12 @@ class TileMapLayout
       clip_j2 = tiles_high - 1
 
     method draw_column( column_i:Int32, callback:Function(index:Int32,ij:XY,bounds:Box) )
-      draw_clip( column_i, 0, column_i, tiles_high-1, callback )
+      draw_subset( column_i, 0, column_i, tiles_high-1, callback )
 
     method draw_row( row_j:Int32, callback:Function(index:Int32,ij:XY,bounds:Box) )
-      draw_clip( 0, row_j, tiles_wide-1, row_j, callback )
+      draw_subset( 0, row_j, tiles_wide-1, row_j, callback )
 
-    method draw_clip( i1:Int32, j1:Int32, i2:Int32, j2:Int32, callback:Function(index:Int32,ij:XY,bounds:Box) )
+    method draw_subset( i1:Int32, j1:Int32, i2:Int32, j2:Int32, callback:Function(index:Int32,ij:XY,bounds:Box) )
       local original_clip_i1 = clip_i1
       local original_clip_j1 = clip_j1
       local original_clip_i2 = clip_i2
@@ -187,6 +187,10 @@ class TileMapLayout
     method map_to_screen( xy:XY )->XY
       update_bounds
       return (xy * scaled_tile_size + screen_bounds.position).floor
+
+    method map_to_screen( box:Box )->Box
+      update_bounds
+      return Box( box.position * scaled_tile_size + screen_bounds.position, box.size * scaled_tile_size ).floor
 
 endClass
 
