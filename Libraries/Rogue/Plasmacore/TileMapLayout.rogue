@@ -17,7 +17,7 @@ class TileMapLayout
     camera            : XY  # tile position of camera
 
     # Properties expressed in screen/pixel coordinates
-    bounds            : Box
+    viewport          : Box
     origin            : XY      # screen position of camera
     scale             = 1.0
     tile_size         = XY(1,1) # in nominal pixels
@@ -25,12 +25,12 @@ class TileMapLayout
     # Internal
     needs_update      = true
     scaled_tile_size  = XY(1,1)
-    screen_bounds     : Box
+    screen_bounds     : Box  # corners may be off-screen
 
   METHODS
     method init( tiles_wide, tiles_high, tile_size=XY(1,1) )
       needs_update = true
-      bounds = Display.bounds
+      viewport = Display.bounds
       clip_i1 = 0
       clip_j1 = 0
       clip_i2 = tiles_wide - 1
@@ -85,7 +85,7 @@ class TileMapLayout
         y1 += diff * ts.y
       endIf
 
-      local map_bottom_right = screen_to_map( bounds.bottom_right ).floor + XY(offscreen_padding,offscreen_padding)
+      local map_bottom_right = screen_to_map( viewport.bottom_right ).floor + XY(offscreen_padding,offscreen_padding)
       local i2 = map_bottom_right.x->Int32.or_smaller( clip_i2 )
       local j2 = map_bottom_right.y->Int32.or_smaller( clip_j2 )
 
@@ -127,10 +127,10 @@ class TileMapLayout
     method set_origin( @origin )
       needs_update = true
 
-    method set_bounds( bounds:Box )
-      set_bounds( bounds, bounds.center )
+    method set_viewport( viewport:Box )
+      set_viewport( viewport, viewport.center )
 
-    method set_bounds( @bounds, @origin )
+    method set_viewport( @viewport, @origin )
       needs_update = true
 
     method size->XY
@@ -151,32 +151,32 @@ class TileMapLayout
 
       scaled_tile_size = tile_size * scale
       screen_bounds = Box( origin-camera*scaled_tile_size, XY(tiles_wide,tiles_high)*scaled_tile_size )
-      local underflow = (bounds.size - screen_bounds.size)
+      local underflow = (viewport.size - screen_bounds.size)
       if (underflow.x > 0)
         if (clamp_edges)
-          local new_pos = bounds.position + XY( underflow.x/2, screen_bounds.y )
+          local new_pos = viewport.position + XY( underflow.x/2, screen_bounds.y )
           screen_bounds = Box( new_pos, screen_bounds.size )
         endIf
       else
         if (clamp_edges)
-          if (screen_bounds.x > bounds.x)
-            screen_bounds -= XY(screen_bounds.x - bounds.x,0)
-          elseIf (screen_bounds.x2 < bounds.x2)
-            screen_bounds += XY(bounds.x2 - screen_bounds.x2,0)
+          if (screen_bounds.x > viewport.x)
+            screen_bounds -= XY(screen_bounds.x - viewport.x,0)
+          elseIf (screen_bounds.x2 < viewport.x2)
+            screen_bounds += XY(viewport.x2 - screen_bounds.x2,0)
           endIf
         endIf
       endIf
       if (underflow.y > 0)
         if (clamp_edges)
-          local new_pos = bounds.position + XY( screen_bounds.x, underflow.y/2 )
+          local new_pos = viewport.position + XY( screen_bounds.x, underflow.y/2 )
           screen_bounds = Box( new_pos, screen_bounds.size )
         endIf
       else
         if (clamp_edges)
-          if (screen_bounds.y > bounds.y)
-            screen_bounds -= XY(0,screen_bounds.y - bounds.y)
-          elseIf (screen_bounds.y2 < bounds.y2)
-            screen_bounds += XY(0,bounds.y2 - screen_bounds.y2)
+          if (screen_bounds.y > viewport.y)
+            screen_bounds -= XY(0,screen_bounds.y - viewport.y)
+          elseIf (screen_bounds.y2 < viewport.y2)
+            screen_bounds += XY(0,viewport.y2 - screen_bounds.y2)
           endIf
         endIf
       endIf
