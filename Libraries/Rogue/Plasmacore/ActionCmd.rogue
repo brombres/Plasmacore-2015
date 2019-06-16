@@ -9,6 +9,13 @@ class ActionCmd
     method create( fn:Function(Real64), duration:Real64, progress_fn=ProgressFn.LINEAR:Function(Real64)->Real64 )->ActionCmd
       return ActionCmdCallWithProgress( fn, duration, progress_fn )
 
+    method finish_all( cmd:ActionCmd )->ActionCmd
+      while (cmd)
+        cmd.finish
+        cmd = cmd.update
+      endWhile
+      return null
+
     method operator+( a:ActionCmd, b:ActionCmd )->ActionCmd
       if (not a) return b
       if (not b) return a
@@ -20,31 +27,44 @@ class ActionCmd
       return a.also( b )
 
   PROPERTIES
-    duration        : Real64
-    progress_fn     = ProgressFn.LINEAR : Function(Real64)->Real64
+    duration    : Real64
+    progress_fn = ProgressFn.LINEAR : Function(Real64)->Real64
 
-    next_node       : ActionCmd
-    concurrent_node : ActionCmd
+    next        : ActionCmd
+    concurrent  : ActionCmd
 
-    t               : Real64
-    dt              : Real64
-    last_time       : Real64 # 0:not started
+    t           : Real64
+    dt          : Real64
+    last_time   : Real64 # 0:not started
 
   METHODS
     method init( duration=0, progress_fn=ProgressFn.LINEAR )
 
+    method and_then( node:ActionCmd )->this
+      if (node)
+        local cur = this
+        while (cur.next) cur = cur.next
+        cur.next = node
+      endIf
+      return this
+
+    method and_then_also( node:ActionCmd )->this
+      if (next) next = next.also( node )
+      else      next = node
+      return this
+
     method also( node:ActionCmd )->this
       if (node)
         local cur = this
-        while (cur.concurrent_node) cur = cur.concurrent_node
-        cur.concurrent_node = node
+        while (cur.concurrent) cur = cur.concurrent
+        cur.concurrent = node
       endIf
       return this
 
     method count->Int32
       local n = 1
-      if (next_node) n += next_node.count
-      if (concurrent_node) n += concurrent_node.count
+      if (next) n += next.count
+      if (concurrent) n += concurrent.count
       return n
 
     method finish
@@ -52,28 +72,17 @@ class ActionCmd
       t = duration
 
     method insert_next( node:ActionCmd )->this
-      if (node) next_node = node.and_then( next_node )
+      if (node) next = node.and_then( next )
       return this
 
     method is_finished->Logical
       return (duration >= 0 and t >= duration)
 
-    method next->ActionCmd
-      # Finds the successor to this node, adjusts links if necessary, and
-      # returns it or the result of a call to its update().
-      if (next_node)
-        if (concurrent_node)
-          # Attach any parallel commands remaining in this finished command to the
-          # next command in this chain that will be the new head.
-          next_node = next_node.also( concurrent_node )
-          concurrent_node = null
-        endIf
-        return next_node.update
-      elseIf (concurrent_node)
-        return concurrent_node
-      else
-        return null
-      endIf
+    method last->ActionCmd
+      # Returns the last node in this chain
+      local cur = this
+      while (cur.next ) cur = cur.next
+      return cur
 
     method on_start
 
@@ -90,13 +99,22 @@ class ActionCmd
     method set_progress_fn( @progress_fn )->this
       return this
 
-    method and_then( node:ActionCmd )->this
-      if (node)
-        local cur = this
-        while (cur.next_node) cur = cur.next_node
-        cur.next_node = node
+    method start_next->ActionCmd
+      # Finds the successor to this node, adjusts links if necessary, and
+      # returns it or the result of a call to its update().
+      if (next)
+        if (concurrent)
+          # Attach any parallel commands remaining in this finished command to the
+          # next command in this chain that will be the new head.
+          next = next.also( concurrent )
+          concurrent = null
+        endIf
+        return next.update
+      elseIf (concurrent)
+        return concurrent
+      else
+        return null
       endIf
-      return this
 
     method update->ActionCmd
       local cur_time = System.time
@@ -112,17 +130,29 @@ class ActionCmd
 
       on_update
 
-      if (concurrent_node)
-        concurrent_node = concurrent_node.update
+      if (concurrent)
+        concurrent = concurrent.update
       endIf
 
-      if (duration < 0 or t < duration)
-        return this
-      endIf
+      if (not is_finished) return this
 
       on_finish
 
-      return next
+      return start_next
+endClass
+
+
+class ActionCmdBlock : ActionCmd
+  # Contains nested actions
+  PROPERTIES
+    actions : ActionCmd
+
+  METHODS
+    method update->ActionCmd
+      if (actions) actions = actions.update
+
+      if (actions) return this
+      else         return start_next
 endClass
 
 
