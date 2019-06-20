@@ -1,27 +1,27 @@
 module Plasmacore
 
 
-class ActionCmd
+class Action
   GLOBAL METHODS
-    method create( fn:Function() )->ActionCmd
-      return ActionCmdCall( fn )
+    method create( fn:Function() )->Action
+      return ActionCall( fn )
 
-    method create( fn:Function(Real64), duration:Real64, progress_fn=ProgressFn.LINEAR:Function(Real64)->Real64 )->ActionCmd
-      return ActionCmdCallWithProgress( fn, duration, progress_fn )
+    method create( fn:Function(Real64), duration:Real64, progress_fn=ProgressFn.LINEAR:Function(Real64)->Real64 )->Action
+      return ActionCallWithProgress( fn, duration, progress_fn )
 
-    method finish_all( cmd:ActionCmd )->ActionCmd
+    method finish_all( cmd:Action )->Action
       while (cmd)
         cmd.finish
         cmd = cmd.update
       endWhile
       return null
 
-    method operator+( a:ActionCmd, b:ActionCmd )->ActionCmd
+    method operator+( a:Action, b:Action )->Action
       if (not a) return b
       if (not b) return a
       return a.and_then( b )
 
-    method operator|( a:ActionCmd, b:ActionCmd )->ActionCmd
+    method operator|( a:Action, b:Action )->Action
       if (not a) return b
       if (not b) return a
       return a.also( b )
@@ -30,8 +30,8 @@ class ActionCmd
     duration    : Real64
     progress_fn = ProgressFn.LINEAR : Function(Real64)->Real64
 
-    next        : ActionCmd
-    concurrent  : ActionCmd
+    next        : Action
+    concurrent  : Action
 
     t           : Real64
     dt          : Real64
@@ -40,7 +40,7 @@ class ActionCmd
   METHODS
     method init( duration=0, progress_fn=ProgressFn.LINEAR )
 
-    method and_then( node:ActionCmd )->this
+    method and_then( node:Action )->this
       if (node)
         local cur = this
         while (cur.next) cur = cur.next
@@ -48,12 +48,12 @@ class ActionCmd
       endIf
       return this
 
-    method and_then_also( node:ActionCmd )->this
+    method and_then_also( node:Action )->this
       if (next) next = next.also( node )
       else      next = node
       return this
 
-    method also( node:ActionCmd )->this
+    method also( node:Action )->this
       if (node)
         local cur = this
         while (cur.concurrent) cur = cur.concurrent
@@ -71,14 +71,14 @@ class ActionCmd
       if (duration < 0) duration = 0
       t = duration
 
-    method insert_next( node:ActionCmd )->this
+    method insert_next( node:Action )->this
       if (node) next = node.and_then( next )
       return this
 
     method is_finished->Logical
       return (duration >= 0 and t >= duration)
 
-    method last->ActionCmd
+    method last->Action
       # Returns the last node in this chain
       local cur = this
       while (cur.next ) cur = cur.next
@@ -99,7 +99,7 @@ class ActionCmd
     method set_progress_fn( @progress_fn )->this
       return this
 
-    method start_next->ActionCmd
+    method start_next->Action
       # Finds the successor to this node, adjusts links if necessary, and
       # returns it or the result of a call to its update().
       if (next)
@@ -116,7 +116,7 @@ class ActionCmd
         return null
       endIf
 
-    method update->ActionCmd
+    method update->Action
       local cur_time = System.time
       if (not last_time)
         on_start
@@ -142,13 +142,13 @@ class ActionCmd
 endClass
 
 
-class ActionCmdBlock : ActionCmd
+class ActionBlock : Action
   # Contains nested actions
   PROPERTIES
-    actions : ActionCmd
+    actions : Action
 
   METHODS
-    method update->ActionCmd
+    method update->Action
       if (actions) actions = actions.update
 
       if (actions) return this
@@ -156,17 +156,17 @@ class ActionCmdBlock : ActionCmd
 endClass
 
 
-class ActionCmdWait( duration ) : ActionCmd;
+class ActionWait( duration ) : Action;
 
 
-class ActionCmdCall( fn:Function() ) : ActionCmd
+class ActionCall( fn:Function() ) : Action
   METHODS
     method on_start
       fn()
 endClass
 
 
-class ActionCmdCallWithProgress( fn:Function(Real64), duration, progress_fn ) : ActionCmd
+class ActionCallWithProgress( fn:Function(Real64), duration, progress_fn ) : Action
   METHODS
     method on_update
       fn( progress )

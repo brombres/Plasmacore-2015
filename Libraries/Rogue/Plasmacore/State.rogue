@@ -19,7 +19,7 @@ class State
     next_state            : State
     prior_state           : State
 
-    actions : ActionCmd
+    actions : Action
 
   METHODS
     method init( screen=null )

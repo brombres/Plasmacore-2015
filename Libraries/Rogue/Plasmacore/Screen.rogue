@@ -17,7 +17,7 @@ class Screen
     lighting : Lighting
     # 3D lighting model
 
-    actions  : ActionCmd
+    actions  : Action
 
   METHODS
     #method add( layer:Layer )->this

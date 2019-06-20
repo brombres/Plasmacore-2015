@@ -22,7 +22,7 @@ $if not target("Console")
 
 $if (target("Web")) nativeHeader #include <emscripten.h>
 
-$include "ActionCmd.rogue"
+$include "Action.rogue"
 $include "Angles.rogue"
 $include "Assets.rogue"
 $include "Canvas.rogue"
