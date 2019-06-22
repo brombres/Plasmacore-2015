@@ -1,4 +1,4 @@
-uses Plasmacore
+uses Bitmap
 uses Geometry
 
 routine launch_image_compiler( platform:String )

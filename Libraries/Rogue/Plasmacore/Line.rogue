@@ -2,7 +2,6 @@ uses Plasmacore
 
 augment Line<<>>
   METHODS
-$if (not target("Console"))
     method draw( color:Color, thickness=1:Real64 )->this
       if (thickness == 1)
         Display.draw( this, Colors(color) )
@@ -20,6 +19,5 @@ $if (not target("Console"))
         (Box( 0, -thickness/2, delta.magnitude, thickness ).rotated( delta.radians ) + a).fill( colors )
       endIf
       return this
-$endIf
 endAugment
 

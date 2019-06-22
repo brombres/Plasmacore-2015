@@ -1,4 +1,4 @@
-uses Plasmacore
+uses Bitmap
 
 routine launch_data_compiler( platform:String )
   try

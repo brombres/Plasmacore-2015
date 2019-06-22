@@ -2,9 +2,7 @@ uses Plasmacore
 
 augment XY
   METHODS
-$if (not target("Console"))
     method transform( m:Matrix )->XY
       return m * this
-$endIf
 endAugment
 

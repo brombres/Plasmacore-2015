@@ -1,4 +1,4 @@
-uses Plasmacore
+uses Bitmap
 
 routine launch_sound_compiler( platform:String )
   try

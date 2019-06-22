@@ -2,22 +2,6 @@
 # Plasmacore.rogue
 #==============================================================================
 
-$include "Anchor.rogue"
-$include "Bitmap.rogue"
-$include "BresenhamLineGenerator.rogue"
-$include "Box.rogue"
-$include "Box2D.rogue"
-$include "Circle.rogue"
-$include "Color.rogue"
-$include "JPEG.rogue"
-$include "Line.rogue"
-$include "Quad.rogue"
-$include "PNG.rogue"
-$include "Ray.rogue"
-$include "System.rogue"
-$include "Triangle.rogue"
-$include "XY.rogue"
-
 $if not target("Console")
 
 $if (target("Web")) nativeHeader #include <emscripten.h>
@@ -25,7 +9,11 @@ $if (target("Web")) nativeHeader #include <emscripten.h>
 $include "Action.rogue"
 $include "Angles.rogue"
 $include "Assets.rogue"
+$include "Bitmap.rogue"
+$include "Box.rogue"
+$include "Box2D.rogue"
 $include "Canvas.rogue"
+$include "Circle.rogue"
 $include "DefaultFont.rogue"
 $include "Display.rogue"
 #$include "Entity.rogue"
@@ -38,6 +26,7 @@ $include "ImageSheetBuilder.rogue"
 $include "iOS.rogue"
 $include "Keyboard.rogue"
 $include "Lighting.rogue"
+$include "Line.rogue"
 $include "Material.rogue"
 $include "Matrix.rogue"
 $include "Mesh.rogue"
@@ -52,7 +41,9 @@ $include "Pointer.rogue"
 $include "Polygon.rogue"
 $include "ProgressFn.rogue"
 $include "ProjectionMode.rogue"
+$include "Quad.rogue"
 $include "Quaternion.rogue"
+$include "Ray.rogue"
 $include "RenderMode.rogue"
 $include "RenderTarget.rogue"
 $include "Renderer.rogue"
@@ -61,19 +52,23 @@ $include "Shader.rogue"
 $include "Sound.rogue"
 $include "Sprite.rogue"
 $include "State.rogue"
+$include "System.rogue"
 $include "SystemFont.rogue"
 $include "TargetValue.rogue"
 $include "Texture.rogue"
 $include "TileMapLayout.rogue"
+$include "Triangle.rogue"
 $include "UpdateTimer.rogue"
 $include "Vertex.rogue"
 $include "Screen.rogue"
 $include "Window.rogue"
+$include "XY.rogue"
 $include "XYZ.rogue"
 $include "XYZW.rogue"
 
 module Plasmacore
   uses Geometry [export]
+  uses Bitmap   [export]
 
 class Plasmacore [essential singleton]
   PROPERTIES

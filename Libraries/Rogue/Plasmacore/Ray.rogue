@@ -3,7 +3,6 @@ module Plasmacore
 
 augment Ray
   METHODS
-$if (not target("Console"))
     method draw( color:Color )->this
       this->Line.draw( color )
       return this
@@ -11,6 +10,5 @@ $if (not target("Console"))
     method draw( colors:Colors )->this
       this->Line.draw( colors )
       return this
-$endIf
 endAugment
 

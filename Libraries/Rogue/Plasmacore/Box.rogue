@@ -3,23 +3,6 @@ uses Geometry
 
 augment Box
   METHODS
-    method at( anchor:Anchor )->XY
-      return position + anchor.position * size
-
-    method positioned_within( enclosing:Box, anchor=Anchor.CENTER:Anchor )->Box
-      return Box( enclosing.position + anchor.position * (enclosing.size-size), size )
-
-    method relative_to( anchor:Anchor )->Box
-      # Returns the result box where Box(box.at(anchor),this.size) == this
-      # E.g. if anchor is Anchor.BOTTOM and Box is [@100,100 20x20], the return value is
-      # [@90,80 20x20]].
-      return Box( position - anchor.position * size, size )
-
-    method subset( subset_size:XY, anchor=Anchor.CENTER:Anchor )->Box
-      return Box( position + anchor.position * (size-subset_size), subset_size )
-
-
-$if not target("Console")
     method fill( color:Color )->this
       Display.fill( this, color )
       return this
@@ -42,6 +25,5 @@ $if not target("Console")
 
     method transformed( m:Matrix )->Box
       return transform( m )->Box
-$endIf
 endAugment
 

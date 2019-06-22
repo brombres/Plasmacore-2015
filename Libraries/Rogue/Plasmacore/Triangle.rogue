@@ -2,7 +2,6 @@ uses Plasmacore
 
 augment Triangle<<>>
   METHODS
-$if (not target("Console"))
     method draw( color:Color )->this
       Line( a, b ).draw( color )
       Line( b, c ).draw( color )
@@ -30,5 +29,4 @@ $if (not target("Console"))
         render_mode=RenderMode.ALPHA_IMAGE:RenderMode, shader=ImageShader.TEXTURE:Shader )->this
         Display.fill( this, texture, uv, colors, render_mode, shader )
       return this
-$endIf
 endAugment

@@ -1,5 +1,6 @@
-$define PLASMACORE_VERSION "0.9.11"
+$define PLASMACORE_VERSION "0.9.12"
 uses Geometry
+uses Bitmap
 
 #$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
 
@@ -18,9 +19,6 @@ uses Geometry
 #$ LIBRARIES(Linux) = libfreetype6-dev(freetype2)
 #$ LIBRARIES(Linux) = libpng-dev libjpeg-dev
 #$ LIBRARIES(Linux) = zlib
-
-$include "Plasmacore" [optional]
-uses Plasmacore
 
 $include "AssetCompiler" [optional]
 

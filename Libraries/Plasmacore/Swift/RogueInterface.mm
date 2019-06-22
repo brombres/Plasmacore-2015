@@ -55,7 +55,7 @@ extern "C" RogueString* Plasmacore_find_asset( RogueString* filepath )
   return Plasmacore_ns_string_to_rogue_string( ns_filepath );
 }
 
-RogueClassPlasmacore__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueInt32 count )
+RogueClassBitmap__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueInt32 count )
 {
   NSData* data = [NSData dataWithBytesNoCopy:bytes length:count freeWhenDone:NO];
 #if defined(ROGUE_PLATFORM_IOS)
@@ -69,7 +69,7 @@ RogueClassPlasmacore__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueIn
     // Get the width and height of the image
     RogueInt32 width = (RogueInt32)CGImageGetWidth(bitmap_image);
     RogueInt32 height = (RogueInt32)CGImageGetHeight(bitmap_image);
-    RogueClassPlasmacore__Bitmap* bitmap = RoguePlasmacore__Bitmap__create__Int32_Int32( width, height );
+    RogueClassBitmap__Bitmap* bitmap = RogueBitmap__Bitmap__create__Int32_Int32( width, height );
 
     // Uses the bitmap creation function provided by the Core Graphics framework.
     CGContextRef gc = CGBitmapContextCreate((GLubyte*)bitmap->pixels->data->as_int32s, width, height, 8, width * 4,

@@ -2,7 +2,6 @@ uses Plasmacore
 
 augment Quad<<>>
   METHODS
-$if (not target("Console"))
     method draw( color:Color )->this
       Line( a, b ).draw( color )
       Line( b, c ).draw( color )
@@ -22,6 +21,5 @@ $if (not target("Console"))
         Triangle( a, c, d ).fill( Colors(colors.a,colors.c,colors.d) )
       endIf
       return this
-$endIf
 endAugment
 
