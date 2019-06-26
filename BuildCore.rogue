@@ -124,6 +124,16 @@ routine run( cmd:String, &silent )
   endForEach
 endRoutine
 
+routine execute( commands:String, &suppress_error )->Logical
+  forEach (cmd in LineReader(commands))
+    print( "> " ).println( cmd )
+    if (System.run(cmd) != 0)
+      if (suppress_error) return false
+      else                throw Error( "Build failed." )
+    endIf
+  endForEach
+  return true
+endRoutine
 
 class Build [essential singleton]
   PROPERTIES
