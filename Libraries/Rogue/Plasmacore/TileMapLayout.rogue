@@ -96,7 +96,10 @@ class TileMapLayout
           local x = x1
           local index = index_start
           forEach (i in i1..i2)
-            callback( index, XY(i,j), Box(x,y,ts) )
+            local tl = XY(x,y)
+            local br = (tl + ts).round
+            tl = tl.round
+            callback( index, XY(i,j), Box(tl,br-tl) )
             x += ts.x
             ++index
           endForEach
@@ -186,11 +189,13 @@ class TileMapLayout
 
     method map_to_screen( xy:XY )->XY
       update_bounds
-      return (xy * scaled_tile_size + screen_bounds.position).floor
+      return (xy * scaled_tile_size + screen_bounds.position).round
 
     method map_to_screen( box:Box )->Box
       update_bounds
-      return Box( box.position * scaled_tile_size + screen_bounds.position, box.size * scaled_tile_size ).floor
+      local tl = (box.position * scaled_tile_size + screen_bounds.position).round
+      local br = ((box.position+box.size) * scaled_tile_size + screen_bounds.position).round
+      return Box( tl, br-tl )
 
 endClass
 
