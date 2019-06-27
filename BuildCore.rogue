@@ -144,8 +144,9 @@ class Build [essential singleton]
     CXX             = "c++"
     ROGUEC          = "roguec"
     ROGUE_STD_LIBS  = "Libraries/Rogue"
+    DEBUG_MODE      = false
 
-    ide_mode = false
+    ide_mode        = false
 
   METHODS
     method init
@@ -250,7 +251,8 @@ class Build [essential singleton]
 
       local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=Libraries/Rogue --output=$/RogueProgram''...
         (ROGUEC,target,output_folder)
-      if (Build.ide_mode) cmd += " --ide"
+      if (Build.ide_mode)   cmd += " --ide"
+      if (Build.DEBUG_MODE) cmd += " --debug"
       run( cmd )
 
     method create_folder( folder:String )
