@@ -111,10 +111,21 @@ class Action
         endIf
         return next.update
       elseIf (concurrent)
+        # start_next() is called after update(), which has already updated 'concurrent' this tick.
         return concurrent
       else
         return null
       endIf
+
+    method to->String
+      return this->String( 0 )
+
+    method to->String( indent:Int32 )
+      local result = prior.to_String + "\n"
+      ++indent
+      if (next) result += "$+ ($) $" ("  "*indent,type_name,next->String(indent))
+      if (concurrent) result += "$| ($) $" ("  "*(indent-1),type_name,concurrent->String(indent))
+      return result
 
     method update->Action
       local cur_time = System.time
@@ -148,11 +159,47 @@ class ActionBlock : Action
     actions : Action
 
   METHODS
+    method finish
+      prior.finish
+      if (actions) actions.finish
+
+    method is_finished->Logical
+      if (actions) return false
+      return (duration >= 0 and t >= duration)
+
+    method to->String( indent:Int32 )
+      local result = prior.to_String(indent)
+      if (actions)
+        ++indent
+        result += "  " * indent
+        result += actions->String(indent)
+      endIf
+      return result
+
     method update->Action
+      local cur_time = System.time
+      if (not last_time)
+        on_start
+      else
+        dt = (cur_time - last_time).clamped(0,1.0/10.0)
+        t += dt
+        if (duration >= 0 and t > duration) t = duration
+      endIf
+
+      last_time = cur_time
+
+      on_update
       if (actions) actions = actions.update
 
-      if (actions) return this
-      else         return start_next
+      if (concurrent)
+        concurrent = concurrent.update
+      endIf
+
+      if (not is_finished) return this
+
+      on_finish
+
+      return start_next
 endClass
 
 
