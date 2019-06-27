@@ -319,10 +319,8 @@ class Screen
       state.is_active = true
       state.on_start
 
-    method queue_state( new_state:State )
-      local cur = state
-      while (cur.next_state) cur = cur.next_state
-      cur.next_state = new_state
+    method queue_state( new_state:State, &insert )
+      state.queue_state( new_state, &=insert )
 
     method reload_images( &keep_unused_textures )
       # Collect texture names before reloading

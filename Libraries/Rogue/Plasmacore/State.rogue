@@ -153,10 +153,12 @@ class State
     method push_state( new_state:State )
       screen.push_state( new_state )
 
-    method queue_state( new_state:State )
-      if (screen)
-        if (not new_state.screen) new_state.screen = screen
-        screen.queue_state( new_state )
+    method queue_state( new_state:State, &insert )
+      if (not new_state.screen) new_state.screen = screen
+
+      if (insert)
+        if (next_state) new_state.queue_state( next_state )
+        next_state = new_state
       else
         local cur = this
         while (cur.next_state) cur = cur.next_state
