@@ -117,12 +117,35 @@ class TileMapLayout
     method index_to_ij( index:Int32 )->XY
       return XY( index%tiles_wide, index/tiles_wide )
 
+    method map_to_screen( xy:XY )->XY
+      update_bounds
+      return (xy * scaled_tile_size + screen_bounds.position).round
+
+    method map_to_screen( box:Box )->Box
+      update_bounds
+      local tl = (box.position * scaled_tile_size + screen_bounds.position).round
+      local br = ((box.position+box.size) * scaled_tile_size + screen_bounds.position).round
+      return Box( tl, br-tl )
+
     method screen_to_map( xy:XY )->XY
       update_bounds
       return (xy - screen_bounds.position) / scaled_tile_size
 
     method set_camera( @camera )
       needs_update = true
+
+    method set_clip( clip:Box? )
+      if (clip.exists)
+        clip_i1 = clip.value.position.x->Int32
+        clip_j1 = clip.value.position.y->Int32
+        clip_i2 = ((clip_i1 + clip.value.size.x) - 1)->Int32
+        clip_j2 = ((clip_j1 + clip.value.size.y) - 1)->Int32
+      else
+        clip_i1 = 0
+        clip_j1 = 0
+        clip_i2 = tiles_wide - 1
+        clip_j2 = tiles_high - 1
+      endIf
 
     method set_scale( @scale )
       needs_update = true
@@ -186,16 +209,6 @@ class TileMapLayout
 
     method width->Real64
       return screen_bounds.size.x
-
-    method map_to_screen( xy:XY )->XY
-      update_bounds
-      return (xy * scaled_tile_size + screen_bounds.position).round
-
-    method map_to_screen( box:Box )->Box
-      update_bounds
-      local tl = (box.position * scaled_tile_size + screen_bounds.position).round
-      local br = ((box.position+box.size) * scaled_tile_size + screen_bounds.position).round
-      return Box( tl, br-tl )
 
 endClass
 
