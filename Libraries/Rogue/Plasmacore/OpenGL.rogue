@@ -8,7 +8,15 @@ class OpenGL [singleton]
   METHODS
     method log_errors( where="":String )
       native @|GLenum error_code = glGetError();
-              |if (error_code) ROGUE_LOG( "OpenGL error %s: %d\n", $where->utf8, error_code );
+              |if (error_code)
+              |{
+              |  switch (error_code)
+              |  {
+              |    case 1286: break;   // resizing the window - ignore
+              |    default:
+              |      ROGUE_LOG( "OpenGL error %s: %d\n", $where->utf8, error_code );
+              |  }
+              |}
 
     method max_texture_size->Int32
       native @|GLint result = 0;
