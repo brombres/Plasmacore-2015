@@ -108,9 +108,10 @@ class PlasmacoreView: NSOpenGLView
     context.makeCurrentContext()
     CGLLockContext( context.cglContextObj! )
 
+    let scale = NSScreen.main?.backingScaleFactor ?? CGFloat(1.0)
 
-    let display_width  = Int( view_bounds.width )
-    let display_height = Int( view_bounds.height )
+    let display_width  = Int( view_bounds.width * scale )
+    let display_height = Int( view_bounds.height * scale )
 
     let m = PlasmacoreMessage( type:"Display.on_render" )
     m.set( name:"window_id", value:windowID )
@@ -217,12 +218,14 @@ class PlasmacoreView: NSOpenGLView
     configure()
     let point = convert( event.locationInWindow, from:nil )
 
+    let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+
     let m = PlasmacoreMessage( type:"Display.on_pointer_event" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"type", value:1 )  // 1=press
-    m.set( name:"x", value:Double(point.x) )
-    m.set( name:"y", value:Double(bounds.size.height - point.y) )
+    m.set( name:"x", value:Double(point.x)*scale )
+    m.set( name:"y", value:Double(bounds.size.height - point.y)*scale )
     m.set( name:"index", value:0 )
     m.post()
   }
@@ -232,12 +235,14 @@ class PlasmacoreView: NSOpenGLView
     configure()
     let point = convert( event.locationInWindow, from: nil )
 
+    let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+
     let m = PlasmacoreMessage( type:"Display.on_pointer_event" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"type", value:0 )  // 0=move
-    m.set( name:"x", value:Double(point.x) )
-    m.set( name:"y", value:Double(bounds.size.height - point.y) )
+    m.set( name:"x", value:Double(point.x)*scale )
+    m.set( name:"y", value:Double(bounds.size.height - point.y)*scale )
     m.post()
   }
 
@@ -246,12 +251,14 @@ class PlasmacoreView: NSOpenGLView
     configure()
     let point = convert( event.locationInWindow, from: nil )
 
+    let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+
     let m = PlasmacoreMessage( type:"Display.on_pointer_event" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"type", value:0 )  // 0=move
-    m.set( name:"x", value:Double(point.x) )
-    m.set( name:"y", value:Double(bounds.size.height - point.y) )
+    m.set( name:"x", value:Double(point.x)*scale )
+    m.set( name:"y", value:Double(bounds.size.height - point.y)*scale )
     m.post()
   }
 
@@ -260,12 +267,14 @@ class PlasmacoreView: NSOpenGLView
     configure()
     let point = convert( event.locationInWindow, from: nil )
 
+    let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+
     let m = PlasmacoreMessage( type:"Display.on_pointer_event" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"type", value:2 )  // 2=release
-    m.set( name:"x", value:Double(point.x) )
-    m.set( name:"y", value:Double(bounds.size.height - point.y) )
+    m.set( name:"x", value:Double(point.x)*scale )
+    m.set( name:"y", value:Double(bounds.size.height - point.y)*scale )
     m.set( name:"index", value:0 )
     m.post()
   }
@@ -277,6 +286,7 @@ class PlasmacoreView: NSOpenGLView
 
   override func prepareOpenGL()
   {
+    self.wantsBestResolutionOpenGLSurface = true
     self.openGLContext?.setValues( [1], for:NSOpenGLContext.Parameter.swapInterval )
   }
 
@@ -311,12 +321,14 @@ class PlasmacoreView: NSOpenGLView
     configure()
     let point = convert( event.locationInWindow, from: nil )
 
+    let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+
     let m = PlasmacoreMessage( type:"Display.on_pointer_event" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"type", value:1 )  // 1=press
-    m.set( name:"x", value:Double(point.x) )
-    m.set( name:"y", value:Double(bounds.size.height - point.y) )
+    m.set( name:"x", value:Double(point.x)*scale )
+    m.set( name:"y", value:Double(bounds.size.height - point.y)*scale )
     m.set( name:"index", value:1 )
     m.post()
   }
@@ -326,12 +338,14 @@ class PlasmacoreView: NSOpenGLView
     configure()
     let point = convert( event.locationInWindow, from: nil )
 
+    let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+
     let m = PlasmacoreMessage( type:"Display.on_pointer_event" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"type", value:0 )  // 0=move
-    m.set( name:"x", value:Double(point.x) )
-    m.set( name:"y", value:Double(bounds.size.height - point.y) )
+    m.set( name:"x", value:Double(point.x)*scale )
+    m.set( name:"y", value:Double(bounds.size.height - point.y)*scale )
     m.post()
   }
 
@@ -340,12 +354,14 @@ class PlasmacoreView: NSOpenGLView
     configure()
     let point = convert( event.locationInWindow, from: nil )
 
+    let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+
     let m = PlasmacoreMessage( type:"Display.on_pointer_event" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.set( name:"type", value:2 )  // 2=release
-    m.set( name:"x", value:Double(point.x) )
-    m.set( name:"y", value:Double(bounds.size.height - point.y) )
+    m.set( name:"x", value:Double(point.x)*scale )
+    m.set( name:"y", value:Double(bounds.size.height - point.y)*scale )
     m.set( name:"index", value:1 )
     m.post()
   }
@@ -356,13 +372,15 @@ class PlasmacoreView: NSOpenGLView
     let dx = event.deltaX
     let dy = event.deltaY
 
+    let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+
     if (dx >= 0.0001 || dx <= -0.0001 || dy >= 0.0001 || dy <= -0.0001)
     {
       let m = PlasmacoreMessage( type:"Display.on_scroll_event" )
       m.set( name:"window_id", value:windowID )
       m.set( name:"display_name", value:name )
-      m.set( name:"dx", value:Double(dx) )
-      m.set( name:"dy", value:Double(dy) )
+      m.set( name:"dx", value:Double(dx)*scale )
+      m.set( name:"dy", value:Double(dy)*scale )
       m.post()
     }
   }
