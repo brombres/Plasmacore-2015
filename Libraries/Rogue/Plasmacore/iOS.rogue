@@ -5,6 +5,15 @@ $if (target("iOS")) nativeHeader #import <UIKit/UIKit.h>
 
 class iOS
   GLOBAL METHODS
+    #{
+      # TODO: safe area insets
+      if #available(iOS 11.0, *) {
+          let window = UIApplication.shared.keyWindow
+          let topPadding = window?.safeAreaInsets.top
+          let bottomPadding = window?.safeAreaInsets.bottom
+      }
+    }#
+
     method status_bar_height->Int32
       # In pixels
       $if (target("iOS"))

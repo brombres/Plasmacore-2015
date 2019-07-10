@@ -413,7 +413,7 @@ class ImageCommand
       File.create_folder( dest_folder )
 
       local oldest_existing_timestamp = 0.0
-      forEach (filepath in File.listing("$/$*.png" (dest_folder,output_filename)))
+      forEach (filepath in File.listing(dest_folder,"$*.png" (output_filename)))
         local timestamp = File.timestamp( filepath )
         if (oldest_existing_timestamp == 0.0 or oldest_existing_timestamp > timestamp)
           oldest_existing_timestamp = timestamp
