@@ -1,18 +1,35 @@
 module Plasmacore
+  uses Geometry
 
 
 $if (target("iOS")) nativeHeader #import <UIKit/UIKit.h>
 
 class iOS
   GLOBAL METHODS
-    #{
-      # TODO: safe area insets
-      if #available(iOS 11.0, *) {
-          let window = UIApplication.shared.keyWindow
-          let topPadding = window?.safeAreaInsets.top
-          let bottomPadding = window?.safeAreaInsets.bottom
-      }
-    }#
+    method density->Real64
+      $if (target("iOS"))
+        return native("[UIScreen mainScreen].scale")->Real64
+      $else
+        return 1
+      $endIf
+
+    method safe_area->Box
+      local available = false
+      local left, top, right, bottom : Int32
+      local density = iOS.density
+      $if (target("iOS"))
+        native @|if (@available(iOS 11.0, *))
+                |{
+                |  $available = (RogueLogical) true;
+                |  UIWindow* window = UIApplication.sharedApplication.keyWindow;
+                |  $left   = (RogueInt32)(window.safeAreaInsets.left * $density);
+                |  $top    = (RogueInt32)(window.safeAreaInsets.top * $density);
+                |  $right  = (RogueInt32)(window.safeAreaInsets.right * $density);
+                |  $bottom = (RogueInt32)(window.safeAreaInsets.bottom * $density);
+                |}
+      $endIf
+      if (available) return Box( left, top, Display.width-(left+right), Display.height-(top+bottom) )
+      else           return Box( Display.size )
 
     method status_bar_height->Int32
       # In pixels

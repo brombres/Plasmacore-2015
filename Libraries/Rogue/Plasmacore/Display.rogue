@@ -841,6 +841,10 @@ class Display [singleton]
       if (vertex_count + n > VERTEX_BUFFER_SIZE) flush
       vertex_count += n
 
+    method safe_area->Box
+      if (System.is_ios) return iOS.safe_area
+      else               return Box( size )
+
     method scale_to_fit( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
       return scale_to_fit( XY(w,h), anchor )
 

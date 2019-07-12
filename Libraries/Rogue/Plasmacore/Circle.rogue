@@ -14,6 +14,8 @@ augment Circle
       #     If whole - the number of segments
       #     If fractional -  segments *= circumference (1/8 is a rougher circle than 1/4)
       #
+      if (radius <= 0) return this
+
       if (segments < 1.0)
         local circ = radius * 2 * pi
         segments = (circ * segments).floor
@@ -46,6 +48,7 @@ augment Circle
       #   segments [default: (1.0/4.0)]
       #     If whole - the number of segments
       #     If fractional -  segments *= circumference (1/8 is a rougher circle than 1/4)
+      if (radius <= 0) return this
       if (colors.count == 2) colors = Colors( colors.b, colors.b, colors.a )
 
       if (segments < 1.0)
