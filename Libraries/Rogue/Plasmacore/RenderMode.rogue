@@ -9,7 +9,7 @@ class RenderMode( value=0:Int32 ) [compound]
     BLEND_ONE                  = 0x01
     BLEND_SOURCE_ALPHA         = 0x02
     BLEND_INVERSE_SOURCE_ALPHA = 0x03
-    BLEND_MASK                 = 0x0f
+    BLEND_MASK                 = 0xFF000000
 
     BLENDED                    = 0x00001000
     TEXTURED                   = 0x00002000
@@ -18,18 +18,15 @@ class RenderMode( value=0:Int32 ) [compound]
     WRAP                       = (WRAP_X | WRAP_Y)
     POINT_FILTER               = 0x00010000
 
-    COLOR_MULTIPLY             = 0x00100000
-    COLOR_ADD                  = 0x00200000
-    COLOR_FILL                 = 0x00300000
-    COLOR_MODE_MASK            = 0x00f00000
+    OPTION_MASK                = 0x000FF000
 
-    OPTION_MASK                = 0x00FFF000
+    OPAQUE_IMAGE   = RenderMode((BLEND_ZERO:<<:28)|(BLEND_ONE:<<:24)|TEXTURED)
+    ALPHA_IMAGE    = RenderMode((BLEND_INVERSE_SOURCE_ALPHA:<<:28)|(BLEND_ONE:<<:24)|BLENDED|TEXTURED)
+    ADDITIVE_IMAGE = RenderMode((BLEND_ONE:<<:28)|(BLEND_ONE:<<:24)|BLENDED|TEXTURED)
 
-    OPAQUE_IMAGE  = RenderMode((BLEND_ZERO:<<:28)|(BLEND_ONE:<<:24)|TEXTURED)
-    ALPHA_IMAGE   = RenderMode((BLEND_INVERSE_SOURCE_ALPHA:<<:28)|(BLEND_ONE:<<:24)|BLENDED|TEXTURED)
-
-    OPAQUE_SHAPE  = RenderMode((BLEND_ZERO:<<:28)|(BLEND_ONE:<<:24))
-    ALPHA_SHAPE   = RenderMode((BLEND_INVERSE_SOURCE_ALPHA:<<:28)|(BLEND_ONE:<<:24)|BLENDED)
+    OPAQUE_SHAPE   = RenderMode((BLEND_ZERO:<<:28)|(BLEND_ONE:<<:24))
+    ALPHA_SHAPE    = RenderMode((BLEND_INVERSE_SOURCE_ALPHA:<<:28)|(BLEND_ONE:<<:24)|BLENDED)
+    ADDITIVE_SHAPE = RenderMode((BLEND_ONE:<<:28)|(BLEND_ONE:<<:24)|BLENDED)
 
   GLOBAL METHODS
     method create( src_blend:Int32, dest_blend:Int32 )->RenderMode

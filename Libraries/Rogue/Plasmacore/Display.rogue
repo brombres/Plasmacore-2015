@@ -691,24 +691,7 @@ class Display [singleton]
       local render_mode = active_render_mode
 
       local shader = custom_shader
-      if (not shader)
-        # Choose shader based on render mode.
-        if (render_mode.is_textured)
-          which (render_mode.value & RenderMode.COLOR_MODE_MASK)
-            case RenderMode.COLOR_MULTIPLY: shader = ImageShader.TEXTURE_WITH_COLOR_MULTIPLY
-            case RenderMode.COLOR_ADD:      shader = ImageShader.TEXTURE_WITH_COLOR_ADD
-            case RenderMode.COLOR_FILL:     shader = ImageShader.TEXTURE_WITH_COLOR_FILL
-            others:                         shader = ImageShader.TEXTURE
-          endWhich
-        else
-          shader = ImageShader.COLOR
-        endIf
-      endIf
-
-      if (not shader)
-        println "Display.render_2dx: No active shader"
-        return
-      endIf
+      if (not shader) shader = ImageShader.COLOR
 
       local vp_size = viewport_size
 
