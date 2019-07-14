@@ -25,8 +25,8 @@ class RenderTarget
 
     projection_mode   = ProjectionMode2DX() : ProjectionMode
 
-    clipping_region       : Box?
-    clipping_region_stack = Box?[]
+    clip       : Box?
+    clip_stack = Box?[]
 
     projection_transform  : Matrix
     transform             : Matrix
@@ -76,8 +76,8 @@ class RenderTarget
 
       activate
 
-      clipping_region = null
-      clipping_region_stack.clear
+      clip = null
+      clip_stack.clear
 
       # Ensure viewport min/max ordering matches true size ordering
       if ((true_size.x <= true_size.y) xor (viewport_size.x <= viewport_size.y))
@@ -94,20 +94,20 @@ class RenderTarget
       scale_to_fit( target_display_size, target_anchor )
       <ui_hook>
 
-    method pop_clipping_region
-      if (clipping_region_stack.count)
-        clipping_region = clipping_region_stack.remove_last
+    method pop_clip
+      if (clip_stack.count)
+        clip = clip_stack.remove_last
       else
-        clipping_region = null
+        clip = null
       endIf
 
-    method push_clipping_region( box:Box?, &replace )
-      clipping_region_stack.add( clipping_region )
+    method push_clip( box:Box?, &replace )
+      clip_stack.add( clip )
 
-      if (replace and clipping_region.exists and box.exists)
-        clipping_region = clipping_region.value & box.value
+      if (replace and clip.exists and box.exists)
+        clip = clip.value & box.value
       else
-        clipping_region = box
+        clip = box
       endIf
 
     method push_object_transform( m:Matrix )
@@ -171,34 +171,34 @@ class RenderTarget
         projection_mode.update
       endIf
 
-    method set_clipping_region( new_clipping_region:Box? )
+    method set_clip( new_clip:Box? )
       contingent
         # Avoid rendering cached content if the clipping region is unchanged
-        sufficient (new_clipping_region.exists != clipping_region.exists)
+        sufficient (new_clip.exists != clip.exists)
 
         # Existing and new clipping region are both null or both non-null.
 
         # If the CR was null before and is still null, no need to flush the render buffer
-        necessary (new_clipping_region.exists)
+        necessary (new_clip.exists)
 
         # Was non-null before and is non-null now; did the value change?
-        necessary (new_clipping_region.value != clipping_region.value)
+        necessary (new_clip.value != clip.value)
 
       satisfied
         Display.flush
       endContingent
 
-      @clipping_region = new_clipping_region
+      @clip = new_clip
 
-      if (clipping_region.exists)
-        local box = (clipping_region.value & Display.bounds)
-        if (box.exists) @clipping_region = box
-        else            @clipping_region = null
+      if (clip.exists)
+        local box = (clip.value & Display.bounds)
+        if (box.exists) @clip = box
+        else            @clip = null
       endIf
 
-      if (clipping_region.exists)
+      if (clip.exists)
         local scale = viewport_size / size
-        local box = clipping_region.value
+        local box = clip.value
         local pos = box.position * scale
         local size = box.size * scale
 

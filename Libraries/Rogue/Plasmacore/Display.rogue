@@ -198,8 +198,11 @@ class Display [singleton]
       endIf
       }#
 
+    method clip->Box?
+      return render_target.clip
+
     method clipping_region->Box?
-      return render_target.clipping_region
+      return render_target.clip
 
     method define_texture( gl_id:Int32, bitmap:Bitmap, options:Int32 )->Int32
       nativeCode
@@ -615,8 +618,12 @@ class Display [singleton]
     method perspective_center->XY
       return render_target.perspective_center
 
+    method pop_clip->this
+      render_target.pop_clip
+      return this
+
     method pop_clipping_region->this
-      render_target.pop_clipping_region
+      render_target.pop_clip
       return this
 
     method pop_object_transform( n=1:Int32 )->this
@@ -632,7 +639,7 @@ class Display [singleton]
         flush
         @render_target = canvas.render_target
         render_target.configure( canvas.texture.image_size )
-        clipping_region = clipping_region  # Reset clipping region
+        clip = clip  # Reset clipping region
       else
         remove_render_target
       endIf
@@ -642,10 +649,14 @@ class Display [singleton]
       native "glFlush();"
       @render_target = default_render_target
       @render_target.activate
-      clipping_region = clipping_region  # Reset clipping region
+      clip = clip  # Reset clipping region
+
+    method push_clip( box:Box?, &replace )->this
+      render_target.push_clip( box, replace )
+      return this
 
     method push_clipping_region( box:Box?, &replace )->this
-      render_target.push_clipping_region( box, replace )
+      render_target.push_clip( box, replace )
       return this
 
     method push_object_transform( m:Matrix )->this
@@ -835,8 +846,12 @@ class Display [singleton]
       render_target.scale_to_fit( target_display_size, anchor )
       return this
 
-    method set_clipping_region( new_clipping_region:Box? )->this
-      render_target.set_clipping_region( new_clipping_region )
+    method set_clip( new_clip:Box? )->this
+      render_target.set_clip( new_clip )
+      return this
+
+    method set_clipping_region( new_clip:Box? )->this
+      render_target.set_clip( new_clip )
       return this
 
     method set_primitive_type( primitive_type:Int32, front_face=Display.CLOCKWISE:Int32 )->this
