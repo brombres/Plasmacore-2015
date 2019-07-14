@@ -201,7 +201,7 @@ class Display [singleton]
     method clip->Box?
       return render_target.clip
 
-    method clipping_region->Box?
+    method clipping_region->Box? [deprecated]
       return render_target.clip
 
     method define_texture( gl_id:Int32, bitmap:Bitmap, options:Int32 )->Int32
@@ -622,7 +622,7 @@ class Display [singleton]
       render_target.pop_clip
       return this
 
-    method pop_clipping_region->this
+    method pop_clipping_region->this [deprecated]
       render_target.pop_clip
       return this
 
@@ -655,7 +655,7 @@ class Display [singleton]
       render_target.push_clip( box, replace )
       return this
 
-    method push_clipping_region( box:Box?, &replace )->this
+    method push_clipping_region( box:Box?, &replace )->this [deprecated]
       render_target.push_clip( box, replace )
       return this
 
@@ -850,7 +850,7 @@ class Display [singleton]
       render_target.set_clip( new_clip )
       return this
 
-    method set_clipping_region( new_clip:Box? )->this
+    method set_clipping_region( new_clip:Box? )->this [deprecated]
       render_target.set_clip( new_clip )
       return this
 
