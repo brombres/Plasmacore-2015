@@ -2,8 +2,7 @@
 //  PlasmacoreView.swift
 //  PlasmacoreStudio
 //
-//  Created by Abraham Pralle on 3/27/16.
-//  Copyright © 2016 Abe Pralle. All rights reserved.
+//  Created by Abe Pralle on 3/27/16.
 //
 
 #if os(OSX)

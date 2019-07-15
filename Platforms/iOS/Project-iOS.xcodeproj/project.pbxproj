@@ -141,7 +141,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 0800;
 				LastUpgradeCheck = 0930;
-				ORGANIZATIONNAME = Plasmaworks;
+				ORGANIZATIONNAME = MyOrganization;
 				TargetAttributes = {
 					30361DBF1D9A224D00A33B99 = {
 						CreatedOnToolsVersion = 8.0;
@@ -355,7 +355,7 @@
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = "Project-iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.plasmaworks.Project-iOS";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.plasmacore.Project-iOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Project-iOS-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Project-iOS-Swift.h";
@@ -374,7 +374,7 @@
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = "Project-iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.plasmaworks.Project-iOS";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.plasmacore.Project-iOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Project-iOS-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Project-iOS-Swift.h";

@@ -2,8 +2,7 @@
 //  PlasmacoreViewController-iOS.swift
 //  iOS-Plasmacore
 //
-//  Created by Abraham Pralle on 5/11/16.
-//  Copyright © 2016 Abe Pralle. All rights reserved.
+//  Created by Abe Pralle on 5/11/16.
 //
 
 import GLKit

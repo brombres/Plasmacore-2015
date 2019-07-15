@@ -2,8 +2,8 @@
 //  AppDelegate.swift
 //  Project-macOS
 //
-//  Created by Abraham Pralle on 11/27/16.
-//  Copyright © 2016 Plasmaworks. All rights reserved.
+//  Created by Abe Pralle on 11/27/16.
+//  Copyright © 2019 AuthorName. All rights reserved.
 //
 
 import Cocoa
