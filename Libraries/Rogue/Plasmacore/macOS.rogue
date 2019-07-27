@@ -1,0 +1,15 @@
+module Plasmacore
+  uses Geometry
+
+$if (target("macOS")) nativeHeader #import <Cocoa/Cocoa.h>
+
+class macOS
+  GLOBAL METHODS
+    method display_density->Real64
+      $if (target("macOS"))
+        return native("[NSScreen mainScreen].backingScaleFactor")->Real64
+      $else
+        return 1.0
+      $endIf
+endClass
+

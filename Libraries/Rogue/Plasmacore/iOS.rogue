@@ -6,7 +6,7 @@ $if (target("iOS")) nativeHeader #import <UIKit/UIKit.h>
 
 class iOS
   GLOBAL METHODS
-    method density->Real64
+    method display_density->Real64
       $if (target("iOS"))
         return native("[UIScreen mainScreen].scale")->Real64
       $else
@@ -16,7 +16,7 @@ class iOS
     method safe_area->Box
       local available = false
       local left, top, right, bottom : Int32
-      local density = iOS.density
+      local density = iOS.display_density
       $if (target("iOS"))
         native @|if (@available(iOS 11.0, *))
                 |{

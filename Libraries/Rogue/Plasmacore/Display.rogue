@@ -288,6 +288,16 @@ class Display [singleton]
       native @|GLuint texture_id = (GLuint) $gl_id;
               |glDeleteTextures( 1, &texture_id );
 
+    method density->Real64
+      if (System.is_ios)
+        return iOS.display_density
+      elseIf (System.is_macos)
+        return macOS.display_density
+      else
+        return 1
+      endIf
+
+
     method display_scale->Real64
       return render_target.display_scale
 
