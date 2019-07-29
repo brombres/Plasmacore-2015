@@ -160,7 +160,7 @@ public class PlasmacoreView extends GLSurfaceView
     {
       case MotionEvent.ACTION_MOVE: type = POINTER_MOVE;  break;
       case MotionEvent.ACTION_DOWN: type = POINTER_PRESS; break;
-      default: type = POINTER_RELEASE;  // UP and CANCEL both count as release for Plasmacore
+      default: type = POINTER_RELEASE;  // UP and CANCEL both count as release for Plasmacore (CANCEL sends extra cancelled:true)
     }
 
     int n = e.getPointerCount();
@@ -178,6 +178,7 @@ public class PlasmacoreView extends GLSurfaceView
           m.set( "type", type );
           m.set( "x", e.getHistoricalX(i,h) );
           m.set( "y", e.getHistoricalY(i,h) );
+          if (e.getActionMasked() == MotionEvent.ACTION_CANCEL) m.set( "cancelled", true );
           m.post();
         }
       }

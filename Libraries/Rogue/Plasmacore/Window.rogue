@@ -113,10 +113,11 @@ class WindowManager [essential singleton]
           local dy        = m.real64( "dy" )
           local button    = m.int32( "button" )
           local id        = m.int32( "id" )
+          local is_cancelled = m.logical( "cancelled" )
 
           local window    = WindowManager.find_window( window_id )
           if (window)
-            local e = PointerEvent( type, XY(x,y), XY(dx,dy), button, id )
+            local e = PointerEvent( type, XY(x,y), XY(dx,dy), button, id, is_cancelled )
             window.handle_pointer_event( display_name, e )
           endIf
         endFunction

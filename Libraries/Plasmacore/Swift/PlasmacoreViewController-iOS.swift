@@ -2,7 +2,8 @@
 //  PlasmacoreViewController-iOS.swift
 //  iOS-Plasmacore
 //
-//  Created by Abe Pralle on 5/11/16.
+//  Created by Abraham Pralle on 5/11/16.
+//  Copyright © 2016 Abe Pralle. All rights reserved.
 //
 
 import GLKit
@@ -158,13 +159,14 @@ class PlasmacoreViewController : GLKViewController
     {
       let m = PlasmacoreMessage( type:"Display.on_pointer_event" )
       m.set( name:"display_name",   value:name )
-      m.set( name:"type", value:2 )  // release (we count canceled touches as releases)
+      m.set( name:"type", value:2 )  // release (we send cancelled touches as releases with the additional property cancelled:true)
 
       let scale = UIScreen.main.scale
       let os_pt = touch.location( in: self.view )
-      m.set( name:"x",      value:Int( os_pt.x * scale ) )
-      m.set( name:"y",      value:Int( os_pt.y * scale ) )
-      m.set( name:"index",  value:touch_index )
+      m.set( name:"x",         value:Int( os_pt.x * scale ) )
+      m.set( name:"y",         value:Int( os_pt.y * scale ) )
+      m.set( name:"index",     value:touch_index )
+      m.set( name:"cancelled", value:true )
       m.post()
 
       touch_index += 1

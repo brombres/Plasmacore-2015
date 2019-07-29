@@ -119,13 +119,14 @@ class PointerEvent : Event
     RELEASE  = 2
 
   PROPERTIES
-    type        : Int32
-    position    : XY
-    delta       : XY
-    index       : Int32
+    type         : Int32
+    position     : XY
+    delta        : XY
+    index        : Int32
+    is_cancelled : Logical
 
   METHODS
-    method init( type, position, delta, index )
+    method init( type, position, delta, index, is_cancelled )
 
     method is_move->Logical [macro]
       return (this.type == PointerEvent.MOVE)
@@ -143,7 +144,7 @@ class PointerEvent : Event
       return (this.type == RELEASE and index == button_index)
 
     method operator+( offset:XY )->PointerEvent
-      return PointerEvent( type, position+offset, delta, index )
+      return PointerEvent( type, position+offset, delta, index, is_cancelled )
 
     method operator-( offset:XY )->PointerEvent
       return this + (-offset)
