@@ -137,11 +137,29 @@ class PointerEvent : Event
     method is_press( button_index:Int32 )->Logical
       return (this.type == PRESS and index == button_index)
 
+    method is_press_left->Logical
+      return is_press( 0 )
+
+    method is_press_right->Logical
+      return is_press( 1 )
+
+    method is_press_middle->Logical
+      return is_press( 2 )
+
     method is_release->Logical [macro]
       return (this.type == PointerEvent.RELEASE)
 
     method is_release( button_index:Int32 )->Logical
       return (this.type == RELEASE and index == button_index)
+
+    method is_release_left->Logical
+      return is_release( 0 )
+
+    method is_release_right->Logical
+      return is_release( 1 )
+
+    method is_release_middle->Logical
+      return is_release( 2 )
 
     method operator+( offset:XY )->PointerEvent
       return PointerEvent( type, position+offset, delta, index, is_cancelled )
