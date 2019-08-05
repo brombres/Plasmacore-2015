@@ -37,7 +37,7 @@ class OverlayLog : PrintWriter<<output_buffer>> [essential singleton]
       font.color = Color.WHITE
       font.anchor = Anchor.TOP_LEFT
 
-      local y = 0
+      local y = Display.safe_area.position.y
 
       if (Plasmacore.show_fps)
         font.draw( "fps:$" (Plasmacore.fps), XY(0,0) )

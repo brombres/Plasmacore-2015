@@ -63,6 +63,7 @@ class GGButton : GGComponent
         if (@is_pressed)
           is_pressed = false
           GGComponentManager.pointer_focus = null
+          if (System.is_mobile) GGComponentManager.pointer_position = null  # don't leave buttons targeted after pointer-up
           on_release
           if (on_release_callback) on_release_callback( this )
 
@@ -98,7 +99,10 @@ class GGButton : GGComponent
       return (@is_pressed or not press_timer.is_expired)
 
     method is_targeted->Logical
-      return (GGComponentManager.pointer_position.exists and this.contains(GGComponentManager.pointer_position.value))
+      if (not GGComponentManager.pointer_position.exists) return false
+      if (not this.contains(GGComponentManager.pointer_position.value)) return false
+      if (GGComponentManager.pointer_focus is null) return true
+      return (GGComponentManager.pointer_focus is this)
 
     method is_toggle->Logical
       return false

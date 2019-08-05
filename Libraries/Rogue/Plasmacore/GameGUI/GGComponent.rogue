@@ -4,7 +4,12 @@ class GGComponentManager [singleton]
   PROPERTIES
     pointer_position : XY?
     pointer_focus    : GGComponent
-    default_font     = DefaultFont.cloned.set_scale( 0.60 ) : Font
+    default_font     : Font
+
+  METHODS
+    method init
+      default_font = DefaultFont.cloned
+      default_font.height = Int32( 20 * (Display.height / 960.0) )
 endClass
 
 class GGComponent
