@@ -2,6 +2,17 @@
 # Plasmacore.rogue
 #==============================================================================
 
+# You application can set up the following listeners to hook into app lifecycle events.
+#
+#   MessageManager.set_listener( "Application.on_launch",
+#     function(m:Message)
+#       ...
+#     endFunction
+#   )
+#   MessageManager.set_listener( "Application.on_start", ... )
+#   MessageManager.set_listener( "Application.on_stop",  ... )
+#   MessageManager.set_listener( "Application.on_save",  ... )  # Called when the app should auto-save the game to Plasmacore.application_data_folder
+
 $if not target("Console")
 
 $if (target("Web")) nativeHeader #include <emscripten.h>
@@ -381,6 +392,7 @@ class Plasmacore [essential singleton]
       return this
 
     method user_data_folder->String
+      # These files are exposed to the user on iOS
       $if not target("Android")
         if (not @user_data_folder)
           user_data_folder = native( "Plasmacore_get_user_data_folder()" )->String
