@@ -54,6 +54,8 @@ class OverlayLog : PrintWriter<<output_buffer>> [essential singleton]
         y += font.height
       endForEach
 
+      font.color = Color.WHITE
+
       Display.pop_clip
 
     method update

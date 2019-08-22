@@ -16,8 +16,8 @@ class iOS
     method safe_area->Box
       local available = false
       local left, top, right, bottom : Int32
-      local density = iOS.display_density
       $if (target("iOS"))
+        local density = iOS.display_density
         native @|if (@available(iOS 11.0, *))
                 |{
                 |  $available = (RogueLogical) true;
