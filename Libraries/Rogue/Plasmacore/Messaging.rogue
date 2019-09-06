@@ -79,6 +79,9 @@ class MessageManager [essential singleton]
         endFunction
       )
 
+    method set( type:String, listener:Function(Message) )
+      set_listener( type, listener )
+
     method set_listener( type:String, listener:Function(Message), &once )
       local table = select{ once:one_time_listeners || listeners }
       table[ type ] = listener
