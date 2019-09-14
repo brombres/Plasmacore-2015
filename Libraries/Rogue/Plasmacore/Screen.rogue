@@ -38,7 +38,7 @@ class Screen
 
     method after_update
 
-    method change_state( new_state:State )
+    method change_state( new_state:State )->State
       local cur = new_state
       while (cur.next_state) cur = cur.next_state
       cur.next_state = state.next_state
@@ -52,8 +52,9 @@ class Screen
       state.screen = this
       state.is_active = true
       state.on_start
+      return state
 
-    method change_screen( new_screen:Screen )
+    method change_screen( new_screen:Screen )->Screen
       new_screen.display = display
       new_screen.on_prepare
       #forEach (layer in new_screen.layers)
@@ -66,6 +67,7 @@ class Screen
       this.is_active = false
       display.screen.mark_images_unused
       display.screen = new_screen
+      return new_screen
 
     method collect_texture_names( texture_names=null:StringTable<<Logical>> )->String[]
       ensure texture_names

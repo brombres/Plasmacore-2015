@@ -38,11 +38,11 @@ class State
 
     method after_update
 
-    method change_state( new_state:State )
-      screen.change_state( new_state )
+    method change_state( new_state:State )->State
+      return screen.change_state( new_state )
 
-    method change_screen( new_screen:Screen )
-      screen.change_screen( new_screen )
+    method change_screen( new_screen:Screen )->Screen
+      return screen.change_screen( new_screen )
 
     method exit_state
       screen.exit_state
