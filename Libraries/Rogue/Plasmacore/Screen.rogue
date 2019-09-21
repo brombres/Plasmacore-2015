@@ -134,6 +134,7 @@ class Screen
         @state = new_state
         state.on_resume
       else
+        @state = new_state
         state.on_start
       endIf
 

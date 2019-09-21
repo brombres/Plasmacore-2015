@@ -176,3 +176,50 @@ class State<<$ScreenType>> : State
       return @screen as $ScreenType
 endClass
 
+class ChangeScreenState( new_screen:Screen ) : State
+  METHODS
+    method on_start
+      change_screen( new_screen )
+endClass
+
+class ExecuteState( fn:Function ) : State
+  METHODS
+    method on_start
+      fn()
+      exit_state
+endClass
+
+class FadeInState : State
+  PROPERTIES
+    color   : Color
+    opacity : EasedValue<<Real64>>
+
+  METHODS
+    method init( duration=0.25:Real64, color=Color.BLACK, progress_fn=ProgressFn.QUADRATIC_IN:ProgressFnType )
+      opacity = EasedValue<<Real64>>( 1.0, duration, progress_fn )
+
+    method on_start
+      opacity.target_value = 0.0
+
+    method after_draw
+      Display.bounds.fill( color.with_alpha(opacity.value) )
+      if (opacity.value == 0.0) exit_state
+endClass
+
+class FadeOutState : State
+  PROPERTIES
+    color   : Color
+    opacity : EasedValue<<Real64>>
+
+  METHODS
+    method init( duration=0.25:Real64, color=Color.BLACK, progress_fn=ProgressFn.QUADRATIC_OUT:ProgressFnType )
+      opacity = EasedValue<<Real64>>( 0.0, duration, progress_fn )
+
+    method on_start
+      opacity.target_value = 1.0
+
+    method after_draw
+      Display.bounds.fill( color.with_alpha(opacity.value) )
+      if (opacity.value == 1.0) exit_state
+endClass
+
