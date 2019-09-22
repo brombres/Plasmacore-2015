@@ -1,8 +1,12 @@
 uses  Plasmacore
 
 class GGLayout : GGComponent
-  PROPERTIES
-  METHODS
+  GLOBAL METHODS
+    method horizontal->GGHorizontalLayout
+      return GGHorizontalLayout()
+
+    method vertical->GGVerticalLayout
+      return GGVerticalLayout()
 endClass
 
 
