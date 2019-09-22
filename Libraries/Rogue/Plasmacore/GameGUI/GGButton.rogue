@@ -5,7 +5,7 @@ class GGButton : GGComponent
   PROPERTIES
     text                 : String
     font                 : Font
-    color=Color.WHITE    : Color
+    color                : Color
 
     image                : Image
     pressed_image        : Image
@@ -29,7 +29,9 @@ class GGButton : GGComponent
       size = fixed_size
 
     method init( text, font=GGComponentManager.default_font, fixed_size=XY(0,0) )
-      size = fixed_size
+      font  = font.cloned
+      color = font.color
+      size  = fixed_size
 
     method init( image, pressed_image=null )
 
@@ -154,9 +156,8 @@ class GGButton : GGComponent
       endIf
 
       if (text and font)
-        font.anchor = Anchor.CENTER
         font.color = select{ is_disabled:Color.GRAY || color }
-        font.draw( text, bounds.center )
+        font.draw( text, bounds )
       endIf
 
     method on_press
@@ -187,7 +188,7 @@ class GGButton : GGComponent
       press_timer.duration = duration
       return this
 
-    method set_text( @text, @font=GGComponentManager.default_font, @color=Color.WHITE )->this
+    method set_text( @text )->this
       return this
 
 endClass
