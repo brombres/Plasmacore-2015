@@ -3,8 +3,8 @@ module Plasmacore
 
 class Canvas : Image
   PROPERTIES
-    texture       : Texture
-    render_target : RenderTarget
+    canvas_texture : Texture
+    render_target  : RenderTarget
 
   METHODS
     method init( w:Int32, h:Int32 )
@@ -17,14 +17,14 @@ class Canvas : Image
       init( size.x, size.y )
 
     method is_blank->Logical
-      return (texture is null)
+      return (canvas_texture is null)
 
     method render_target->RenderTarget
-      if (not texture)
-        texture = Texture( this.size )
-        init( texture )
+      if (not canvas_texture)
+        canvas_texture = Texture( this.size )
+        init( canvas_texture )
       endIf
-      if (not @render_target) render_target = RenderTarget( texture.render_target_id )
+      if (not @render_target) render_target = RenderTarget( canvas_texture.render_target_id )
       return @render_target
 
 endClass

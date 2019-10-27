@@ -648,8 +648,9 @@ class Display [singleton]
       if (canvas)
         flush
         @render_target = canvas.render_target
-        render_target.configure( canvas.texture.image_size )
+        render_target.configure( canvas.canvas_texture.image_size )
         clip = clip  # Reset clipping region
+        active_front_face = COUNTER_CLOCKWISE
       else
         remove_render_target
       endIf
@@ -660,6 +661,7 @@ class Display [singleton]
       @render_target = default_render_target
       @render_target.activate
       clip = clip  # Reset clipping region
+      active_front_face = CLOCKWISE
 
     method push_clip( box:Box?, &replace )->this
       render_target.push_clip( box, replace )
@@ -864,7 +866,7 @@ class Display [singleton]
       render_target.set_clip( new_clip )
       return this
 
-    method set_primitive_type( primitive_type:Int32, front_face=Display.CLOCKWISE:Int32 )->this
+    method set_primitive_type( primitive_type:Int32, front_face=Display.active_front_face:Int32 )->this
       if (primitive_type == active_primitive_type and front_face == active_front_face) return this
       flush
       active_primitive_type = primitive_type
