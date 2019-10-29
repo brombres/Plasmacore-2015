@@ -313,7 +313,10 @@ class Display [singleton]
       endIf
 
     method draw( line:Line, colors:Colors )
-      draw( transform(line), colors, select{ colors.is_opaque:RenderMode.OPAQUE_SHAPE || RenderMode.ALPHA_SHAPE }, null )
+      local render_mode : RenderMode
+      if (colors.is_opaque) render_mode = RenderMode.OPAQUE_SHAPE
+      else                  render_mode = RenderMode.ALPHA_SHAPE
+      draw( transform(line), colors, render_mode, null )
 
     method draw( line:Line<<XYZW>>, colors:Colors, render_mode:RenderMode, shader:Shader )
       if (colors.count == 1) colors = Colors( colors.a, colors.a )
@@ -342,18 +345,22 @@ class Display [singleton]
       fill( box, Colors(color) )
 
     method fill( box:Box, colors:Colors )
-      fill_solid_quad( transform(Quad(box)), colors,
-        select{ colors.is_opaque:RenderMode.OPAQUE_SHAPE || RenderMode.ALPHA_SHAPE }, null )
+      local render_mode : RenderMode
+      if (colors.is_opaque) render_mode = RenderMode.OPAQUE_SHAPE
+      else                  render_mode = RenderMode.ALPHA_SHAPE
+      fill_solid_quad( transform(Quad(box)), colors, render_mode, null )
 
     method fill( triangle:Triangle, color:Color )
       fill( triangle, Colors(color) )
 
     method fill( triangle:Triangle, colors:Colors )
-      fill_solid_triangle( transform(triangle), colors,
-        select{ colors.is_opaque:RenderMode.OPAQUE_SHAPE || RenderMode.ALPHA_SHAPE }, null )
+      local render_mode : RenderMode
+      if (colors.is_opaque) render_mode = RenderMode.OPAQUE_SHAPE
+      else                  render_mode = RenderMode.ALPHA_SHAPE
+      fill_solid_triangle( transform(triangle), colors, render_mode, null )
 
     method fill( triangle:Triangle, image:Image, uv:Triangle, colors=Colors(Color.WHITE):Colors,
-        render_mode=null:RenderMode?, shader=ImageShader.TEXTURE:Shader )
+        render_mode=null:RenderMode, shader=ImageShader.TEXTURE:Shader )
       local texture_data = image.data as TextureImageData
       if (texture_data)
         fill( triangle, texture_data.texture, uv, colors, render_mode, shader )
@@ -362,14 +369,14 @@ class Display [singleton]
       endIf
 
     method fill( triangle:Triangle, texture:Texture, uv:Triangle, colors=Colors(Color.WHITE):Colors,
-        render_mode=null:RenderMode?, shader=ImageShader.TEXTURE:Shader )
+        render_mode=null:RenderMode, shader=ImageShader.TEXTURE:Shader )
 
-      if (not render_mode.exists)
+      if (not render_mode)
         if (texture.is_opaque) render_mode = RenderMode.OPAQUE_IMAGE
         else                   render_mode = RenderMode.ALPHA_IMAGE
       endIf
 
-      fill_textured_triangle( texture, transform(triangle), colors, uv, render_mode.value, shader )
+      fill_textured_triangle( texture, transform(triangle), colors, uv, render_mode, shader )
 
     method fill_solid_quad( quad:Quad<<XYZW>>, colors:Colors, render_mode:RenderMode, shader:Shader )
       set_primitive_type( TRIANGLES )
@@ -726,60 +733,7 @@ class Display [singleton]
 
       native @|glFrontFace( $active_front_face ? GL_CW : GL_CCW );
 
-      if (render_mode.is_blended)
-        local gl_source_blend = 0
-        which (render_mode.source_blend)
-          case RenderMode.BLEND_ZERO:                 gl_source_blend = native("GL_ZERO")->Int32
-          case RenderMode.BLEND_ONE:                  gl_source_blend = native("GL_ONE")->Int32
-          case RenderMode.BLEND_SOURCE_ALPHA:         gl_source_blend = native("GL_SRC_ALPHA")->Int32
-          case RenderMode.BLEND_INVERSE_SOURCE_ALPHA: gl_source_blend = native("GL_ONE_MINUS_SRC_ALPHA")->Int32
-        endWhich
-
-        local gl_dest_blend = 0
-        which (render_mode.dest_blend)
-          case RenderMode.BLEND_ZERO:                 gl_dest_blend = native("GL_ZERO")->Int32
-          case RenderMode.BLEND_ONE:                  gl_dest_blend = native("GL_ONE")->Int32
-          case RenderMode.BLEND_SOURCE_ALPHA:         gl_dest_blend = native("GL_SRC_ALPHA")->Int32
-          case RenderMode.BLEND_INVERSE_SOURCE_ALPHA: gl_dest_blend = native("GL_ONE_MINUS_SRC_ALPHA")->Int32
-        endWhich
-
-        native @|glEnable( GL_BLEND );
-                |glBlendFunc( $gl_source_blend, $gl_dest_blend );
-      else
-        native @|glDisable( GL_BLEND );
-      endIf
-
-      if (render_mode.is_textured)
-        forEach (i in 0..<active_textures.count.or_smaller(shader.texture_settings.count))
-          local texture = active_textures[ i ]
-          if (texture)
-            local setting = shader.texture_settings[ i ]
-            native @|glActiveTexture( GL_TEXTURE0+$i );
-                    |glBindTexture( GL_TEXTURE_2D, $texture->id );
-                    |glUniform1i( $setting, $i );
-
-            if (render_mode.wrap_x)
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-            else
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-            endIf
-
-            if (render_mode.wrap_y)
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-            else
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-            endIf
-
-            if (render_mode.is_point_filtered)
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-            else
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-            endIf
-          endIf
-        endForEach
-      endIf
+      render_mode.apply( shader )
 
       # ---- Set Vertex Color Mode ------------------------------------------------
       # Copy vertex colors and set up vertex color mode
@@ -892,7 +846,7 @@ class Display [singleton]
       return this
 
     method set_render_mode( render_mode:RenderMode, shader=null:Shader )->this
-      if (render_mode.value == active_render_mode.value and custom_shader is shader) return this
+      if (render_mode is active_render_mode and custom_shader is shader) return this
       flush
       active_render_mode = render_mode
       custom_shader = shader

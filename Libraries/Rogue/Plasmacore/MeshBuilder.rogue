@@ -11,7 +11,7 @@ class MeshBuilder
     is_clockwise = true
     is_linked    : Logical
 
-    render_mode : RenderMode?
+    render_mode : RenderMode
     shader      : Shader
 
   METHODS
@@ -45,15 +45,15 @@ class MeshBuilder
       is_clockwise = (cw or not ccw)
       return this
 
-    method fill( texture:Texture, render_mode=null:RenderMode?, shader=null:Shader )
+    method fill( texture:Texture, render_mode=null:RenderMode, shader=null:Shader )
       render_mode = ?:{ render_mode || this.render_mode || texture.default_render_mode }
       shader = ?:{ shader || this.shader || texture.default_shader }
-      Display.fill_textured_mesh( this, texture, render_mode.value, shader )
+      Display.fill_textured_mesh( this, texture, render_mode, shader )
 
-    method fill( render_mode=null:RenderMode?, shader=null:Shader )
+    method fill( render_mode=null:RenderMode, shader=null:Shader )
       render_mode = ?:{ render_mode || this.render_mode || RenderMode.OPAQUE_SHAPE }
       shader = ?:{ shader || this.shader || ImageShader.COLOR }
-      Display.fill_solid_mesh( this, render_mode.value, shader )
+      Display.fill_solid_mesh( this, render_mode, shader )
 
     method set_clockwise->this
       is_clockwise = true

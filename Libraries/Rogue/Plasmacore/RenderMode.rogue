@@ -1,75 +1,81 @@
 module Plasmacore
 
+class RenderMode
+  GLOBAL PROPERTIES
+    OPAQUE_IMAGE   = OpaqueImageRenderMode()
+    ALPHA_IMAGE    = AlphaImageRenderMode()
+    ADDITIVE_IMAGE = AdditiveImageRenderMode()
 
-class RenderMode( value=0:Int32 ) [compound]
-  DEFINITIONS
-    # dest_blend is (render_mode >> 28) & 15
-    # src_blend  is (render_mode >> 24) & 15
-    BLEND_ZERO                 = 0x00
-    BLEND_ONE                  = 0x01
-    BLEND_SOURCE_ALPHA         = 0x02
-    BLEND_INVERSE_SOURCE_ALPHA = 0x03
-    BLEND_MASK                 = 0xFF000000
-
-    BLENDED                    = 0x00001000
-    TEXTURED                   = 0x00002000
-    WRAP_X                     = 0x00004000
-    WRAP_Y                     = 0x00008000
-    WRAP                       = (WRAP_X | WRAP_Y)
-    POINT_FILTER               = 0x00010000
-
-    OPTION_MASK                = 0x000FF000
-
-    OPAQUE_IMAGE   = RenderMode((BLEND_ZERO:<<:28)|(BLEND_ONE:<<:24)|TEXTURED)
-    ALPHA_IMAGE    = RenderMode((BLEND_INVERSE_SOURCE_ALPHA:<<:28)|(BLEND_ONE:<<:24)|BLENDED|TEXTURED)
-    ADDITIVE_IMAGE = RenderMode((BLEND_ONE:<<:28)|(BLEND_ONE:<<:24)|BLENDED|TEXTURED)
-
-    OPAQUE_SHAPE   = RenderMode((BLEND_ZERO:<<:28)|(BLEND_ONE:<<:24))
-    ALPHA_SHAPE    = RenderMode((BLEND_INVERSE_SOURCE_ALPHA:<<:28)|(BLEND_ONE:<<:24)|BLENDED)
-    ADDITIVE_SHAPE = RenderMode((BLEND_ONE:<<:28)|(BLEND_ONE:<<:24)|BLENDED)
-
-  GLOBAL METHODS
-    method create( src_blend:Int32, dest_blend:Int32 )->RenderMode
-      return RenderMode( (dest_blend:<<:28) | (src_blend:<<:24) )
-
-    method create( src_blend:Int32, dest_blend:Int32, options=0:Int32 )->RenderMode
-      return RenderMode( (dest_blend:<<:28) | (src_blend:<<:24) | options )
+    OPAQUE_SHAPE   = OpaqueShapeRenderMode()
+    ALPHA_SHAPE    = AlphaShapeRenderMode()
+    ADDITIVE_SHAPE = AdditiveShapeRenderMode()
 
   METHODS
-    method operator&( flags:Int32 )->RenderMode [macro]
-      return RenderMode( this.value & flags )
+    method apply( shader:Shader )
+      native @|glEnable( GL_BLEND );
+              |glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
 
-    method operator|( flags:Int32 )->RenderMode [macro]
-      return RenderMode( this.value | flags )
+    method configure_texture( i:Int32, texture:Texture )
+      native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );  // GL_REPEAT to wrap
+              |glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+              |glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );     // GL_NEAREST for pixellated
+              |glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
-    method operator&( other:RenderMode )->RenderMode [macro]
-      return RenderMode( this.value & other.value )
+    method enable_textures( shader:Shader )
+      local active_textures = Display.active_textures
+      forEach (i in 0..<active_textures.count.or_smaller(shader.texture_settings.count))
+        local texture = active_textures[ i ]
+        if (texture)
+          local setting = shader.texture_settings[ i ]
+          native @|glActiveTexture( GL_TEXTURE0+$i );
+                  |glBindTexture( GL_TEXTURE_2D, $texture->id );
+                  |glUniform1i( $setting, $i );
+          configure_texture( i, texture )
+        endIf
+      endForEach
+endClass
 
-    method operator|( other:RenderMode )->RenderMode [macro]
-      return RenderMode( this.value | other.value )
+class OpaqueImageRenderMode : RenderMode
+  METHODS
+    method apply( shader:Shader )
+      native @|glEnable( GL_BLEND );
+              |glBlendFunc( GL_ONE, GL_ZERO );
+      enable_textures( shader )
+endClass
 
-    method dest_blend->Int32 [macro]
-      return ((this.value :>>>: 28) & 15)
+class AlphaImageRenderMode : RenderMode
+  METHODS
+    method apply( shader:Shader )
+      native @|glEnable( GL_BLEND );
+              |glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+      enable_textures( shader )
+endClass
 
-    method has_blend_mode->Logical [macro]
-      return ((this.value & RenderMode.BLEND_MASK) != 0)
+class AdditiveImageRenderMode : RenderMode
+  METHODS
+    method apply( shader:Shader )
+      native @|glEnable( GL_BLEND );
+              |glBlendFunc( GL_ONE, GL_ONE );
+      enable_textures( shader )
+endClass
 
-    method is_blended->Logical [macro]
-      return (this.value & RenderMode.BLENDED)
+class OpaqueShapeRenderMode : RenderMode
+  METHODS
+    method apply( shader:Shader )
+      native @|glEnable( GL_BLEND );
+              |glBlendFunc( GL_ONE, GL_ZERO );
+endClass
 
-    method is_point_filtered->Logical [macro]
-      return (this.value & RenderMode.POINT_FILTER)
+class AlphaShapeRenderMode : RenderMode
+  METHODS
+    method apply( shader:Shader )
+      native @|glEnable( GL_BLEND );
+              |glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+endClass
 
-    method is_textured->Logical [macro]
-      return (this.value & RenderMode.TEXTURED)
-
-    method source_blend->Int32 [macro]
-      return ((this.value :>>>: 24) & 15)
-
-    method wrap_x->Logical [macro]
-      return (this.value & RenderMode.WRAP_X)
-
-    method wrap_y->Logical [macro]
-      return (this.value & RenderMode.WRAP_Y)
-
+class AdditiveShapeRenderMode : RenderMode
+  METHODS
+    method apply( shader:Shader )
+      native @|glEnable( GL_BLEND );
+              |glBlendFunc( GL_ONE, GL_ONE );
 endClass

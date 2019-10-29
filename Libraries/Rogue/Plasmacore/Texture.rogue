@@ -100,7 +100,8 @@ class Texture
       unload
 
     method default_render_mode->RenderMode
-      return ?:{ is_opaque:RenderMode.OPAQUE_IMAGE || RenderMode.ALPHA_IMAGE }
+      if (is_opaque) return RenderMode.OPAQUE_IMAGE
+      else           return RenderMode.ALPHA_IMAGE
 
     method default_shader->Shader
       return ImageShader.TEXTURE

@@ -115,7 +115,8 @@ class Image
       data = ColorFillImageData
       colors = Colors( _color )
       shader = ImageShader.COLOR
-      render_mode = select{ _color.is_opaque:RenderMode.OPAQUE_SHAPE || RenderMode.ALPHA_SHAPE }
+      if (_color.is_opaque) render_mode = RenderMode.OPAQUE_SHAPE
+      else                  render_mode = RenderMode.ALPHA_SHAPE
       size = _size
       original_size = _size
 
@@ -123,7 +124,8 @@ class Image
       data = ColorFillImageData
       colors = _colors
       shader = ImageShader.COLOR
-      render_mode = select{ _colors.is_opaque:RenderMode.OPAQUE_SHAPE || RenderMode.ALPHA_SHAPE }
+      if (colors.is_opaque) render_mode = RenderMode.OPAQUE_SHAPE
+      else                  render_mode = RenderMode.ALPHA_SHAPE
       size = _size
       original_size = _size
 
@@ -199,13 +201,14 @@ class Image
       endIf
 
       selected_render_mode = render_mode
-      if (not render_mode.has_blend_mode)
+      if (not render_mode)
         if (opacity < 1.0 or not colors.is_opaque_white)
-          selected_render_mode |= RenderMode.ALPHA_IMAGE
+          selected_render_mode = RenderMode.ALPHA_IMAGE
         else
           local texture_data = data as TextureImageData
           if (texture_data)
-            selected_render_mode |= select{ texture_data.is_opaque:RenderMode.OPAQUE_IMAGE || RenderMode.ALPHA_IMAGE }
+            if (texture_data.is_opaque) selected_render_mode = RenderMode.OPAQUE_IMAGE
+            else                        selected_render_mode = RenderMode.ALPHA_IMAGE
           endIf
         endIf
       endIf
@@ -591,8 +594,8 @@ augment Display
 
       local vertex_shader =
           @|attribute vec4 position;
-           |attribute      vec2 uv;
-           |varying        vec2 vertex_uv;
+           |attribute vec2 uv;
+           |varying   vec2 vertex_uv;
            |
            |void main()
            |{

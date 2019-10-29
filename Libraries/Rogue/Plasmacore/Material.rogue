@@ -34,62 +34,7 @@ class Material [abstract]
               |glFrontFace( GL_CCW );
               |glCullFace( GL_BACK );
 
-      if (render_mode.is_blended)
-        local gl_source_blend = 0
-        which (render_mode.source_blend)
-          case RenderMode.BLEND_ZERO:                 gl_source_blend = native("GL_ZERO")->Int32
-          case RenderMode.BLEND_ONE:                  gl_source_blend = native("GL_ONE")->Int32
-          case RenderMode.BLEND_SOURCE_ALPHA:         gl_source_blend = native("GL_SRC_ALPHA")->Int32
-          case RenderMode.BLEND_INVERSE_SOURCE_ALPHA: gl_source_blend = native("GL_ONE_MINUS_SRC_ALPHA")->Int32
-        endWhich
-
-        local gl_dest_blend = 0
-        which (render_mode.dest_blend)
-          case RenderMode.BLEND_ZERO:                 gl_dest_blend = native("GL_ZERO")->Int32
-          case RenderMode.BLEND_ONE:                  gl_dest_blend = native("GL_ONE")->Int32
-          case RenderMode.BLEND_SOURCE_ALPHA:         gl_dest_blend = native("GL_SRC_ALPHA")->Int32
-          case RenderMode.BLEND_INVERSE_SOURCE_ALPHA: gl_dest_blend = native("GL_ONE_MINUS_SRC_ALPHA")->Int32
-        endWhich
-
-        native @|glEnable( GL_BLEND );
-                |glBlendFunc( $gl_source_blend, $gl_dest_blend );
-      else
-        native @|glDisable( GL_BLEND );
-      endIf
-
-      #{
-      if (render_mode.is_textured)
-        forEach (i in 0..<active_textures.count.or_smaller(shader.texture_settings.count))
-          local texture = active_textures[ i ]
-          if (texture)
-            local setting = shader.texture_settings[ i ]
-            native @|glActiveTexture( GL_TEXTURE0+$i );
-                    |glBindTexture( GL_TEXTURE_2D, $texture->id );
-                    |glUniform1i( $setting, $i );
-
-            if (render_mode.wrap_x)
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-            else
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-            endIf
-
-            if (render_mode.wrap_y)
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-            else
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-            endIf
-
-            if (render_mode.is_point_filtered)
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-            else
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-              native @|glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-            endIf
-          endIf
-        endForEach
-      endIf
-      }#
+      render_mode.apply( shader )
 
       #{
       # ---- Set Vertex Color Mode ------------------------------------------------
