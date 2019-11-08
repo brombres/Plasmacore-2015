@@ -223,3 +223,16 @@ class FadeOutState : State
       if (opacity.value == 1.0) exit_state
 endClass
 
+class FadeTransitionState : State
+  PROPERTIES
+    to_screen : Screen
+    duration  : Real64
+    color     : Color
+
+  METHODS
+    method init( to_screen, duration=0.25, color=Color.BLACK )
+
+    method on_start
+      change_state( FadeOutState(duration,color) + ChangeScreenState(to_screen) + FadeInState(duration,color) )
+endClass
+
