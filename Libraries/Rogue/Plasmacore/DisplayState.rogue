@@ -37,8 +37,8 @@ class FadeTransition : DisplayState
     fade_in_opacity  : EasedValue<<Real64>>
 
   METHODS
-    method init( to_screen, duration=0.25, color=Color.BLACK )
-      fade_out_opacity = EasedValue<<Real64>>( 0.0, duration, ProgressFn.QUADRATIC_OUT )
+    method init( to_screen, duration=0.5, color=Color.BLACK )
+      fade_out_opacity = EasedValue<<Real64>>( 0.0, duration/2, ProgressFn.QUADRATIC_OUT )
       fade_out_opacity.target_value = 1.0
 
   METHODS
@@ -71,7 +71,7 @@ class FadeTransition : DisplayState
         if (fade_out_opacity.value == 1.0)
           fading_out = false
           Display.screen.state.change_screen( to_screen )
-          fade_in_opacity  = EasedValue<<Real64>>( 1.0, duration, ProgressFn.QUADRATIC_IN )
+          fade_in_opacity  = EasedValue<<Real64>>( 1.0, duration/2, ProgressFn.QUADRATIC_IN )
           fade_in_opacity.target_value = 0.0
         endIf
       else
