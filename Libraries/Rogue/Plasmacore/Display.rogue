@@ -142,8 +142,10 @@ class Display [singleton]
 
         if (screen.state.needs_first_update)
           # Will also update the screen
-          screen.state.needs_first_update = false
           screen.state.handle_update
+          screen.state.needs_first_update = false
+          # set first_update=false AFTER .handle_update() to avoid an infinite loop if a new
+          # screen's on_update() does a change_state() to a new state.
           nextIteration
         endIf
 
