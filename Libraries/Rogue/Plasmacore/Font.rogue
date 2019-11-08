@@ -12,7 +12,7 @@ class Font
 
     anchor         = Anchor.CENTER : Anchor
     scale          = XY(1,1)
-    spacing        = 0  # Added to each character's 'advance' (usually the width) to position the next character
+    spacing_adjustment = 0  # Added to each character's 'advance' (usually the width) to position the next character
 
     color          = Color.WHITE : Color
     opacity        = 1.0
@@ -22,7 +22,7 @@ class Font
     method init( name, options=@{} )
       data = FontData( name )
       if (data.snap) snap = true
-      if (data.snug) spacing = -1
+      if (data.snug) spacing_adjustment = -1
 
     method cloned->Font
       local result = Font( name, options )
@@ -31,7 +31,7 @@ class Font
       result.snap = snap
       result.anchor = anchor
       result.scale = scale
-      result.spacing = spacing
+      result.spacing_adjustment = spacing_adjustment
       result.color = color
       result.opacity = opacity
       result.shader = shader
@@ -89,8 +89,7 @@ class Font
     method set_options( @options )->this
       if (options.contains("anchor")) anchor = Anchor( options//anchor )
       snap = options//snap->Logical
-      #spacing = options//spacing->Int32
-      if (options//snug->Logical) spacing = -1
+      if (options//snug->Logical) spacing_adjustment = -1
       if (options.contains("scale")) scale = XY( options//scale )
 
       return this
@@ -319,7 +318,7 @@ class FontData
           image.position = cursor + font_ch.offset
           image.opacity = font.opacity
           image.draw
-          cursor += font_ch.advance * font.scale + XY(font.spacing,0) * font.scale
+          cursor += font_ch.advance * font.scale + XY(font.spacing_adjustment,0) * font.scale
         endIf
       endForEach
 
@@ -381,7 +380,7 @@ class FontData
             prev_advance = info.advance.x
             if (visual) prev_width = info.size.x
             else        prev_width = prev_advance
-            w += prev_advance + font.spacing
+            w += prev_advance + font.spacing_adjustment
           endIf
         endIf
       endForEach
@@ -416,7 +415,7 @@ class FontData
             prev_advance = info.advance.x
             if (visual) prev_width = info.size.x
             else        prev_width = prev_advance
-            w += prev_advance + font.spacing
+            w += prev_advance + font.spacing_adjustment
           endIf
         endIf
       endForEach
@@ -428,8 +427,8 @@ class FontData
       if (ch == '\n') return XY(0,height)
       local info = this[ ch ]
       if (not info) return XY(0,0)
-      if (visual) return info.size.xv + XY(font.spacing,0)
-      else        return info.advance + XY(font.spacing,0)
+      if (visual) return info.size.xv + XY(font.spacing_adjustment,0)
+      else        return info.advance + XY(font.spacing_adjustment,0)
 
     method reload->FontData
       if (name and image_info)
