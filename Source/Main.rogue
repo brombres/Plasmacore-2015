@@ -23,7 +23,7 @@ class MainScreen : Screen [singleton]
 endClass
 
 
-class InitialState : State<<MainScreen>>
+class InitialState : ScreenState<<MainScreen>>
   METHODS
     method on_start
       # Called when this state becomes the active state

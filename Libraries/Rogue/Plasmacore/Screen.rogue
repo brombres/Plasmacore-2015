@@ -3,7 +3,7 @@ module Plasmacore
 
 class Screen
   PROPERTIES
-    state                 = State(this)
+    state                 = ScreenState(this)
     #layers                = Layer[]
 
     display               : Display
@@ -38,7 +38,7 @@ class Screen
 
     method after_update
 
-    method change_state( new_state:State )->State
+    method change_state( new_state:ScreenState )->ScreenState
       local cur = new_state
       while (cur.next_state) cur = cur.next_state
       cur.next_state = state.next_state
@@ -109,13 +109,13 @@ class Screen
       return textures
 
     method exit_state
-      local new_state : State
+      local new_state : ScreenState
       if (state.next_state)
         new_state = state.next_state
       elseIf (state.prior_state)
         new_state = state.prior_state
       else
-        new_state = State()
+        new_state = ScreenState()
       endIf
 
       new_state.screen = this
@@ -313,7 +313,7 @@ class Screen
 
     method on_update
 
-    method push_state( new_state:State )
+    method push_state( new_state:ScreenState )
       new_state.prior_state = state
       state.is_active = false
       state.on_suspend
@@ -322,7 +322,7 @@ class Screen
       state.is_active = true
       state.on_start
 
-    method queue_state( new_state:State, &insert )
+    method queue_state( new_state:ScreenState, &insert )
       state.queue_state( new_state, &=insert )
 
     method reload_images( &keep_unused_textures )
@@ -381,7 +381,7 @@ class Screen
         endIf
       endForEach
 
-    method set_state( new_state:State )->this
+    method set_state( new_state:ScreenState )->this
       change_state( new_state )
       return this
 

@@ -38,6 +38,7 @@ class Display [singleton]
 
   PROPERTIES
     is_configured : Logical
+    display_state = DisplayState()
 
     name               : String
     screen               = default_screen_type.create_object<<Screen>> : Screen
@@ -53,7 +54,7 @@ class Display [singleton]
     # Disclosed by the native layer - usually 60
 
     updates_per_second  = 60
-    # Arbitrary - usually left at 60.  Determines how often Screen/State on_update() is called.
+    # Arbitrary - usually left at 60.  Determines how often Screen/ScreenState on_update() is called.
 
     background_color = Color.BLACK : Color
 
@@ -128,7 +129,7 @@ class Display [singleton]
         local cur_state = screen.state
         if (not cur_state.previous_display_size.exists or cur_state.previous_display_size.value != Display.size)
           # Will also call handle_resize on the screen
-          cur_state.handle_resize
+          display_state.handle_resize
           cur_state.previous_display_size = Display.size
           nextIteration
         endIf
@@ -142,7 +143,7 @@ class Display [singleton]
 
         if (screen.state.needs_first_update)
           # Will also update the screen
-          screen.state.handle_update
+          display_state.handle_update
           screen.state.needs_first_update = false
           # set first_update=false AFTER .handle_update() to avoid an infinite loop if a new
           # screen's on_update() does a change_state() to a new state.
@@ -580,7 +581,7 @@ class Display [singleton]
 
     method handle( e:KeyEvent )
       activate_screen_and_state
-      screen.state.handle( e )
+      display_state.handle( e )
 
     method handle( e:PointerEvent )
       if (pointer_exists)
@@ -591,15 +592,15 @@ class Display [singleton]
         pointer_position = e.position
       endIf
       activate_screen_and_state
-      screen.state.handle( e )
+      display_state.handle( e )
 
     method handle( e:ScrollEvent )
       activate_screen_and_state
-      screen.state.handle( e )
+      display_state.handle( e )
 
     method handle( e:TextEvent )
       activate_screen_and_state
-      screen.state.handle( e )
+      display_state.handle( e )
 
     method height->Int32 [macro]
       return this.size.y->Int32
@@ -697,11 +698,11 @@ class Display [singleton]
 
       while (update_timer.tick)
         activate_screen_and_state
-        screen.state.handle_update
+        display_state.handle_update
       endWhile
 
       activate_screen_and_state
-      screen.state.handle_draw
+      display_state.handle_draw
 
       OverlayLog.update
       OverlayLog.draw
@@ -860,7 +861,7 @@ class Display [singleton]
       active_textures.expand_to_include( index )[ index ] = texture
       return this
 
-    method set_state( new_state:State )->this
+    method set_state( new_state:ScreenState )->this
       # Sets the state of this Display's current screen.
       screen.@state = new_state
       return this
@@ -872,7 +873,7 @@ class Display [singleton]
     method size->XY
       return render_target.size
 
-    method state->State [macro]
+    method state->ScreenState [macro]
       # Obtains the state of this Display's current screen.
       return this.screen.state
 
