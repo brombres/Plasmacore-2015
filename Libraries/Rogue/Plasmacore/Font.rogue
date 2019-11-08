@@ -74,6 +74,9 @@ class Font
     method is_loaded->Logical
       return data.is_loaded
 
+    method make_numerals_monospace
+      data.make_numerals_monospace
+
     method reload
       data = data.reload
 
@@ -333,6 +336,22 @@ class FontData
           ch.image.load
           ch.image.anchor = Anchor.TOP_LEFT
         endIf
+      endForEach
+
+    method make_numerals_monospace
+      local info = this['0']
+      if (not info) return
+      local max_w = Int32( info.size.x + info.offset.x + info.advance.x )
+      forEach (ch in '1'..'9')
+        info = this[ch]
+        if (not info) return
+        max_w = max_w.or_larger( info.size.x + info.offset.x + info.advance.x )
+      endForEach
+      forEach (ch in '0'..'9')
+        info = this[ch]
+        local padding = max_w - Int32( info.size.x + info.offset.x + info.advance.x )
+        info.offset  = XY( info.offset.x + padding/2, info.offset.y )
+        info.advance = XY( info.advance.x - padding/2, info.advance.y )
       endForEach
 
     method measure( font:Font, text:String, i1=null:Int32?, i2=null:Int32?, &visual )->XY
