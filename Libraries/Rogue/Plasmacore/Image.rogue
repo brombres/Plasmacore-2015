@@ -158,6 +158,9 @@ class Image
       endIf
       data.draw( this )
 
+    method draw( x:Real64, y:Real64 )
+      draw( XY(x,y) )
+
     method height->Real64 [macro]
       return (this.size.y)
 
