@@ -1,4 +1,5 @@
 module Plasmacore
+$include "ProgressFn.rogue"
 
 class DisplayEffect
   PROPERTIES
@@ -48,9 +49,26 @@ endClass
 class NoEffect : DisplayEffect [singleton]
 endClass
 
-class BaseTransitionEffect : DisplayEffect
-  # Suppresses all input events
+class TransitionInfo( t:Real64, color:Color ) [compound]
   METHODS
+    method is_transitioning_in->Logical
+      return (t >= 0.5)
+
+    method is_transitioning_out->Logical
+      return (t < 0.5)
+
+    method eased_progress( fn_out=ProgressFn.QUADRATIC_OUT:ProgressFnType, fn_in=ProgressFn.QUADRATIC_IN:ProgressFnType )->Real64
+      if (t < 0.5) return fn_out( t*2 )
+      else         return fn_in( 2*t-2 )
+
+    method linear_progress->Real64
+      if (t < 0.5) return t * 2
+      else         return 2 - t*2
+endClass
+
+class TransitionEffect : DisplayEffect
+  METHODS
+    # Suppresses all input events
     method handle( e:KeyEvent )
       noAction
 
@@ -64,7 +82,7 @@ class BaseTransitionEffect : DisplayEffect
       noAction
 endClass
 
-class BaseFadeDisplayEffect : BaseTransitionEffect
+class BaseFadeDisplayEffect : TransitionEffect
   PROPERTIES
     duration     : Real64
     color        : Color
@@ -78,9 +96,9 @@ class BaseFadeDisplayEffect : BaseTransitionEffect
       Display.effect += this
 
     method handle_draw
-      Display.screen.state.on_transition_before_draw( progress, color )
+      Display.screen.state.on_transition_before_draw( TransitionInfo(progress,color) )
       Display.screen.state.handle_draw
-      Display.screen.state.on_transition_after_draw( progress, color )
+      Display.screen.state.on_transition_after_draw( TransitionInfo(progress,color) )
 
     method is_finished->Logical
       return (progress == 1.0)

@@ -147,11 +147,11 @@ class ScreenState
     method on_suspend
       noAction
 
-    method on_transition_after_draw( progress:Real64, color:Color )
-      screen.on_transition_after_draw( progress, color )
+    method on_transition_after_draw( info:TransitionInfo )
+      screen.on_transition_after_draw( info )
 
-    method on_transition_before_draw( progress:Real64, color:Color )
-      screen.on_transition_before_draw( progress, color )
+    method on_transition_before_draw( info:TransitionInfo )
+      screen.on_transition_before_draw( info )
 
     method on_update
       noAction
