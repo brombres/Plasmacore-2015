@@ -52,6 +52,18 @@ class RenderTarget
       is_id_configured = true
       is_offscreen = true
 
+    method clear_scale
+      local new_display_scale = 1.0
+      local new_size = true_size
+      local new_offset = XY(0,0)
+      if (new_display_scale != display_scale or new_size != size or new_offset != offset)
+        Display.flush
+        display_scale = new_display_scale
+        size = new_size
+        offset = new_offset
+        projection_mode.update
+      endIf
+
     method clear_transforms
       Display.flush
       object_transforms.clear
@@ -148,26 +160,37 @@ class RenderTarget
       world_transform_modified = true
       transform_modified = true
 
-    method scale_to_fit( w:Int32, h:Int32, target_anchor )
-      scale_to_fit( XY(w,h), target_anchor )
+    method scale_to_fill( w:Int32, h:Int32, target_anchor )
+      scale_to_fill( XY(w,h), target_anchor )
 
-    method scale_to_fit( @target_display_size, target_anchor )
-      local new_display_scale : Real64
-      local new_size          : XY
-      local new_offset        : XY
-      if (target_display_size.exists)
-        new_display_scale = (target_display_size.value / true_size).max
-        new_size = true_size * new_display_scale
-        offset = (new_size - target_display_size.value) * target_anchor.position
-      else
-        new_display_scale = 1.0
-        new_size = true_size
-        new_offset = XY(0,0)
-      endIf
+    method scale_to_fill( @target_display_size, target_anchor )
+      if (not target_display_size.exists) clear_scale; return
+
+      local new_display_scale = (target_display_size.value / true_size).min
+      local new_size = true_size * new_display_scale
+      local new_offset = (new_size - target_display_size.value) * target_anchor.position
       if (new_display_scale != display_scale or new_size != size or new_offset != offset)
         Display.flush
         display_scale = new_display_scale
         size = new_size
+        offset = new_offset
+        projection_mode.update
+      endIf
+
+    method scale_to_fit( w:Int32, h:Int32, target_anchor )
+      scale_to_fit( XY(w,h), target_anchor )
+
+    method scale_to_fit( @target_display_size, target_anchor )
+      if (not target_display_size.exists) clear_scale; return
+
+      local new_display_scale = (target_display_size.value / true_size).max
+      local new_size = true_size * new_display_scale
+      local new_offset = (new_size - target_display_size.value) * target_anchor.position
+      if (new_display_scale != display_scale or new_size != size or new_offset != offset)
+        Display.flush
+        display_scale = new_display_scale
+        size = new_size
+        offset = new_offset
         projection_mode.update
       endIf
 

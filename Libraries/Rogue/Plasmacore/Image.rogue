@@ -245,6 +245,16 @@ class Image
       data = null
       init( new_info )
 
+    method scale_to_fill( other_bounds:Box )
+      scale = (other_bounds.size / @size).max
+      position = other_bounds.center
+      anchor = Anchor.CENTER
+
+    method scale_to_fit( other_bounds:Box )
+      scale = (other_bounds.size / @size).min
+      position = other_bounds.center
+      anchor = Anchor.CENTER
+
     method set( bitmap:Bitmap )
       if (data) data = data.set( bitmap )
       size = bitmap.size

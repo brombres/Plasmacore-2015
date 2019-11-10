@@ -186,6 +186,9 @@ class Display [singleton]
     method clear( background_color )->this
       return clear
 
+    method clear_scale
+      render_target.clear_scale
+
     method clear_transforms
       render_target.clear_transforms
 
@@ -809,6 +812,13 @@ class Display [singleton]
     method safe_area->Box
       if (System.is_ios) return iOS.safe_area
       else               return Box( size )
+
+    method scale_to_fill( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
+      return scale_to_fill( XY(w,h), anchor )
+
+    method scale_to_fill( target_display_size:XY, anchor=Anchor.TOP_LEFT:Anchor )->this
+      render_target.scale_to_fill( target_display_size, anchor )
+      return this
 
     method scale_to_fit( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
       return scale_to_fit( XY(w,h), anchor )
