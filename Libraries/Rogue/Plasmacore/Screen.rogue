@@ -19,6 +19,8 @@ class Screen
 
     actions  : Action
 
+    transition_info : TransitionInfo?
+
   METHODS
     #method add( layer:Layer )->this
     #  layers.add( layer )
@@ -311,11 +313,11 @@ class Screen
 
     method on_start
 
-    method on_transition_after_draw( info:TransitionInfo )
+    method on_transition_after_draw
+      local info = transition_info.value
       Display.bounds.fill( info.color.with_alpha(info.eased_progress(ProgressFn.QUADRATIC_OUT,ProgressFn.QUADRATIC_IN)) )
 
-    method on_transition_before_draw( info:TransitionInfo )
-      noAction
+    method on_transition_before_draw
 
     method on_update
 

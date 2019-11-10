@@ -19,7 +19,8 @@ class ScreenState
     next_state            : ScreenState
     prior_state           : ScreenState
 
-    actions : Action
+    actions         : Action
+    transition_info : TransitionInfo?
 
   METHODS
     method init( screen=null )
@@ -147,11 +148,11 @@ class ScreenState
     method on_suspend
       noAction
 
-    method on_transition_after_draw( info:TransitionInfo )
-      screen.on_transition_after_draw( info )
+    method on_transition_after_draw
+      screen.on_transition_after_draw
 
-    method on_transition_before_draw( info:TransitionInfo )
-      screen.on_transition_before_draw( info )
+    method on_transition_before_draw
+      screen.on_transition_before_draw
 
     method on_update
       noAction

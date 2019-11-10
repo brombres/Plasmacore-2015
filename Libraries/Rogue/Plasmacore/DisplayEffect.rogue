@@ -49,21 +49,27 @@ endClass
 class NoEffect : DisplayEffect [singleton]
 endClass
 
-class TransitionInfo( t:Real64, color:Color ) [compound]
+class TransitionInfo( t:Real64, color:Color, exit_vector:XY ) [compound]
   METHODS
+    method exit_vector->XY
+      if (t < 0.5) return @exit_vector
+      else         return @exit_vector * XY(-1,-1)
+
     method is_transitioning_in->Logical
       return (t >= 0.5)
 
     method is_transitioning_out->Logical
       return (t < 0.5)
 
-    method eased_progress( fn_out=ProgressFn.QUADRATIC_OUT:ProgressFnType, fn_in=ProgressFn.QUADRATIC_IN:ProgressFnType )->Real64
-      if (t < 0.5) return fn_out( t*2 )
-      else         return fn_in( 2*t-2 )
+    method eased_progress( fn_out=ProgressFn.QUADRATIC_OUT:ProgressFnType, fn_in=ProgressFn.QUADRATIC_IN:ProgressFnType, &invert_ease_in )->Real64
+      if (t < 0.5)            return fn_out( t*2 )
+      elseIf (invert_ease_in) return fn_in( 2 - 2*t )
+      else                    return fn_in( 2*t - 1 )
 
-    method linear_progress->Real64
-      if (t < 0.5) return t * 2
-      else         return 2 - t*2
+    method linear_progress( &invert_ease_in )->Real64
+      if (t < 0.5)            return t * 2
+      elseIf (invert_ease_in) return 2 - 2*t
+      else                    return 2*t - 1
 endClass
 
 class TransitionEffect : DisplayEffect
@@ -82,23 +88,29 @@ class TransitionEffect : DisplayEffect
       noAction
 endClass
 
-class BaseFadeDisplayEffect : TransitionEffect
+class BaseTransitionDisplayEffect : TransitionEffect
   PROPERTIES
     duration     : Real64
     color        : Color
+    exit_vector  : XY
     fading_in    = false
     progress     = 0.0
     delta        : Real64
 
   METHODS
-    method init( duration=0.5, color=Color.BLACK )
+    method init( duration=0.5, color=Color.BLACK, exit_vector=XY.zero )
       delta = 1.0 / (duration * 60.0)
       Display.effect += this
 
     method handle_draw
-      Display.screen.state.on_transition_before_draw( TransitionInfo(progress,color) )
+      local info = TransitionInfo( progress, color, exit_vector )
+      Display.screen.transition_info = info
+      Display.screen.state.transition_info = info
+      Display.screen.state.on_transition_before_draw
       Display.screen.state.handle_draw
-      Display.screen.state.on_transition_after_draw( TransitionInfo(progress,color) )
+      Display.screen.state.on_transition_after_draw
+      Display.screen.transition_info = null
+      Display.screen.state.transition_info = null
 
     method is_finished->Logical
       return (progress == 1.0)
@@ -118,17 +130,17 @@ class BaseFadeDisplayEffect : TransitionEffect
       return prior.update
 endClass
 
-class FadeTo : BaseFadeDisplayEffect
+class TransitionTo : BaseTransitionDisplayEffect
   PROPERTIES
     to_screen : Screen
     to_state  : ScreenState
 
   METHODS
-    method init( to_screen, duration=0.5, color=Color.BLACK )
-      prior.init( duration, color )
+    method init( to_screen, duration=0.5, color=Color.BLACK, exit_vector=XY.zero )
+      prior.init( duration, color, exit_vector )
 
-    method init( to_state, duration=0.5, color=Color.BLACK )
-      prior.init( duration, color )
+    method init( to_state, duration=0.5, color=Color.BLACK, exit_vector=XY.zero )
+      prior.init( duration, color, exit_vector )
 
     method handle_resize
       Display.screen.state.handle_resize
@@ -140,16 +152,16 @@ class FadeTo : BaseFadeDisplayEffect
 
 endClass
 
-class FadeToPushState : FadeTo
+class TransitionToPushState : TransitionTo
   METHODS
-    method init( to_state, duration=0.5, color=Color.BLACK )
-      prior.init( to_state, duration, color )
+    method init( to_state, duration=0.5, color=Color.BLACK, exit_vector=XY.zero )
+      prior.init( to_state, duration, color, exit_vector )
 
     method on_fade_out_finished
       Display.screen.state.push_state( to_state )
 endClass
 
-class FadeToExitState : BaseFadeDisplayEffect
+class TransitionToExitState : BaseTransitionDisplayEffect
   METHODS
     method on_fade_out_finished
       Display.screen.state.exit_state
