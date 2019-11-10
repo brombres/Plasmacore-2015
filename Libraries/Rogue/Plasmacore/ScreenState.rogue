@@ -10,7 +10,7 @@ class ScreenState
       return a
 
   PROPERTIES
-    screen                  : Screen
+    screen                : Screen
 
     is_active             : Logical
     needs_first_update    = true
@@ -43,10 +43,6 @@ class ScreenState
 
     method change_screen( new_screen:Screen )->Screen
       return screen.change_screen( new_screen )
-
-    method change_screen( new_screen:Screen, fade_duration:Real64, fade_color=Color.BLACK:Color )->Screen
-      Display.display_state = FadeTransition( new_screen, fade_duration, fade_color )
-      return new_screen
 
     method exit_state
       screen.exit_state

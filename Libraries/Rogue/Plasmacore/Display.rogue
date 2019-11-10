@@ -38,7 +38,7 @@ class Display [singleton]
 
   PROPERTIES
     is_configured : Logical
-    display_state = DisplayState()
+    effect        = NoEffect : DisplayEffect
 
     name               : String
     screen               = default_screen_type.create_object<<Screen>> : Screen
@@ -129,7 +129,7 @@ class Display [singleton]
         local cur_state = screen.state
         if (not cur_state.previous_display_size.exists or cur_state.previous_display_size.value != Display.size)
           # Will also call handle_resize on the screen
-          display_state.handle_resize
+          effect.handle_resize
           cur_state.previous_display_size = Display.size
           nextIteration
         endIf
@@ -143,7 +143,8 @@ class Display [singleton]
 
         if (screen.state.needs_first_update)
           # Will also update the screen
-          display_state.handle_update
+          effect = effect.update
+          effect.handle_update
           screen.state.needs_first_update = false
           # set first_update=false AFTER .handle_update() to avoid an infinite loop if a new
           # screen's on_update() does a change_state() to a new state.
@@ -581,7 +582,7 @@ class Display [singleton]
 
     method handle( e:KeyEvent )
       activate_screen_and_state
-      display_state.handle( e )
+      effect.handle( e )
 
     method handle( e:PointerEvent )
       if (pointer_exists)
@@ -592,15 +593,15 @@ class Display [singleton]
         pointer_position = e.position
       endIf
       activate_screen_and_state
-      display_state.handle( e )
+      effect.handle( e )
 
     method handle( e:ScrollEvent )
       activate_screen_and_state
-      display_state.handle( e )
+      effect.handle( e )
 
     method handle( e:TextEvent )
       activate_screen_and_state
-      display_state.handle( e )
+      effect.handle( e )
 
     method height->Int32 [macro]
       return this.size.y->Int32
@@ -697,12 +698,13 @@ class Display [singleton]
       update_timer.update
 
       while (update_timer.tick)
+        effect = effect.update
         activate_screen_and_state
-        display_state.handle_update
+        effect.handle_update
       endWhile
 
       activate_screen_and_state
-      display_state.handle_draw
+      effect.handle_draw
 
       OverlayLog.update
       OverlayLog.draw

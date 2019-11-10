@@ -1,0 +1,131 @@
+module Plasmacore
+
+class DisplayEffect
+  PROPERTIES
+    next_effect : DisplayEffect
+
+  METHODS
+    method handle( e:KeyEvent )
+      Display.screen.state.handle( e )
+
+    method handle( e:PointerEvent )
+      Display.screen.state.handle( e )
+
+    method handle( e:ScrollEvent )
+      Display.screen.state.handle( e )
+
+    method handle( e:TextEvent )
+      Display.screen.state.handle( e )
+
+    method handle_draw
+      Display.screen.state.handle_draw
+
+    method handle_resize
+      Display.screen.state.handle_resize
+
+    method handle_update
+      Display.screen.state.handle_update
+
+    method is_finished->Logical
+      return true
+
+    method operator+( next:DisplayEffect )->DisplayEffect
+      local cur = this
+      while (cur.next_effect) cur = cur.next_effect
+      cur.next_effect = next
+      return this
+
+    method update->DisplayEffect
+      if (not is_finished) return this
+      if (next_effect)
+        local result = next_effect
+        next_effect = null
+        return result
+      endIf
+      return NoEffect
+endClass
+
+class NoEffect : DisplayEffect [singleton]
+endClass
+
+class BaseTransitionEffect : DisplayEffect
+  # Suppresses all input events
+  METHODS
+    method handle( e:KeyEvent )
+      noAction
+
+    method handle( e:PointerEvent )
+      noAction
+
+    method handle( e:ScrollEvent )
+      noAction
+
+    method handle( e:TextEvent )
+      noAction
+endClass
+
+class BaseFadeDisplayEffect : BaseTransitionEffect
+  PROPERTIES
+    duration     : Real64
+    color        : Color
+    fading_in    = false
+    fade_opacity : EasedValue<<Real64>>
+
+  METHODS
+    method init( duration=0.5, color=Color.BLACK )
+      fade_opacity = EasedValue<<Real64>>( 0.0, duration/2, ProgressFn.QUADRATIC_OUT )
+      fade_opacity.target_value = 1.0
+      Display.effect += this
+
+    method handle_draw
+      Display.screen.state.handle_draw
+      Display.bounds.fill( color.with_alpha(fade_opacity.value) )
+
+    method is_finished->Logical
+      return fading_in and fade_opacity.value == 0
+
+    method on_fade_out_finished
+      noAction
+
+    method update->DisplayEffect
+      if (not fading_in)
+        if (fade_opacity.value == 1.0)
+          fading_in = true
+          on_fade_out_finished
+          fade_opacity.progress_fn = ProgressFn.QUADRATIC_IN
+          fade_opacity.value = 1.0
+          fade_opacity.target_value = 0.0
+        endIf
+      endIf
+
+      return prior.update
+endClass
+
+class FadeTo : BaseFadeDisplayEffect
+  PROPERTIES
+    to_screen : Screen
+    to_state  : ScreenState
+
+  METHODS
+    method init( to_screen, duration=0.5, color=Color.BLACK )
+      prior.init( duration, color )
+
+    method init( to_state, duration=0.5, color=Color.BLACK )
+      prior.init( duration, color )
+
+    method handle_resize
+      Display.screen.state.handle_resize
+      if (to_screen) to_screen.state.handle_resize
+
+    method on_fade_out_finished
+      if (to_screen) Display.screen.state.change_screen( to_screen )
+      else           Display.screen.state.change_state( to_state )
+
+endClass
+
+class FadeToExitState : BaseFadeDisplayEffect
+  METHODS
+    method on_fade_out_finished
+      Display.screen.state.exit_state
+endClass
+
