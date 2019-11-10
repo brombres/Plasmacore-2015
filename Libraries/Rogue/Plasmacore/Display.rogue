@@ -168,7 +168,7 @@ class Display [singleton]
       return bounds.at( uv )
 
     method bounds->Box
-      return Box(size)
+      return Box(-offset,size)
 
     method center->XY [macro]
       return (size/2)
