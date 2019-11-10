@@ -69,32 +69,31 @@ class BaseFadeDisplayEffect : BaseTransitionEffect
     duration     : Real64
     color        : Color
     fading_in    = false
-    fade_opacity : EasedValue<<Real64>>
+    progress     = 0.0
+    delta        : Real64
 
   METHODS
     method init( duration=0.5, color=Color.BLACK )
-      fade_opacity = EasedValue<<Real64>>( 0.0, duration/2, ProgressFn.QUADRATIC_OUT )
-      fade_opacity.target_value = 1.0
+      delta = 1.0 / (duration * 60.0)
       Display.effect += this
 
     method handle_draw
+      Display.screen.state.on_transition_before_draw( progress, color )
       Display.screen.state.handle_draw
-      Display.bounds.fill( color.with_alpha(fade_opacity.value) )
+      Display.screen.state.on_transition_after_draw( progress, color )
 
     method is_finished->Logical
-      return fading_in and fade_opacity.value == 0
+      return (progress == 1.0)
 
     method on_fade_out_finished
       noAction
 
     method update->DisplayEffect
+      progress = (progress + delta).clamped_high( 1.0 )
       if (not fading_in)
-        if (fade_opacity.value == 1.0)
+        if (progress >= 0.5)
           fading_in = true
           on_fade_out_finished
-          fade_opacity.progress_fn = ProgressFn.QUADRATIC_IN
-          fade_opacity.value = 1.0
-          fade_opacity.target_value = 0.0
         endIf
       endIf
 
@@ -121,6 +120,15 @@ class FadeTo : BaseFadeDisplayEffect
       if (to_screen) Display.screen.state.change_screen( to_screen )
       else           Display.screen.state.change_state( to_state )
 
+endClass
+
+class FadeToPushState : FadeTo
+  METHODS
+    method init( to_state, duration=0.5, color=Color.BLACK )
+      prior.init( to_state, duration, color )
+
+    method on_fade_out_finished
+      Display.screen.state.push_state( to_state )
 endClass
 
 class FadeToExitState : BaseFadeDisplayEffect

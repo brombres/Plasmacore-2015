@@ -311,6 +311,24 @@ class Screen
 
     method on_start
 
+    method on_transition_after_draw( progress:Real64, color:Color )
+      # progress
+      #   0.0 to 1.0
+      #     0.0 to <0.5 indicates this screen is transitioning or fading out
+      #     0.5 to  1.0 indicates this screen is transitioning or fading in
+      # color
+      #   An optional value to use for a translucent fill
+      local alpha : Real64
+      if (progress < 0.5)
+        alpha = ProgressFn.QUADRATIC_IN( progress*2 )
+      else
+        alpha = ProgressFn.QUADRATIC_OUT( 2.0 - progress*2 )
+      endIf
+      Display.bounds.fill( color.with_alpha(alpha) )
+
+    method on_transition_before_draw( progress:Real64, color:Color )
+      noAction
+
     method on_update
 
     method push_state( new_state:ScreenState )
