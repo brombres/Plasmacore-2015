@@ -57,8 +57,11 @@ $(BUILD_FOLDER)/$(PROJECT_NAME).html: $(BUILD_FOLDER)/Source/RogueProgram.cpp $(
 	       -s USE_SDL=2 \
 	       -s USE_LIBPNG=1 \
 	       -s EXPORTED_FUNCTIONS="['_main', '_malloc', '_launch_plasmacore']" \
+	       -s EXTRA_EXPORTED_RUNTIME_METHODS='["UTF8ToString"]' \
                -s TOTAL_MEMORY=$(RUNTIME_MEMORY) \
+               -s ENVIRONMENT=web \
 	       -D LOCAL_FS='"/IDBFS"' \
+               -lidbfs.js \
 	       -std=c++11 \
 	       --preload-file $(BUILD_FOLDER)/Assets@/Assets \
 	       -Wall \

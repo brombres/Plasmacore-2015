@@ -552,7 +552,7 @@ int PlasmacoreLauncher::launch()
   #ifdef LOCAL_FS
     plasmacore_launched = false;
     EM_ASM_({
-       var mountpoint = Module["Pointer_stringify"]($0);
+       var mountpoint = Module["UTF8ToString"]($0);
        FS.mkdir(mountpoint);
        FS.mount(IDBFS, {}, mountpoint);
        FS.syncfs(true, function (err) {

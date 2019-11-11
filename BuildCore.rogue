@@ -87,9 +87,19 @@ routine rogo_update
   endContingent
 endRoutine
 
-routine rogo_web
+routine rogo_web( run_after_building:String, browser:String )
   Build.build( "Web" )
   run @|make -C Platforms/Web
+  if (run_after_building != "")
+    if (browser == "") browser = "chrome"
+    execute( "cd Build/Web && emrun --browser $ index.html" (browser) )
+  else
+    println @|Execute 'rogo web run' or 'rogo web run <browser-name>' to build for web and then run
+             |the game locally in the selected browser.
+             |
+             |'emrun --list_browsers' to see which browsers are available.  'chrome' is the default.
+  endIf
+
 endRoutine
 
 help( "install_rogue", "Embeds Rogue locally to remove the dependency and freeze its version." )
