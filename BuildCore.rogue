@@ -19,6 +19,7 @@ uses Bitmap
 #$ LIBRARIES(Linux) = libfreetype6-dev(freetype2)
 #$ LIBRARIES(Linux) = libpng-dev libjpeg-dev
 #$ LIBRARIES(Linux) = zlib
+#$ LIBRARIES(Linux) = sox
 
 $include "AssetCompiler" [optional]
 
