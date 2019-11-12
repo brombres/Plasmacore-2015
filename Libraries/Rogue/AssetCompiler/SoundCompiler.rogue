@@ -20,9 +20,10 @@ routine launch_sound_compiler( platform:String )
                       |#   include <file or pattern>            # Include file in build
                       |#
                       |# ATTTRIBUTES
-                      |#   @ ... format:[ima4|mp3|ogg]
-                      |#     - ima4 is good for iOS and Mac sound effects
-                      |#     - mp3 is good for iOS and Mac music
+                      |#   @ ... format:[ima4|mp3|ogg|wav]
+                      |#     - macOS,iOS: use mp3 for music, ima4 for sound effects
+                      |#     - Linux: use mp3 for music, wav for sound effects
+                      |#     - Web:   use ogg for music, wav for sound effects
                       |
                       |[Default]
                       |include **
@@ -155,7 +156,7 @@ class SoundCompiler
           if (System.os == "macOS")
             which (format)
               case "ima4": buffer.print( "afconvert -f caff -d 'ima4' " )
-              case "ogg":  buffer.print( "sox " )
+              others:      buffer.print( "sox " )
             endWhich
             buffer.print( from_filepath ).print( " " ).print( to_filepath )
           else
@@ -164,7 +165,7 @@ class SoundCompiler
           endIf
 
           local cmd = buffer->String
-
+          println "> " + cmd
           System.run( cmd )
         else
           File.copy( from_filepath, to_filepath )

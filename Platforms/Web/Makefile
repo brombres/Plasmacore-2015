@@ -26,11 +26,9 @@ SDLCORE_FILES := \
   $(SDLCORE_FOLDER)/Plasmacore.cpp \
   $(SDLCORE_FOLDER)/PlasmacoreMessage.cpp \
   $(SDLCORE_FOLDER)/PlasmacoreView.cpp \
-  $(SDLCORE_FOLDER)/PlasmacoreSoundDummy.cpp \
   $(SDLCORE_FOLDER)/PlasmacoreUtility.cpp \
-  $(SDLCORE_FOLDER)/RogueInterface.cpp
-
-#  $(SDLCORE_FOLDER)/PlasmacoreSoundSDLMixer.cpp
+  $(SDLCORE_FOLDER)/RogueInterface.cpp \
+  $(SDLCORE_FOLDER)/PlasmacoreSoundSDLMixer.cpp
 
 -include Settings.mk
 
