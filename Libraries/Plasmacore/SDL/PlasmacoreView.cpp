@@ -2,6 +2,7 @@
 #include <SDL2/SDL_opengles2.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <emscripten/html5.h>
 #endif
 
 #include "Plasmacore.h"
@@ -10,9 +11,10 @@
 
 PlasmacoreIntTable<PlasmacoreView*> sdl_windows;
 
-const char* PlasmacoreView::default_window_title = "Plasmacore";
-int         PlasmacoreView::default_display_width = 1024;
+const char* PlasmacoreView::default_window_title   = "Plasmacore";
+int         PlasmacoreView::default_display_width  = 1024;
 int         PlasmacoreView::default_display_height = 768;
+bool        PlasmacoreView::display_size_changed   = false;
 
 PlasmacoreView * plasmacore_get_window (int swindow_id)
 {
@@ -38,6 +40,15 @@ void PlasmacoreView::destroy ()
 /// Override to change just window creation
 void PlasmacoreView::create_window ()
 {
+#ifdef __EMSCRIPTEN__
+  double w, h;
+  emscripten_get_element_css_size( 0, &w, &h );
+  printf( "LOG: initial display size: %dx%d\n", (int)w, (int)h );
+  initial_width  = (int) w;
+  initial_height = (int) h;
+  //emscripten_set_canvas_element_size( 0, initial_width, initial_height );
+#endif
+
   window = SDL_CreateWindow(default_window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, initial_width, initial_height, window_flags|SDL_WINDOW_OPENGL);
 }
 
@@ -95,6 +106,17 @@ void PlasmacoreView::redraw ()
   configure();
   if (!window) return;
   if (!gl_context) return;
+
+#ifdef __EMSCRIPTEN__
+  if (display_size_changed)
+  {
+    double w, h;
+    emscripten_get_element_css_size( 0, &w, &h );
+    printf( "LOG: Display size changed to %dx%d\n", (int)w, (int)h );
+    SDL_SetWindowSize( window, (int)w, (int) h );
+  }
+#endif
+
   auto flags = SDL_GetWindowFlags(window);
   if (flags & SDL_WINDOW_MINIMIZED) return;
   if (!(flags & SDL_WINDOW_SHOWN)) return;

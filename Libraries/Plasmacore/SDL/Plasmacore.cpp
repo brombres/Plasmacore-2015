@@ -10,6 +10,7 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <emscripten/html5.h>
 #include <stdlib.h>
 #else
 #include <libgen.h>
@@ -36,6 +37,13 @@ static void do_async_call ( void (*cb)(void *), int millis )
   emscripten_async_call(cb, 0, millis);
 }
 
+
+
+static EM_BOOL on_emscripten_display_size_changed( int event_type, const EmscriptenUiEvent *event, void *user_data )
+{
+  PlasmacoreView::display_size_changed = true;
+  return false;
+}
 #else
 
 static Uint32 sdl_async_cb_poster (Uint32 interval, void * arg)
@@ -107,6 +115,8 @@ Plasmacore & Plasmacore::configure()
   if (!view) throw "No view created!";
   //std::cerr << "Controller window: " << view << std::endl;
   #endif
+
+  emscripten_set_resize_callback( nullptr, nullptr, false, on_emscripten_display_size_changed );
 
   RogueInterface_set_arg_count( gargc );
   for (int i = 0; i < gargc; ++i)
@@ -381,6 +391,11 @@ static void do_iteration (void)
 #endif
 
   plasmacore_redraw_all_windows();
+
+#ifdef __EMSCRIPTEN__
+  PlasmacoreView::display_size_changed = false;
+#endif
+
   SDL_Event e;
   while (SDL_PollEvent(&e))
   {

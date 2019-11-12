@@ -41,6 +41,7 @@ public:
   static const char* default_window_title;
   static int         default_display_width;
   static int         default_display_height;
+  static bool        display_size_changed;
 
   bool isConfigured = false;
   const char* name  = "unnamed";
