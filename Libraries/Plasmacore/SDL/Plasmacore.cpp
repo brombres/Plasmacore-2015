@@ -334,7 +334,7 @@ static bool should_quit = false;
 static int current_fps = 0;
 
 #ifdef __EMSCRIPTEN__
-static int new_fps = 30;
+static int new_fps = 60;
 #else
 static int new_fps = 60;
 #endif
