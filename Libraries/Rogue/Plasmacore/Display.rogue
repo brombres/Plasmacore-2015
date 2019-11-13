@@ -171,7 +171,7 @@ class Display [singleton]
       return Box(-offset,size)
 
     method center->XY [macro]
-      return (size/2)
+      return bounds.center
 
     method clear->this
       native "int gl_flags = GL_COLOR_BUFFER_BIT;"
