@@ -811,7 +811,7 @@ class Display [singleton]
 
     method safe_area->Box
       if (System.is_ios) return iOS.safe_area
-      else               return Box( size )
+      else               return bounds
 
     method scale_to_fill( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
       return scale_to_fill( XY(w,h), anchor )

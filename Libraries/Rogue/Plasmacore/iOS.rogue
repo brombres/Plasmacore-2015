@@ -28,8 +28,10 @@ class iOS
                 |  $bottom = (RogueInt32)(window.safeAreaInsets.bottom * $density);
                 |}
       $endIf
-      if (available) return Box( left, top, Display.width-(left+right), Display.height-(top+bottom) )
-      else           return Box( Display.size )
+      if (not available) return Display.bounds
+      local bounds = Box( left,top, Display.true_width-(left+right),Display.true_height-(top+bottom) )
+      bounds = bounds * Display.display_scale - Display.offset
+      return bounds
 
     method status_bar_height->Int32
       # In pixels
