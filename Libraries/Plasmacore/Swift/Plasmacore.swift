@@ -134,12 +134,12 @@ class Plasmacore
         if let controllerType = NSClassFromString( className ) as? NSWindowController.Type
         {
           NSLog( "Found controller \(className)" )
-          controller = controllerType.init( windowNibName:NSNib.Name(rawValue: name) )
+          controller = controllerType.init( windowNibName:name )
         }
         else if let controllerType = NSClassFromString( name ) as? NSWindowController.Type
         {
           NSLog( "Found controller \(name)" )
-          controller = controllerType.init( windowNibName:NSNib.Name(rawValue: name) )
+          controller = controllerType.init( windowNibName:name )
         }
         else
         {
@@ -147,7 +147,7 @@ class Plasmacore
           NSLog( "ERROR" )
           NSLog( "  No class found named \(name) or \(className)." )
           NSLog( "===============================================================================" )
-          controller = NSWindowController( windowNibName:NSNib.Name(rawValue: name) )
+          controller = NSWindowController( windowNibName:name )
         }
 
         Plasmacore.singleton.resources[ m.getInt32(name:"id") ] = controller
