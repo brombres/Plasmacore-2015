@@ -185,7 +185,7 @@ class Plasmacore [essential singleton]
             if (x or y)
               # On mobile web, SDL sends mouse (pointer) events at (0,0) followed by finger (stylus) events
               # at actual (x,y) coordinates. As a kludge we'll ignore pointer events at (0,0)
-              local scale = display.display_scale
+              local scale = display.scale
               local pos = XY(x,y) * scale - Display.offset
               local delta = XY( m.real64("dx"), m.real64("dy") ) * scale
               local e = PointerEvent( m.int32("type"), pos, delta, m.int32("index"), m.logical("cancelled") )
@@ -203,7 +203,7 @@ class Plasmacore [essential singleton]
         function(m:Message)
           try
             local display = Display( m.string("display_name") )
-            local scale = display.display_scale
+            local scale = display.scale
             local delta = XY( m.real64("dx"), m.real64("dy") ) * scale
 
             local e = ScrollEvent( delta )

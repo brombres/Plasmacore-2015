@@ -30,7 +30,7 @@ class iOS
       $endIf
       if (not available) return Display.bounds
       local bounds = Box( left,top, Display.true_width-(left+right),Display.true_height-(top+bottom) )
-      bounds = bounds * Display.display_scale - Display.offset
+      bounds = bounds * Display.scale - Display.offset
       return bounds
 
     method status_bar_height->Int32

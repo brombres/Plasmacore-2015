@@ -305,9 +305,6 @@ class Display [singleton]
       endIf
 
 
-    method display_scale->Real64
-      return render_target.display_scale
-
     method draw( box:Box, color:Int32, thickness=1:Int32 )
       draw( box, Color(color) )
 
@@ -657,6 +654,9 @@ class Display [singleton]
     method pop_view_transform( n=1:Int32 )->this
       render_target.pop_view_transform( n )
       return this
+
+    method scale->Real64
+      return render_target.display_scale
 
     method set_render_target( canvas:Canvas )
       if (canvas)
