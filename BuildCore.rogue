@@ -1,4 +1,4 @@
-$define PLASMACORE_VERSION "0.9.15"
+$define PLASMACORE_VERSION "0.10.0"
 uses Geometry
 uses Bitmap
 

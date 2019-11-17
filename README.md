@@ -2,8 +2,8 @@
 
 About     | &nbsp;
 ----------|-----------------------
-Version   | v0.9.15
-Date      | October 28, 2019
+Version   | v0.10.0
+Date      | November 16, 2019
 Platforms | macOS, Linux
 Targets   | macOS, iOS, Linux, Web
 
