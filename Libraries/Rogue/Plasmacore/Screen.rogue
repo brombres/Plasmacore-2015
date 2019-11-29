@@ -315,7 +315,7 @@ class Screen
 
     method on_transition_after_draw
       local info = transition_info.value
-      Display.bounds.fill( info.color.with_alpha(info.eased_progress(ProgressFn.QUADRATIC_OUT,ProgressFn.QUADRATIC_IN)) )
+      Display.bounds.fill( info.color.with_alpha(info.eased_progress) )
 
     method on_transition_before_draw
 

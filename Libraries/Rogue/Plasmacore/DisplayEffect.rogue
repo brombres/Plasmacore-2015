@@ -61,12 +61,12 @@ class TransitionInfo( t:Real64, color:Color, exit_vector:XY ) [compound]
     method is_transitioning_out->Logical
       return (t < 0.5)
 
-    method eased_progress( fn_out=ProgressFn.QUADRATIC_OUT:ProgressFnType, fn_in=ProgressFn.QUADRATIC_IN:ProgressFnType, &invert_ease_in )->Real64
+    method eased_progress( fn_out=ProgressFn.QUADRATIC_OUT:ProgressFnType, fn_in=ProgressFn.QUADRATIC_IN:ProgressFnType, &invert_ease_in=true )->Real64
       if (t < 0.5)            return fn_out( t*2 )
       elseIf (invert_ease_in) return fn_in( 2 - 2*t )
       else                    return fn_in( 2*t - 1 )
 
-    method linear_progress( &invert_ease_in )->Real64
+    method linear_progress( &invert_ease_in=true )->Real64
       if (t < 0.5)            return t * 2
       elseIf (invert_ease_in) return 2 - 2*t
       else                    return 2*t - 1
