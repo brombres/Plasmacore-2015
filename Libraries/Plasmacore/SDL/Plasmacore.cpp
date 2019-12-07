@@ -430,7 +430,22 @@ static void do_iteration (void)
       case SDL_MOUSEMOTION:
       {
         auto w = plasmacore_get_window(e.motion.windowID);
+        if (!w) break;
         w->on_mouse_move(e.motion.x, e.motion.y);
+        break;
+      }
+      case SDL_KEYDOWN:
+      {
+        auto w = plasmacore_get_window(e.key.windowID);
+        if (!w) break;
+        w->on_key_event( e.key.keysym.scancode, true, !!e.key.repeat );
+        break;
+      }
+      case SDL_KEYUP:
+      {
+        auto w = plasmacore_get_window(e.key.windowID);
+        if (!w) break;
+        w->on_key_event( e.key.keysym.scancode, false, false );
         break;
       }
 

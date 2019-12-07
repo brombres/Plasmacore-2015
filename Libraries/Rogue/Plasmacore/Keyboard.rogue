@@ -168,4 +168,9 @@ class Keycode
     F17             217
     F18             218
     F19             219
+    F20             220
+    F21             221
+    F22             222
+    F23             223
+    F24             224
 endClass

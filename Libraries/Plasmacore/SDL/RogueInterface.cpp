@@ -21,7 +21,11 @@ ROGUEAPI extern "C" RogueString* Plasmacore_get_user_data_folder()
 
 ROGUEAPI extern "C" RogueString* Plasmacore_get_application_data_folder()
 {
-  return RogueString_validate(RogueString_create_from_utf8("."));
+  #ifdef LOCAL_FS
+  return RogueString_validate(RogueString_create_from_utf8(LOCAL_FS));
+  #else
+  return RogueString_validate(RogueString_create_from_utf8("/IDBFS"));
+  #endif
 }
 
 extern "C" RogueString* Plasmacore_find_asset( RogueString* filepath )

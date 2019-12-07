@@ -72,5 +72,6 @@ public:
   void on_mouse_up (int x, int y, int button);
   void on_mouse_down (int x, int y, int button);
   void on_mouse_move (int x, int y);
+  void on_key_event( int syscode, bool is_press, bool is_repeat );
   void on_focus_gained  (void);
 };
