@@ -1,4 +1,3 @@
-$define PLASMACORE_VERSION "0.10.0"
 uses Geometry
 uses Bitmap
 
@@ -7,6 +6,10 @@ uses Bitmap
 #$ ROGUEC(macOS)    = Programs/RogueC-macOS
 #$ ROGUEC(Linux)    = roguec
 #$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
+
+#$ LIBRARIES(macOS) = brew
+#$ LIBRARIES(macOS) = python3
+#$ LIBRARIES(Linux) = python3 python3-pip(which:pip3)
 
 #$ LINK             = true
 
@@ -56,35 +59,24 @@ routine rogo_xclean
   File.delete( ".rogo" )
 endRoutine
 
-routine rogo_version( text="Updated to":String )
-  print( text ).print( " Plasmacore v" ).println( PLASMACORE_VERSION )
+routine rogo_version( text="Updated to":String, &silent )->String
+  local v = String( File("PlasmacoreVersion.txt") )
+  print( text ).print( " Plasmacore v" ).println( v )
+  return v
 endRoutine
 
 routine rogo_update
   println "Checking for Plasmacore update"
-  Build.git_pull
-  local update_version = PLASMACORE_VERSION
-  contingent
-    local filepath = "Build/Update/Plasmacore/BuildCore.rogue"
-    necessary (File.exists(filepath))
-    local def = "$define PLASMACORE_VERSION"
-    forEach (line in LineReader(File(filepath)))
-      if (line.contains(def))
-        update_version = line.after_first(def).trimmed.rightmost(-1).leftmost(-1)
-        sufficient (update_version != PLASMACORE_VERSION)
-        necessary (false)
-      endIf
-    endForEach
-
-  satisfied
+  local current_version = rogo_version( &silent )
+  Build.update_depz
+  local update_version = String( File("Plasmacore/PlasmacoreVersion.txt") )
+  if (current_version != update_version)
     println "Plasmacore updating..."
-    run File.fix_slashes( "rogo --build=Build/Update/Plasmacore/Bootstrap install update" )
+    run File.fix_slashes( "rogo --build=Plasmacore/Bootstrap install update" )
     println "Updated to Plasmacore v" + update_version
-
-  unsatisfied
-    println "No Plasmacore update available. Current version is v$." (PLASMACORE_VERSION)
-
-  endContingent
+  else
+    println "No Plasmacore update available. Current version is v$." (current_version)
+  endIf
 endRoutine
 
 routine rogo_web( run_after_building:String, browser:String )
@@ -307,13 +299,8 @@ class Build [essential singleton]
       endForEach
       return options
 
-    method git_pull
-      if (not File.exists("Build/Update/Plasmacore"))
-        println File.fix_slashes( "Cloning Plasmacore -> Build/Update/Plasmacore" )
-        File.create_folder( "Build/Update" )
-        run File.fix_slashes( "git clone $ Build/Update/Plasmacore"(REPO) )
-      endIf
-      run "cd Build/Update/Plasmacore && git checkout $ && git pull" (BRANCH)
+    method update_depz
+      System.run "depz"
 
     method install_rogue
       print select{ File.exists("Libraries/Rogue/Standard"):"Updating" || "Installing" }
