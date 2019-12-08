@@ -59,9 +59,9 @@ routine rogo_xclean
   File.delete( ".rogo" )
 endRoutine
 
-routine rogo_version( text="Updated to":String, &silent )->String
-  local v = String( File("PlasmacoreVersion.txt") )
-  print( text ).print( " Plasmacore v" ).println( v )
+routine rogo_version( text="2 Updated to":String, &silent )->String
+  local v = String( File("PlasmacoreVersion.txt") ).trimmed
+  if (not silent) print( text ).print( " Plasmacore v" ).println( v )
   return v
 endRoutine
 
@@ -69,11 +69,11 @@ routine rogo_update
   println "Checking for Plasmacore update"
   local current_version = rogo_version( &silent )
   Build.update_depz
-  local update_version = String( File("Plasmacore/PlasmacoreVersion.txt") )
+  local update_version = String( File("Plasmacore/PlasmacoreVersion.txt") ).trimmed
   if (current_version != update_version)
     println "Plasmacore updating..."
     run File.fix_slashes( "rogo --build=Plasmacore/Bootstrap install update" )
-    println "Updated to Plasmacore v" + update_version
+    println "1 Updated to Plasmacore v" + update_version
   else
     println "No Plasmacore update available. Current version is v$." (current_version)
   endIf
@@ -300,7 +300,11 @@ class Build [essential singleton]
       return options
 
     method update_depz
-      System.run "depz"
+      if (not File.exists("Plasmacore.depz"))
+        File.save( "Plasmacore.depz", "[REPO Plasmacore]\nprefix=$\ncheckout=$\n"(REPO.before_first("/Plasmacore"),BRANCH) )
+      endIf
+      if (not File.is_folder("Plasmacore")) run "depz --init"
+      run "depz"
 
     method install_rogue
       print select{ File.exists("Libraries/Rogue/Standard"):"Updating" || "Installing" }

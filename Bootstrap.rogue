@@ -18,6 +18,10 @@ else
     Bootstrap.sync( "Libraries/Plasmacore/**" )
     Bootstrap.sync( "Libraries/Rogue/AssetCompiler/**" )
     Bootstrap.sync( "Libraries/Rogue/Plasmacore/**" )
+
+    if (not File.exists("Plasmacore.depz"))
+      File.save( "Plasmacore.depz", "[REPO Plasmacore]\nprefix=https://github.com/AbePralle\ncheckout=master\n" )
+    endIf
     if (not File.exists("Plasmacore")) run "depz --init"
     run "depz"
   else
@@ -64,7 +68,7 @@ class Bootstrap [singleton]
       endIf
 
       if (not File.exists("Plasmacore.depz"))
-        File.save( "Plasmacore.depz", "[REPO Plasmacore]\nprefix=$\ncheckout=master\n"(REPO.before_first("/Plasmacore"),BRANCH) )
+        File.save( "Plasmacore.depz", "[REPO Plasmacore]\nprefix=$\ncheckout=$\n"(REPO.before_first("/Plasmacore"),BRANCH) )
       endIf
       if (not File.exists("Plasmacore")) run "depz --init"
 
@@ -120,48 +124,50 @@ class Dependencies [singleton]
       if (not exists("pip3")) throw Error( "Please install pip3 and then re-run the command." )
 endClass
 
-global default_gitignore = @|BuildLocal.rogue
-                            |Plasmacore
-                            |
-                            |# Vim
-                            |*.swp
-                            |*.local
-                            |
-                            |# Android
-                            |**/src/main/assets
-                            |
-                            |Test
-                            |Update.mk
-                            |Publish.mk
-                            |**/Local.mk
-                            |**/Build/
-                            |.rogo
-                            |
-                            |# Merge/Patch/etc.
-                            |*.orig
-                            |*.rej
-                            |*.diff
-                            |*.patch
-                            |
-                            |# Mac
-                            |.DS_Store
-                            |
-                            |# Xcode
-                            |#
-                            |build/
-                            |*.pbxuser
-                            |!default.pbxuser
-                            |*.mode1v3
-                            |!default.mode1v3
-                            |*.mode2v3
-                            |!default.mode2v3
-                            |*.perspectivev3
-                            |!default.perspectivev3
-                            |xcuserdata
-                            |*.xccheckout
-                            |*.moved-aside
-                            |DerivedData
-                            |*.hmap
-                            |*.ipa
-                            |*.xcuserstate
+routine default_gitignore->String
+  return @|BuildLocal.rogue
+          |Plasmacore
+          |
+          |# Vim
+          |*.swp
+          |*.local
+          |
+          |# Android
+          |**/src/main/assets
+          |
+          |Test
+          |Update.mk
+          |Publish.mk
+          |**/Local.mk
+          |**/Build/
+          |.rogo
+          |
+          |# Merge/Patch/etc.
+          |*.orig
+          |*.rej
+          |*.diff
+          |*.patch
+          |
+          |# Mac
+          |.DS_Store
+          |
+          |# Xcode
+          |#
+          |build/
+          |*.pbxuser
+          |!default.pbxuser
+          |*.mode1v3
+          |!default.mode1v3
+          |*.mode2v3
+          |!default.mode2v3
+          |*.perspectivev3
+          |!default.perspectivev3
+          |xcuserdata
+          |*.xccheckout
+          |*.moved-aside
+          |DerivedData
+          |*.hmap
+          |*.ipa
+          |*.xcuserstate
+endRoutine
 
