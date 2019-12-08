@@ -2,7 +2,7 @@
 
 About     | &nbsp;
 ----------|-----------------------
-Version   | v0.11.0
+Version   | v0.11.1
 Date      | December 7, 2019
 Platforms | macOS, Linux
 Targets   | macOS, iOS, Linux, Web
@@ -26,7 +26,7 @@ To bootstrap a new Plasmacore-based project, install Rogue, open a Terminal in y
 
     curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/Bootstrap.rogue && rogo --build=Bootstrap
 
-The command will fetch a bootstrap build file which in turn will `git clone` the latest Plasmacore repo in a temporary folder and copy all the files into the current folder.
+The command will fetch a bootstrap build file which in turn will install and use Murphy McCauley's [https://github.com/MurphyMc/depz](depz) app to clone the latest Plasmacore repo as a subfolder and copy all relevant project files into the current folder.
 
 
 ## Documentation and Resources
@@ -40,7 +40,7 @@ A sample Plasmacore game project is available here: [https://github.com/AbePrall
 
 ## Starting a New Project
 
-1.  Run the bootstrap command or manually clone the Plasmacore repo and copy everything except the `.git` folder into your project folder.
+1.  Run the bootstrap command.
 2.  At the command line run e.g. `rogo ios`.  The first build will take a while as intermediate files are compiled.
 3.  Open `Platforms/iOS/iOS-Project.xcodeproj` in Xcode and run on the simulator or a device.  You should see a blue screen.
 4.  Edit `Source/Main.rogue` and add more game code.
