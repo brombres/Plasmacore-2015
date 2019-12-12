@@ -12,6 +12,10 @@ class GGLabel : GGComponent
       size = fixed_size
 
     method on_draw
-      font.draw( text, bounds.at(anchor) )
+      if (anchor == Anchor.CENTER)
+        font.draw( text, bounds, bounds.width )
+      else
+        font.draw( text, bounds.at(anchor) )
+      endIf
 endClass
 
