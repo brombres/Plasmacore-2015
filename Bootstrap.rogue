@@ -19,10 +19,14 @@ else
     Bootstrap.sync( "Libraries/Rogue/AssetCompiler/**" )
     Bootstrap.sync( "Libraries/Rogue/Plasmacore/**" )
 
-    if (not File.exists("Plasmacore.depz"))
-      File.save( "Plasmacore.depz", "[REPO Plasmacore]\nprefix=https://github.com/AbePralle\ncheckout=master\n" )
+    if (not File.exists("Project.depz"))
+      File.save( "Project.depz",
+        @|[REPO Plasmacore]
+         |prefix=https://github.com/AbePralle
+         |checkout=master
+         |default_actions=--init --update --ff --outdated
+      )
     endIf
-    if (not File.exists("Plasmacore")) run "depz --init"
     run "depz"
   else
     println "Invalid option: " + cmd
@@ -67,10 +71,16 @@ class Bootstrap [singleton]
         return
       endIf
 
-      if (not File.exists("Plasmacore.depz"))
-        File.save( "Plasmacore.depz", "[REPO Plasmacore]\nprefix=$\ncheckout=$\n"(REPO.before_first("/Plasmacore"),BRANCH) )
+      if (not File.exists("Project.depz"))
+        local depz =
+          @|[REPO Plasmacore]
+           |prefix=https://github.com/AbePralle
+           |checkout=BRANCH
+           |default_actions=--init --update --ff --outdated
+        depz = depz.replacing( "BRANCH", BRANCH )
+        File.save( "Project.depz", depz )
       endIf
-      if (not File.exists("Plasmacore")) run "depz --init"
+      if (not File.exists("Plasmacore")) run "depz"
 
       local files = Files( "Plasmacore", "**" )
       if (File.exists("README.md")) files.remove( "Plasmacore/README.md" )

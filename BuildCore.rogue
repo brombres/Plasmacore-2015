@@ -301,9 +301,14 @@ class Build [essential singleton]
 
     method update_depz
       if (not File.exists("Project.depz"))
-        File.save( "Project.depz", "[REPO Plasmacore]\nprefix=$\ncheckout=$\n"(REPO.before_first("/Plasmacore"),BRANCH) )
+        local depz =
+          @|[REPO Plasmacore]
+           |prefix=https://github.com/AbePralle
+           |checkout=BRANCH
+           |default_actions=--init --update --ff --outdated
+        depz = depz.replacing( "BRANCH", BRANCH )
+        File.save( "Project.depz", depz )
       endIf
-      if (not File.is_folder("Plasmacore")) run "depz --init"
       run "depz"
 
     method install_rogue
