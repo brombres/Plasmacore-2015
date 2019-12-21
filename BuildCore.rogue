@@ -1,5 +1,6 @@
 uses Geometry
 uses Bitmap
+uses XML
 
 #$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
 
@@ -63,6 +64,67 @@ routine rogo_version( text="2 Updated to":String, &silent )->String
   local v = String( File("PlasmacoreVersion.txt") ).trimmed
   if (not silent) print( text ).print( " Plasmacore v" ).println( v )
   return v
+endRoutine
+
+routine rogo_rename_android( new_package_name:String, new_app_name:String )
+  local cur_package_name = String(File("Platforms/Android/app/build.gradle")).extract_string(''*\napplicationId "$"\n*'')
+  local cur_app_name = "Plasmacore"
+  local strings_file = File( "Platforms/Android/app/src/main/res/values/strings.xml" )
+  local strings = XML( strings_file )
+  local resources = strings.find( $.name == "resources" )
+  local name_node : XML
+  if (resources)
+    name_node = resources.find( $.name == "string" and $//name == "app_name" )
+    cur_app_name = name_node.content
+  endIf
+  println "Current package name: " + cur_package_name
+  println "Current app name:     " + cur_app_name
+  if (new_package_name == "" and new_app_name == "")
+    println @|USAGE
+             |  rogo rename android <new_package_name> [<new_app_name]
+    return
+  endIf
+  if (new_package_name == "") new_package_name = cur_package_name
+  if (new_app_name == "") new_app_name = cur_app_name
+
+  println ''Renaming Android project $ "$" -> $ "$"'' (cur_package_name,cur_app_name,new_package_name,new_app_name)
+
+  if (cur_package_name == new_package_name and cur_app_name == new_app_name)
+    println "  (No changes)"
+    return
+  endIf
+
+  name_node.children.clear.add( XML.text(new_app_name) )
+  strings_file.save( strings->String )
+
+  if (cur_package_name == new_package_name) return
+
+  if (not new_package_name.contains('.'))
+    # This is for our convenience but it's a reasonable request
+    throw Error( "New package name must have at least one '.' in it." )
+  endIf
+
+  File.delete( "Platforms/Android/build" )
+  File.delete( "Platforms/Android/app/build" )
+  File.delete( "Platforms/Android/plasmacore/build" )
+
+  local old_folder = "Platforms/Android/app/src/main/java/" + cur_package_name.replacing('.','/')
+  local new_folder = "Platforms/Android/app/src/main/java/" + new_package_name.replacing('.','/')
+  File.create_folder( new_folder )
+  File.sync_from( Files(old_folder,"*"), new_folder, &verbose )
+  File.delete( old_folder ) # FIXME
+
+  # Search and replace cur_package_name with new_package_name
+  println "Changing application id $ -> $" (cur_package_name,new_package_name)
+  forEach (filepath in Files("Platforms/Android", "**"))
+    local content = String( File(filepath) )
+    if (content.contains(cur_package_name))
+      println "  " + filepath
+      content = content.replacing( cur_package_name, new_package_name )
+      File.save( filepath, content )
+    endIf
+  endForEach
+
 endRoutine
 
 routine rogo_update
