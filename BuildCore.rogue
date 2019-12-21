@@ -233,6 +233,25 @@ class Build [essential singleton]
                    |
       endWhich
 
+      # Run depz if necessary
+      contingent
+        if (not File.exists("Project.depz"))
+          local depz =
+            @|[REPO Plasmacore]
+             |prefix=https://github.com/AbePralle
+             |checkout=BRANCH
+             |default_actions=--init --update --ff --outdated
+          depz = depz.replacing( "BRANCH", BRANCH )
+          File.save( "Project.depz", depz )
+        endIf
+        necessary (File.is_folder("Plasmacore"))
+        necessary (File.exists("Plasmacore/PlasmacoreVersion.txt"))
+        necessary (File.exists("PlasmacoreVersion.txt"))
+        necessary (String(File("Plasmacore/PlasmacoreVersion.txt")) == String(File("PlasmacoreVersion.txt")))
+      unsatisfied
+        execute( "depz" )
+      endContingent
+
       local output_folder = File.fix_slashes( "Build/$/Source" (platform) )
       create_folder( output_folder )
 
