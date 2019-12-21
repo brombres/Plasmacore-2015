@@ -167,7 +167,7 @@ ROGUE_FN( jboolean, Plasmacore, nativeSendMessage )( JNIEnv* env, jobject static
 //-----------------------------------------------------------------------------
 // Rogue Plasmacore
 //-----------------------------------------------------------------------------
-RogueClassPlasmacore__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueInt32 count )
+RogueClassBitmap__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueInt32 count )
 {
   JNIEnv* env = Plasmacore_env;
 
@@ -187,7 +187,7 @@ RogueClassPlasmacore__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueIn
     int byte_count = env->GetIntField( ioBuffer, jfieldID_ByteList_count );
     RogueInt32 height = (RogueInt32) ((byte_count/4) / width);
 
-    RogueClassPlasmacore__Bitmap* bitmap = RoguePlasmacore__Bitmap__create__Int32_Int32( width, height );
+    RogueClassBitmap__Bitmap* bitmap = RogueBitmap__Bitmap__create__Int32_Int32( width, height );
     env->GetByteArrayRegion( (jbyteArray) buffer_bytes, 0, byte_count, (signed char*) bitmap->pixels->data->as_bytes );
 
     return bitmap;
