@@ -37,8 +37,6 @@ static void do_async_call ( void (*cb)(void *), int millis )
   emscripten_async_call(cb, 0, millis);
 }
 
-
-
 static EM_BOOL on_emscripten_display_size_changed( int event_type, const EmscriptenUiEvent *event, void *user_data )
 {
   PlasmacoreView::display_size_changed = true;
@@ -116,7 +114,9 @@ Plasmacore & Plasmacore::configure()
   //std::cerr << "Controller window: " << view << std::endl;
   #endif
 
+#ifdef __EMSCRIPTEN__
   emscripten_set_resize_callback( nullptr, nullptr, false, on_emscripten_display_size_changed );
+#endif
 
   RogueInterface_set_arg_count( gargc );
   for (int i = 0; i < gargc; ++i)
