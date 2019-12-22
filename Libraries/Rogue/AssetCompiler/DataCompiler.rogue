@@ -95,7 +95,7 @@ class DataCompiler
 
   METHODS
     method init( file, platform )
-      println "Compiling data for platform $..." (platform)
+      println "Compiling $ data..." (platform)
 
       organize_commands
       execute_global_commands

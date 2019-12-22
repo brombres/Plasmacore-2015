@@ -27,13 +27,24 @@ uses XML
 
 $include "AssetCompiler" [optional]
 
+${
+  println System.command_line_arguments
+}$
+
 help( "default", &syntax="", "Prints list of commands." )
 routine rogo_default
   rogo_help
 endRoutine
 
+description( "android", "Compiles Rogue files and assets for Android." )
 routine rogo_android
   Build.build( "Android" )
+endRoutine
+
+description( "android debug", "Compiles Rogue files and assets, then builds, installs, and runs a debug APK." )
+routine rogo_android_debug
+  rogo_android
+  execute "cd Platforms/Android && rogo debug"
 endRoutine
 
 routine rogo_ios
@@ -112,7 +123,7 @@ routine rogo_rename_android( new_package_name:String, new_app_name:String )
   local new_folder = "Platforms/Android/app/src/main/java/" + new_package_name.replacing('.','/')
   File.create_folder( new_folder )
   File.sync_from( Files(old_folder,"*"), new_folder, &verbose )
-  File.delete( old_folder ) # FIXME
+  File.delete( old_folder )
 
   # Search and replace cur_package_name with new_package_name
   println "Changing application id $ -> $" (cur_package_name,new_package_name)

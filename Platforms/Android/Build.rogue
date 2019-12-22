@@ -1,0 +1,433 @@
+# To run this build file, install Rogue from github.com/AbePralle/Rogue and type "rogo" at the command line.
+
+# Rogo is a "build your own build system" facilitator. At its core Rogo just recompiles build files if
+# needed and then runs the build executable while forwarding any command line arguments. This file contains
+# a default framework which uses introspection to turn command line arguments into parameterized routine calls.
+
+# Example: to handle the command "rogo abc xyz 5", define "routine rogo_abc_xyz( n:Int32 )".
+
+# "rogo_default" will run in the absence of any other command line argument.
+
+# The following "comment directives" can be used in this file to control how RogueC compiles it and to
+# manage automatic dependency installation and linking.
+
+# Each of the following should be on a line beginning with the characters #$ (preceding whitespace is fine).
+# Sample args are given.
+
+#   ROGUEC       = roguec       # Path to roguec compiler to compile this file with
+#   ROGUEC_ARGS  = --whatever   # Additional options to pass to RogueC
+#   CPP          = g++ -Wall -std=gnu++11 -fno-strict-aliasing -Wno-invalid-offsetof   # C++ compiler path and/or invocation
+#   CPP_ARGS     = -a -b -c          # Additional C++ args
+#   LINK         = true              # Links following LIBRARIES with this Build file
+#   LINK         = -lalpha -lbeta    # Links following LIBRARIES and includes these additional flags
+#   LINK         = false             # Linking turned off for following LIBRARIES - info can still be obtained from #$LIBRARY_FLAGS()
+#   LINK(macOS)  = ...               # Options applying only to System.os=="macOS" (use with any OS and any comment directive)
+#   LIBRARIES    = libalpha
+#   LIBRARIES    = libbeta(library-name)
+#   LIBRARIES    = libfreetype6-dev(freetype2)
+#   DEPENDENCIES = Library/Rogue/**/*.rogue
+#
+#   LIBRARIES    = name(package)
+#   LIBRARIES    = name(package:<package> install:<install-cmd> link:<link-flags>)
+#
+# The following macro is replaced within this file (Build.rogue) - the libraries should also be declared in #$ LIBRARIES:
+#
+#   $LIBRARY_FLAGS(lib1,lib2)                              # sample macro
+#     ->
+#   -Ipath/to/lib1/include -Lpath/to/lib1/library -I ...   # sample replacement
+
+#$ LIBRARIES(macOS) = brew
+#$ LIBRARIES(macOS) = gradle
+
+#$ LIBRARIES(Linux) = gradle
+#$ LIBRARIES(Linux) = ninja-build(package:ninja which:ninja)
+
+# description()s are optional - Rogo uses introspection to determine which commands are available.
+# 'rogo help default' displays the description for "default", etc.
+description( "default", "The default action is performed when no other actions are specified. Use 'rogo default' to explicitly perform the default option." )
+description( "help",    "Displays a list of all actions that can be performed by Rogo." )
+
+routine rogo_default
+  rogo_help
+endRoutine
+
+routine esc( filepath:String )->String
+  return File.shell_escaped( filepath )
+endRoutine
+
+routine rogo_build
+  configure_local_properties
+  execute "gradle assembleDebug"
+endRoutine
+
+routine rogo_debug
+  #rogo_build # FIXME
+  if (not Process.run("aapt v",&inherit_environment).success)
+    throw Error( "You must install the Android command line tool 'aapt' and add it to your path." )
+  endIf
+  if (not Process.run("adb version",&inherit_environment).success)
+    throw Error( "You must install the Android command line tool 'adb' and add it to your path." )
+  endIf
+  local package = String(File("app/build.gradle")).extract_string(''*\napplicationId "$"\n*'')
+  local apk_filepath = "app/build/outputs/apk/debug/app-debug.apk"
+
+  uninstall( package )
+  install( apk_filepath )
+
+  local launch_timestamp = "$-$ $" (Date.now.month.format("02"),Date.now.day.format("02"),Date.now->String(&hms,&ms))
+  local launchable_activity = package + ".MainActivity"
+  execute( "adb shell am start -n $/$" (package,launchable_activity) )
+
+  println "-" * 79
+  println "LOGCAT (CTRL+C to exit)"
+  println "-" * 79
+
+  local check_timestamp = true
+
+  local ps_info : String?
+  loop 5
+    ps_info = Process.run( "adb shell ps", &inherit_environment, &writable )->String.split( '\n' ).find($.contains(package))
+    if (ps_info.exists) escapeLoop
+  endLoop
+  require ps_info.exists
+  local pid = ps_info.value.from_first(' ').trimmed.before_first(' ')  # second value is PID
+
+  local process = Process( "adb logcat", &readable, &writable, &inherit_environment )
+  local reader = LineReader( process.output_reader )
+  while (not process.is_finished)
+    forEach (line in reader)
+      local has_pid = line.contains( pid )
+      if (has_pid)
+        local i = line.locate( ' ' )
+        if (i.exists) i = line.locate( ' ', i.value+1 )
+        has_pid = i.exists and line.contains_at( pid, i.value+1 )
+      endIf
+      if (has_pid or line.contains("AndroidRuntime"))
+        if (check_timestamp)
+          local i = line.locate( ' ' )
+          if (i.exists) i = line.locate( ' ', i.value+1 )
+          if (i.exists)
+            local timestamp = line.leftmost( i.value )
+            if (timestamp > launch_timestamp) check_timestamp = false; println line
+          endIf
+        else
+          println line
+        endIf
+      endIf
+    endForEach
+    System.sleep( 0.1 )
+  endWhile
+
+endRoutine
+
+routine uninstall( package:String )
+  local output = Process.run( "adb shell pm list packages", &inherit_environment )->String
+  forEach (line in LineReader(output))
+    if (line.after_first("package:").trimmed == package)
+      execute( "adb uninstall $" (package) )
+      return
+    endIf
+  endForEach
+endRoutine
+
+routine install( filepath:String )
+  execute( "adb install "+ filepath )
+endRoutine
+
+routine configure_local_properties
+  local local_properties_filepath = "local.properties"
+  if (File.exists(local_properties_filepath)) return
+
+  # Attempt to locate Android SDK
+  local sdk_folder : String
+  contingent
+    sdk_folder = "~/Library/Android/sdk"
+    sufficient (File.is_folder(sdk_folder))
+
+    sdk_folder = "/Library/Android/sdk"
+    sufficient (File.is_folder(sdk_folder))
+
+    sdk_folder = "~/Android/Sdk"
+    sufficient (File.is_folder(sdk_folder))
+
+    sdk_folder = "/usr/lib/android-sdk"
+    sufficient (File.is_folder(sdk_folder))
+
+    sdk_folder = "/usr/local/bin/android-sdk"
+    sufficient (File.is_folder(sdk_folder))
+
+    sdk_folder = null
+    escapeContingent
+
+  satisfied
+    sdk_folder = File.absolute_filepath( sdk_folder )
+  endContingent
+
+  # Attempt to locate Android NDK
+  local ndk_folder : String
+  contingent
+    necessary (sdk_folder)
+    ndk_folder = sdk_folder + "/ndk-bundle"
+    sufficient (File.exists(ndk_folder))
+
+    necessary (sdk_folder)
+    ndk_folder = sdk_folder + "/ndk"
+    sufficient (File.exists(ndk_folder))
+
+    ndk_folder = null
+    escapeContingent
+
+  satisfied
+    ndk_folder = File.absolute_filepath( ndk_folder )
+    if (not File.contains(ndk_folder, "README.md"))
+      local versions = File.listing( ndk_folder )
+      if (versions.count)
+        versions.sort( (a,b) => compare_versions(a,b) > 0 )
+        ndk_folder = versions.first
+        if (File.contains(ndk_folder, "README.md"))
+          escapeContingent
+        endIf
+      endIf
+      ndk_folder = null
+    endIf
+  endContingent
+
+  local builder = StringBuilder()
+  builder.println @|# Do NOT check this file into your version control system as it contains
+                   |# information specific to your local configuration.
+                   |#
+                   |# Location of the Android SDK and NDK. This is only used by Gradle and Android
+                   |# Studio.
+  builder.println( "# " + Date.now )
+  if (sdk_folder) builder.println"sdk.dir=$" (sdk_folder)
+  else            builder.println"#sdk.dir=<folder>  # Specify the correct folder and uncomment this line"
+  if (ndk_folder) builder.println"ndk.dir=$" (ndk_folder)
+  else            builder.println"#ndk.dir=<folder>  # Specify the correct folder and uncomment this line"
+  println "Creating local.properties with SDK and NDK locations."
+  File.save( local_properties_filepath, builder )
+
+  local mesg = "Cannot locate the Android SDK and/or NDK. Please install them and then edit the corresponding paths in 'local.properties'."
+  mesg += ''\n\nInstalling Android Studio is an easy way to get both libraries - install it to the the Android SDK and then use Configure > SDK Manager > SDK Tools to install "NDK (Side by side)":\nhttps://developer.android.com/studio''
+  if (not sdk_folder or not ndk_folder)
+    if (System.is_linux and not sdk_folder)
+      mesg += "\n\nYou can also download the Android SDK with:\nsudo apt install android-sdk"
+    endIf
+    if (not ndk_folder) mesg += "\n\nYou can download the Android NDK directly from here:\nhttps://developer.android.com/ndk/downloads/index.html"
+    throw Error( mesg )
+  endIf
+endRoutine
+
+routine execute( commands:String, &suppress_error )->Logical
+  forEach (cmd in LineReader(commands))
+    print( "> " ).println( cmd )
+    if (System.run(cmd) != 0)
+      if (suppress_error) return false
+      else                throw Error( "Build failed." )
+    endIf
+  endForEach
+  return true
+endRoutine
+
+#------------------------------------------------------------------------------
+# Introspection-based Launcher Framework
+#------------------------------------------------------------------------------
+routine syntax( command:String, text:String )
+  Build.rogo_syntax[ command ] = text
+endRoutine
+
+routine description( command:String, text:String )
+  Build.rogo_descriptions[ command ] = text
+endRoutine
+
+routine help( command:String, description=null:String, syntax=null:String )
+  if (description) Global.description( command, description )
+  if (syntax)      Global.syntax( command, syntax )
+endRoutine
+
+try
+  Build.launch
+catch (err:Error)
+  Build.rogo_error = err
+  Build.on_error
+endTry
+
+class Build [singleton]
+  PROPERTIES
+    rogo_syntax         = StringTable<<String>>()
+    rogo_descriptions   = StringTable<<String>>()
+    rogo_prefix         = ?:{ $moduleName.count:$moduleName "::" || "" } + "rogo_" : String
+    rogo_command        = "default"
+    rogo_args           = @[]
+    rogo_error          : Error
+
+    LOCAL_DEFS_FILE     = "Local.mk"
+
+  METHODS
+    method launch
+      rogo_args.add( forEach in System.command_line_arguments )
+      read_defs
+      on_launch
+      parse_args
+      dispatch_command
+
+    method dispatch_command
+      local m = find_command( rogo_command )
+      require m
+
+      local args = @[]
+      forEach (arg in rogo_args)
+        which (arg)
+          case "true":  args.add( true )
+          case "false": args.add( false )
+          case "null":  args.add( NullValue )
+          others:       args.add( arg )
+        endWhich
+      endForEach
+      if (m.parameter_count == 1 and args.count > 1) args = @[ args ] # Wrap args in a ValueList.
+      m.call( Global, args )
+
+    method find_command( name:String )->MethodInfo
+      return <<Global>>.find_method( rogo_prefix + name )
+
+    method on_error
+      Console.error.println "=" * 79
+      Console.error.println rogo_error
+      Console.error.println "=" * 79
+      on_exit
+      System.exit 1
+
+    method on_command_found
+      noAction
+
+    method on_command_not_found
+      println "=" * 79
+      println "ERROR: No such command '$'." (rogo_args.first)
+      println "=" * 79
+      println
+      rogo_command = "help"
+      rogo_args.clear
+      on_command_found
+
+    method on_launch
+      noAction
+
+    method on_exit
+      noAction
+
+    method parse_args
+      block
+        if (rogo_args.count)
+          local parts = String[]
+          parts.add( forEach in rogo_args )
+          rogo_args.clear
+
+          while (parts.count)
+            local cmd = _join( parts )
+            if (find_command(cmd))
+              rogo_command = cmd
+              on_command_found
+              escapeBlock
+            endIf
+            rogo_args.insert( parts.remove_last )
+          endWhile
+
+          on_command_not_found
+        endIf
+
+        # Use default command
+        on_command_found
+      endBlock
+
+    method read_defs
+      read_defs( LOCAL_DEFS_FILE )
+
+    method read_defs( defs_filepath:String )
+      # Attempt to read defs from Local.mk
+      local overrides = String[]
+      if (File.exists(defs_filepath))
+        forEach (line in LineReader(File(defs_filepath)))
+          if (line.contains("="))
+            local name  = line.before_first('=').trimmed
+            local value = line.after_first('=').trimmed
+            if (value.begins_with('"') or value.begins_with('\''))
+              value = value.leftmost(-1).rightmost(-1)
+            endIf
+            local p = <<Build>>.find_property( name )
+            if (p)
+              overrides.add( "$ = $" (name,value) )
+              <<Build>>.set_property( this, p, Value(value) )
+            endIf
+          endIf
+        endForEach
+      endIf
+
+    method _join( value:Value )->String
+      local args = String[]
+      args.add( forEach in value )
+      return args.join( "_" )
+endClass
+
+
+routine rogo_help( command="":String )
+  command = Build._join( Build.rogo_args )
+  if (command.count)
+    local syntax = get_syntax( command )
+    local success = false
+    if (syntax)
+      println "SYNTAX"
+      println "  " + syntax
+      println
+      success = true
+    endIf
+    local description = get_description( command )
+    if (description)
+      println "DESCRIPTION"
+      forEach (line in LineReader(description.word_wrapped(76)))
+        print( "  " ).println( line )
+      endForEach
+      println
+      success = true
+    endIf
+    if (success)
+      return
+    else
+      println "=" * 79
+      println "ERROR: No such command '$'." (command)
+      println "=" * 79
+      println
+    endIf
+  endIf
+
+  println "USAGE"
+  local lines = String[]
+  forEach (m in <<Global>>.methods)
+    if (m.name.begins_with(Build.rogo_prefix))
+      lines.add( "  " + get_syntax(m.name.after_first(Build.rogo_prefix)) )
+    endIf
+  endForEach
+  lines.sort( (a,b)=>(a<b) )
+  println (forEach in lines)
+  println
+endRoutine
+
+
+routine get_syntax( m_name:String )->String
+  if (Build.rogo_syntax.contains(m_name))
+    return "rogo " + Build.rogo_syntax[ m_name ]
+  else
+    local m = <<Global>>.find_method( Build.rogo_prefix + m_name )
+    if (not m) return null
+    local line = "rogo $" (m_name.replacing('_',' '))
+    line += " <$>" (m.parameter_name(forEach in 0..<m.parameter_count))
+    return line
+  endIf
+endRoutine
+
+
+routine get_description( m_name:String )->String
+  if (Build.rogo_descriptions.contains(m_name))
+    return Build.rogo_descriptions[ m_name ]
+  else
+    return null
+  endIf
+endRoutine

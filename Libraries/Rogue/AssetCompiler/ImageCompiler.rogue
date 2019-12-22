@@ -149,7 +149,7 @@ class ImageCompiler
 
   METHODS
     method init( file, platform )
-      println "Compiling images for platform $..." (platform)
+      println "Compiling $ images..." (platform)
       file_timestamp = file.timestamp
       group_manifests = @[]
       newest_manifest_timestamp = 0.0

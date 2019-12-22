@@ -105,7 +105,7 @@ class SoundCompiler
 
   METHODS
     method init( file, platform )
-      println "Compiling sounds for platform $..." (platform)
+      println "Compiling $ sounds..." (platform)
 
       organize_commands
       execute_global_commands
