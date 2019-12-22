@@ -300,6 +300,10 @@ class Display [singleton]
         return iOS.display_density
       elseIf (System.is_macos)
         return macOS.display_density
+      elseIf (System.is_android)
+        local result = Message( "Display.density" ).send
+        if (not result or not result.contains("density")) return 1
+        return result.int32( "density" ).or_larger( 1 )
       else
         return 1
       endIf

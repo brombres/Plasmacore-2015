@@ -1,5 +1,5 @@
 BuildLocal.rogue
-Plasmacore
+./Plasmacore
 
 # Vim
 *.swp

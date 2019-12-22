@@ -8,6 +8,7 @@ class MainScreen : Screen [singleton]
   METHODS
     method on_start
       trace
+      trace Display.density
       change_state( InitialState() )
 
     method on( e:PointerEvent )

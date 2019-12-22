@@ -22,6 +22,7 @@ public class Plasmacore
   static public String   mutex = new String( "mutex" );
 
   static public Activity activity;
+  static public Device   device;
 
   static public String   applicationDataFolder;
   static public String   userDataFolder;
@@ -58,6 +59,7 @@ public class Plasmacore
   static public void configure( Activity activity )
   {
     Plasmacore.activity = activity;
+    Plasmacore.device = new Device( activity );
 
     if (isConfigured) return;
     isConfigured = true;
@@ -84,7 +86,8 @@ public class Plasmacore
 
     soundManager = new PlasmacoreSoundManager();
 
-    setMessageListener( "Plasmacore.find_asset",
+    setMessageListener(
+        "Plasmacore.find_asset",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
@@ -112,6 +115,17 @@ public class Plasmacore
             {
               // no response
             }
+          }
+        }
+    );
+
+    setMessageListener(
+        "Display.density",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            m.reply().set( "density", Plasmacore.device.displayDensity() );
           }
         }
     );

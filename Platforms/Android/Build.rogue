@@ -61,7 +61,7 @@ routine rogo_build
 endRoutine
 
 routine rogo_debug
-  #rogo_build # FIXME
+  rogo_build
   if (not Process.run("aapt v",&inherit_environment).success)
     throw Error( "You must install the Android command line tool 'aapt' and add it to your path." )
   endIf
@@ -121,7 +121,7 @@ routine rogo_debug
 endRoutine
 
 routine uninstall( package:String )
-  local output = Process.run( "adb shell pm list packages", &inherit_environment )->String
+  local output = Process.run( "adb shell pm list packages", &inherit_environment, &writable )->String
   forEach (line in LineReader(output))
     if (line.after_first("package:").trimmed == package)
       execute( "adb uninstall $" (package) )
