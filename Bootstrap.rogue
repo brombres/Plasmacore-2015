@@ -19,6 +19,7 @@ else
     Bootstrap.sync( "Libraries/Rogue/AssetCompiler/**" )
     Bootstrap.sync( "Libraries/Rogue/Plasmacore/**" )
     Bootstrap.sync( "Platforms/Android/plasmacore/src/main/cpp/*" )
+    Bootstrap.sync( "Platforms/Android/Build.rogue" )
 
     if (not File.exists("Project.depz"))
       File.save( "Project.depz",
@@ -97,6 +98,22 @@ class Bootstrap [singleton]
     method sync( pattern:String, exclude=UndefinedValue:Value, &keep_unused )
       local update_folder = "Plasmacore/"
       if (not File.is_folder(update_folder)) update_folder = "Build/Update/Plasmacore/" # pre-depz update
+
+      local src_filepath = update_folder + pattern
+      if (File.exists(src_filepath) and not File.is_folder(src_filepath))
+        # Handle a single specific file separately
+        local dest_filepath = pattern
+        contingent
+          sufficient (not File.exists(dest_filepath))
+          sufficient (File.size(src_filepath) != File.size(dest_filepath))
+          necessary  (File.crc32(src_filepath) != File.crc32(dest_filepath))
+        satisfied
+          println "Copying $ -> $" (src_filepath,dest_filepath)
+          File.copy( src_filepath, dest_filepath )
+        endContingent
+        return
+      endIf
+
       local source_folder = update_folder
       local dest_folder = "."
       if (pattern != "*")

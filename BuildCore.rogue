@@ -67,7 +67,7 @@ routine rogo_xclean
   File.delete( ".rogo" )
 endRoutine
 
-routine rogo_version( text="2 Updated to":String, &silent )->String
+routine rogo_version( text="Updated to":String, &silent )->String
   local v = String( File("PlasmacoreVersion.txt") ).trimmed
   if (not silent) print( text ).print( " Plasmacore v" ).println( v )
   return v
@@ -142,7 +142,7 @@ routine rogo_update
   if (current_version != update_version)
     println "Plasmacore updating..."
     run File.fix_slashes( "rogo --build=Plasmacore/Bootstrap install update" )
-    println "1 Updated to Plasmacore v" + update_version
+    println "Updated to Plasmacore v" + update_version
   else
     println "No Plasmacore update available. Current version is v$." (current_version)
   endIf
