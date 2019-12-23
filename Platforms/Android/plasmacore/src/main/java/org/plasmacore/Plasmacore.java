@@ -171,6 +171,22 @@ public class Plasmacore
           }
         }
     );
+
+    setMessageListener(
+        "Display.safe_insets",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            PlasmacoreMessage reply = m.reply();
+            reply.set( "left",   device.safeInsetLeft() );
+            reply.set( "right",  device.safeInsetRight() );
+            reply.set( "top",    device.safeInsetTop() );
+            reply.set( "bottom", device.safeInsetBottom() );
+            reply.send();
+          }
+        }
+    );
   }
 
   static boolean copyAsset( String filepath, File toFile )

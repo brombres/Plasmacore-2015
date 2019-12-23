@@ -834,8 +834,24 @@ class Display [singleton]
       vertex_count += n
 
     method safe_area->Box
-      if (System.is_ios) return iOS.safe_area
-      else               return bounds
+      if (System.is_ios)
+        return iOS.safe_area
+      #{
+        # The following calls work but I don't have a notched device to test on so
+        # I will finish this up when I do. Also, safe insets do not detect rounded
+        # screen corners - not sure if there is a solution for that.  --Abe
+      elseIf (System.is_android)
+        local result = Message( "Display.safe_insets" ).send
+        if (result)
+          local left   = result.int32( "left" )
+          local top    = result.int32( "top" )
+          local right  = result.int32( "right" )
+          local bottom = result.int32( "bottom" )
+          @trace left, top, right, bottom
+        endIf
+      }#
+      endIf
+      return bounds
 
     method scale_to_fill( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
       return scale_to_fill( XY(w,h), anchor )

@@ -92,6 +92,8 @@ routine rogo_debug
   require ps_info.exists
   local pid = ps_info.value.from_first(' ').trimmed.before_first(' ')  # second value is PID
 
+  println "Logging process " + pid
+  println ps_info
   local process = Process( "adb logcat", &readable, &writable, &inherit_environment )
   local reader = LineReader( process.output_reader )
   while (not process.is_finished)
