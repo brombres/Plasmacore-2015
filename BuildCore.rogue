@@ -325,15 +325,7 @@ class Build [essential singleton]
         try
           execute( "depz" )
         catch (err:Error)
-          local paths = System.environment//PATH.split('\n')
-          forEach (path in paths)
-            if (path.contains("depz"))
-              # Successfully ran depz but depz had an error
-              throw err
-            endIf
-          endForEach
-          # If we reach this point then there depz could not be found (Xcode).
-          # It's not critical to run depz here so we'll ignore the error and continue.
+          execute( "bash -l -c depz" )
         endTry
       endContingent
 
