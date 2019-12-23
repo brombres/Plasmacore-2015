@@ -109,7 +109,7 @@ class DataCompiler
       forEach (filepath in included_data)
         if (not File.is_folder(filepath))
           local attr = data_attributes( filepath )
-          copy_data( filepath, dest_folder, attr )
+          copy_data( filepath, dest_folder+filepath.after_first("Data/"), attr )
         endIf
       endForEach
 
