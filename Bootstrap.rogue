@@ -18,6 +18,7 @@ else
     Bootstrap.sync( "Libraries/Plasmacore/**" )
     Bootstrap.sync( "Libraries/Rogue/AssetCompiler/**" )
     Bootstrap.sync( "Libraries/Rogue/Plasmacore/**" )
+    Bootstrap.sync( "Platforms/Android/plasmacore/src/main/java/org/plasmacore/*" )
     Bootstrap.sync( "Platforms/Android/plasmacore/src/main/cpp/*" )
     Bootstrap.sync( "Platforms/Android/Build.rogue" )
 
