@@ -27,10 +27,6 @@ uses XML
 
 $include "AssetCompiler" [optional]
 
-${
-  println System.command_line_arguments
-}$
-
 help( "default", &syntax="", "Prints list of commands." )
 routine rogo_default
   rogo_help
