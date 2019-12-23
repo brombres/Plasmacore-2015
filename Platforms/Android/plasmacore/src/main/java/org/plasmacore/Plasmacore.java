@@ -1,6 +1,7 @@
 package org.plasmacore;
 
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.graphics.*;
 import android.util.*;
 
@@ -126,6 +127,47 @@ public class Plasmacore
           public void on( PlasmacoreMessage m )
           {
             m.reply().set( "density", Plasmacore.device.displayDensity() );
+          }
+        }
+    );
+
+    setMessageListener(
+        "Display.is_tablet",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            m.reply().set( "is_tablet", Plasmacore.device.isTablet() );
+          }
+        }
+    );
+
+    final Activity ACTIVITY = activity;
+    setMessageListener(
+        "Display.allow_orientation",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            boolean allow_portrait  = m.getBoolean( "allow_portrait" );
+            boolean allow_landscape = m.getBoolean( "allow_landscape" );
+            int orientation = 0;
+            if (allow_portrait ^ allow_landscape)
+            {
+              if (allow_landscape)
+              {
+                orientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+              }
+              else
+              {
+                orientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
+              }
+            }
+            else
+            {
+              orientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE | ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
+            }
+            ACTIVITY.setRequestedOrientation( orientation );
           }
         }
     );
