@@ -62,8 +62,16 @@ routine rogo_linux
 endRoutine
 
 routine rogo_clean
-  println "Deleting Build/"
-  File.delete( "Build" )
+  if (File.exists("Build"))
+    println "Deleting Build/"
+    File.delete( "Build" )
+  endIf
+
+  if (File.exists("Platforms/Android/app/build") or File.exists("Platforms/Android/plasmacore/build"))
+    println "Deleting Platforms/Android/app/build/ and Platforms/Android/plasmacore/build/"
+    File.delete "Platforms/Android/app/build/"
+    File.delete "Platforms/Android/plasmacore/build/"
+  endIf
 endRoutine
 
 routine rogo_xclean
