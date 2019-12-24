@@ -37,10 +37,15 @@ routine rogo_android
   Build.build( "Android" )
 endRoutine
 
-description( "android debug", "Compiles Rogue files and assets, then builds, installs, and runs a debug APK." )
+description( "android_debug", "Compiles Rogue files and assets, then builds, installs, and runs a debug APK." )
 routine rogo_android_debug
   rogo_android
   execute "cd Platforms/Android && rogo debug"
+endRoutine
+
+description( "android_keystore", "Creates an Android release keystore." )
+routine rogo_android_keystore
+  execute "cd Platforms/Android && rogo keystore"
 endRoutine
 
 routine rogo_ios

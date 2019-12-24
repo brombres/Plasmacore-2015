@@ -47,24 +47,143 @@
 description( "default", "The default action is performed when no other actions are specified. Use 'rogo default' to explicitly perform the default option." )
 description( "help",    "Displays a list of all actions that can be performed by Rogo." )
 
+class Keystore [singleton]
+  # Create a BuildLocal.rogue file with:
+  #   augment Keystore
+  #     METHODS
+  #       method init
+  #         keystore_filepath = "<Keystore filepath>"
+  #         keystore_password = "<Keystore password>"
+  #         key_alias         = "<key alias>"
+  #         key_password      = "<key password>"
+  #   endAugment
+  PROPERTIES
+    keystore_filepath : String
+    keystore_password : String
+    key_alias         = "appsign"
+    key_password      : String
+
+  METHODS
+    method configure
+      contingent
+        necessary (keystore_filepath)
+        necessary (keystore_password)
+        necessary (key_password)
+      unsatisfied
+        println @|-------------------------------------------------------------------------------
+                 |No keystore information found in BuildLocal.rogue. Would you like to (c)reate a
+                 |new upload keystore or use an (e)xisting keystore?
+                 |
+        local choice = Console.input( "(c)reate keystore or use (e)xisting? " ).to_lowercase
+        which (choice)
+          case "c"
+            rogo_keystore
+          case "e"
+            local content = ""
+            if (File.exists("BuildLocal.rogue")) content = String( File("BuildLocal.rogue") ) + "\n"
+            else                                 println "Creating Platforms/Android/BuildLocal.rogue"
+
+            if (not content.contains("augment Keystore"))
+              if (content.count > 0) content += "\n"
+              content += @|# Uncomment the following and adjust the properties.
+                          |#augment Keystore
+                          |#  METHODS
+                          |#    method init
+                          |#      keystore_filepath = "<keystore-filepath>"
+                          |#      keystore_password = "<keystore-password>"
+                          |#      key_alias         = "<key-alias>"
+                          |#      key_password      = "<key-password>"
+                          |#endAugment
+              File.save( "BuildLocal.rogue", content )
+            endIf
+
+            println @|Edit keystore filepath and passwords in Platforms/Android/BuildLocal.rogue, then
+                     |re-run the current command.
+            System.exit
+          others
+            println "Unsupported option. Exiting."
+        endWhich
+      endContingent
+endClass
+
 routine rogo_default
   rogo_help
+endRoutine
+
+routine rogo_keystore
+  println @|
+           |===========================================================================================
+           |Create Keystore
+           |===========================================================================================
+           |The following steps will create a new Android keystore suitable for using as a release key
+           |or as an upload key. If you elect to use App Signing by Google Play, the first key you sign
+           |your app with will become your "upload key" and should be used for all subsequent uploads
+           |to Google Play.
+           |
+           |The passwords you enter are used for the 'keytool' software and are also stored in
+           |Platforms/Android/BuildLocal.rogue for building 'rogo android release'. Be sure and store
+           |your keystore and passwords in permanent and private location.
+           |
+           |If you prefer you can CTRL+C now and manually create a keystore with the following command:
+           |
+           |  keytool -genkey -v -keystore <filepath.keystore> -storepass <keystore-password> \
+           |  -alias <key-alias> -keypass <key-password> -keyalg RSA -validity 36500
+           |
+  local keystore_filepath = File.expand_filepath( Console.input( "Enter keystore filepath (can use ~): " ) )
+  if (File.exists(keystore_filepath))
+    throw Error( "Keystore $ already exits - if\nyou wish to overwrite it, manually delete and retry." (keystore_filepath) )
+  endIf
+
+  local keystore_password = Console.input( "Enter keystore password: " )
+  local key_alias    = Console.input( "Enter key alias (default: 'appsign'): " )
+  if (key_alias == "") key_alias = "appsign"
+  local key_password = Console.input( "Enter key password: " )
+  local keystore_folder = File.folder( keystore_filepath )
+  if (not File.exists(keystore_folder))
+    println "Creating folder " + keystore_folder
+    File.create_folder( keystore_folder )
+  endIf
+  execute "keytool -genkey -v -keystore $ -storepass $ -alias $ -keypass $ -keyalg RSA -validity 36500" ...
+          (esc(keystore_filepath),keystore_password,key_alias,key_password)
+  local build_local = ""
+  if (File.exists("BuildLocal.rogue"))
+    println "Appending Keystore info to Platforms/Android/BuildLocal.rogue"
+    build_local = String( File("BuildLocal.rogue") ) + "\n"
+  else
+    println "Creating Platforms/Android/BuildLocal.rogue with keystore info."
+  endIf
+  build_local += ''augment Keystore\n''
+  build_local += ''  METHODS\n''
+  build_local += ''    method init\n''
+  build_local += ''      keystore_filepath = "$"\n'' (keystore_filepath)
+  build_local += ''      keystore_password = "$"\n'' (keystore_password)
+  build_local += ''      key_alias         = "$"\n'' (key_alias)
+  build_local += ''      key_password      = "$"\n'' (key_password)
+  build_local += ''endAugment\n''
+  File.save( "BuildLocal.rogue", build_local )
+
+  Keystore.keystore_filepath = keystore_filepath
+  Keystore.keystore_password = keystore_password
+  Keystore.key_alias         = key_alias
+  Keystore.key_password      = key_password
 endRoutine
 
 routine esc( filepath:String )->String
   return File.shell_escaped( filepath )
 endRoutine
 
-routine rogo_build
+routine rogo_build_debug
   configure_local_properties
   execute "gradle assembleDebug"
 endRoutine
 
+routine rogo_build_release
+  configure_local_properties
+  execute "gradle assembleRelease"
+endRoutine
+
 routine rogo_debug
-  rogo_build
-  if (not Process.run("aapt v",&inherit_environment).success)
-    throw Error( "You must install the Android command line tool 'aapt' and add it to your path." )
-  endIf
+  rogo_build_debug
   if (not Process.run("adb version",&inherit_environment).success)
     throw Error( "You must install the Android command line tool 'adb' and add it to your path." )
   endIf
@@ -119,6 +238,48 @@ routine rogo_debug
     endForEach
     System.sleep( 0.1 )
   endWhile
+
+endRoutine
+
+routine rogo_release
+  Keystore.configure
+
+  rogo_build_release
+
+  if (not Process.run("aapt v",&inherit_environment).success)
+    throw Error( "You must install the Android command line tool 'aapt' and add it to your path." )
+  endIf
+
+  local result = Process.run( "aapt dump badging app/build/outputs/apk/release/app-release-unsigned.apk", &env )
+  require result.success
+  local path = "app/build/outputs/apk/release"
+  local aligned_apk = path + "app-release-unsigned-aligned.apk"
+  File.delete( aligned_apk )
+  if (not execute("zipalign -p 4 $/app-release-unsigned.apk $"(path,aligned_apk), &suppress_error))
+    throw Error( "Ensure that 'zipalign' is the system path and can be run from the command line." )
+  endIf
+
+  local strings = result->String.extract_strings( "* name='$' versionCode='$' versionName='$'*" )
+  local signed_apk = "$/$-v$.apk" (path,strings[0].after_any('.'),strings[1])
+  File.delete( signed_apk )
+
+  local cmd = "apksigner sign --ks $ --v1-signing-enabled true --v2-signing-enabled true" (esc(Keystore.keystore_filepath))
+  if (Keystore.keystore_password) cmd += " --ks-pass pass:"  + Keystore.keystore_password
+  if (Keystore.key_alias)         cmd += " --ks-key-alias "  + Keystore.key_alias
+  if (Keystore.key_password)      cmd += " --key-pass pass:" + Keystore.key_password
+  cmd += " --out $ $" (signed_apk,aligned_apk)
+  execute cmd
+
+  execute "apksigner verify $" (signed_apk)
+
+  println
+  println "-" * 79
+  println ''"META-INF" warnings are normal and can be disregarded.''
+  println "-" * 79
+  println
+
+  println "Signed APK:"
+  println signed_apk
 
 endRoutine
 

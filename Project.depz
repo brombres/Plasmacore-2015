@@ -1,0 +1,4 @@
+[REPO Plasmacore]
+prefix=https://github.com/AbePralle
+checkout=master
+default_actions=--init --update --ff --outdated
