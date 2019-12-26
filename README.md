@@ -2,10 +2,10 @@
 
 About     | &nbsp;
 ----------|-----------------------
-Version   | v0.11.5
-Date      | December 23, 2019
+Version   | v0.11.6
+Date      | December 25, 2019
 Platforms | macOS, Linux
-Targets   | macOS, iOS, Linux, Web
+Targets   | macOS, iOS, Android, Linux, Web
 
 
 ## Requirements
@@ -14,11 +14,12 @@ Targets   | macOS, iOS, Linux, Web
 - macOS & iOS targets require Xcode.
 
 ### Compile Target Support
-Host Platform | macOS   | Linux  | iOS    | Web
---------------|---------|--------|--------|----
-macOS         | &#10004;|        |&#10004;|&#10004;
-Linux         |         |&#10004;|        |&#10004;
+Host Platform | macOS   | Linux   |  iOS    | Android   | Web
+--------------|---------|---------|---------|-----------|---------
+macOS         | &#10003;|         | &#10003;| &#10003;  | &#10003;
+Linux         |         | &#10003;|         | &#10003;* | &#10003;
 
+&#42; Linux Android support is not well-tested.
 
 ## Bootstrap Command
 
