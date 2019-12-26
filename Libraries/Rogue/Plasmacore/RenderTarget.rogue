@@ -73,16 +73,19 @@ class RenderTarget
 
     method activate
       native @|glBindFramebuffer( GL_FRAMEBUFFER, $this->render_target_id );
+      OpenGL.log_errors( "Binding framebuffer" )
 
     method configure( true_size )
       configure( true_size, true_size )
 
     method configure( true_size, viewport_size )
       if (not is_id_configured)
-        is_id_configured = true
+        # is_id_configured is only set when we're drawing to an offscreen buffer.
+        # Otherwise we need to fetch the render target ID every frame to be able
+        # to recover from screen lock due to timeout or iPad cover.
         native @|GLint default_id;
                 |glGetIntegerv( GL_FRAMEBUFFER_BINDING, &default_id );
-                |printf( "Default Framebuffer ID: %d\n", default_id );
+                |if ( !default_id ) return;
                 |$this->render_target_id = (RogueInt32) default_id;
       endIf
 
