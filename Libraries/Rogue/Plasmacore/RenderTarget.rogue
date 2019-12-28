@@ -85,7 +85,6 @@ class RenderTarget
         # to recover from screen lock due to timeout or iPad cover.
         native @|GLint default_id;
                 |glGetIntegerv( GL_FRAMEBUFFER_BINDING, &default_id );
-                |if ( !default_id ) return;
                 |$this->render_target_id = (RogueInt32) default_id;
       endIf
 
