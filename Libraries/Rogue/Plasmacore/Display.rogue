@@ -725,6 +725,7 @@ class Display [singleton]
       update_timer.update
 
       while (update_timer.tick)
+        ++Plasmacore.update_ticks
         effect = effect.update
         activate_screen_and_state
         effect.handle_update

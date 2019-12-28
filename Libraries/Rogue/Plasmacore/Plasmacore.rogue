@@ -50,6 +50,7 @@ $include "Layer.rogue"
 $include "Log.rogue"
 $include "OpenGL.rogue"
 $include "OverlayLog.rogue"
+$include "PlasmacoreTiming.rogue"
 $include "Pointer.rogue"
 $include "Polygon.rogue"
 $include "ProgressFn.rogue"
@@ -72,7 +73,6 @@ $include "TargetValue.rogue"
 $include "Texture.rogue"
 $include "TileMapLayout.rogue"
 $include "Triangle.rogue"
-$include "UpdateTimer.rogue"
 $include "Vertex.rogue"
 $include "Window.rogue"
 $include "XY.rogue"
@@ -100,10 +100,11 @@ class Plasmacore [essential singleton]
     user_data_folder        : String
     cache_folder            : String
 
-    show_fps  : Logical
-    fps       : Int32
-    next_fps  : Int32
-    fps_timer = Timer(1)
+    show_fps      : Logical
+    fps           : Int32
+    next_fps      : Int32
+    fps_timer     = Timer(1)
+    update_ticks  = 0.0
 
   METHODS
     method init
@@ -426,6 +427,11 @@ class Plasmacore [essential singleton]
       fps = 0
       fps_timer.restart
       return this
+
+    method time->Real64
+      # Runs the "app time" which runs at the same rate as real time but only
+      # updates while the app is active.
+      return (update_ticks / Display.updates_per_second)
 
     method user_data_folder->String
       # These files are exposed to the user on iOS

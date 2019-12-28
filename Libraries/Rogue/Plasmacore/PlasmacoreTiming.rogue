@@ -1,5 +1,17 @@
 module Plasmacore
 
+class GameStopwatch : Stopwatch
+  METHODS
+    method init( time_fn=(function()->Real64 return Plasmacore.time), &stopped )
+      prior.init( time_fn, &=stopped )
+endClass
+
+class GameTimer : Timer
+  METHODS
+    method init( duration, time_fn=(function()->Real64 return Plasmacore.time), &expired )
+      prior.init( duration, time_fn, &=expired )
+endClass
+
 
 class UpdateTimer
   PROPERTIES
