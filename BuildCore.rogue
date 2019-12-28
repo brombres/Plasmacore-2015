@@ -52,8 +52,28 @@ routine rogo_ios
   Build.build( "iOS" )
 endRoutine
 
+routine rogo_ios_open
+  local listing = File.listing( "Platforms/iOS", "*.xcworkspace" )
+  if (listing.is_empty) listing = File.listing( "Platforms/iOS", "*.xcodeproj" )
+  if (listing.count)
+    execute ''open "$"'' (forEach in listing)
+  else
+    throw Error( "No .xcodeproj or .xcworkspace folders found!" )
+  endIf
+endRoutine
+
 routine rogo_macos
   Build.build( "macOS" )
+endRoutine
+
+routine rogo_macos_open
+  local listing = File.listing( "Platforms/macOS", "*.xcworkspace" )
+  if (listing.is_empty) listing = File.listing( "Platforms/macOS", "*.xcodeproj" )
+  if (listing.count)
+    execute ''open "$"'' (forEach in listing)
+  else
+    throw Error( "No .xcodeproj or .xcworkspace folders found!" )
+  endIf
 endRoutine
 
 routine rogo_linux
