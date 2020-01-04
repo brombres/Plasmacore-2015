@@ -67,6 +67,9 @@ class Action
       if (concurrent) n += concurrent.count
       return n
 
+    method describe->String
+      return type_name
+
     method finish
       if (duration < 0) duration = 0
       t = duration
@@ -118,13 +121,9 @@ class Action
       endIf
 
     method to->String
-      return this->String( 0 )
-
-    method to->String( indent:Int32 )
-      local result = prior.to_String + "\n"
-      ++indent
-      if (next) result += "$+ ($) $" ("  "*indent,type_name,next->String(indent))
-      if (concurrent) result += "$| ($) $" ("  "*(indent-1),type_name,concurrent->String(indent))
+      local result = describe
+      if (next) result = "$ + $" (result,next->String)
+      if (concurrent) result = "($) | ($)" (result,concurrent)
       return result
 
     method update->Action
@@ -159,6 +158,10 @@ class ActionList : Action
     actions : Action
 
   METHODS
+    method describe->String
+      if (actions) return "[" + actions + "]"
+      else         return "[]"
+
     method finish
       prior.finish
       if (actions) actions.finish
@@ -174,15 +177,6 @@ class ActionList : Action
     method operator|( action:Action )->ActionList
       actions |= action
       return this
-
-    method to->String( indent:Int32 )
-      local result = prior.to_String(indent)
-      if (actions)
-        ++indent
-        result += "  " * indent
-        result += actions->String(indent)
-      endIf
-      return result
 
     method update->Action
       local cur_time = System.time
