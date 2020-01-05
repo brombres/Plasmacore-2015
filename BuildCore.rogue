@@ -3,10 +3,13 @@ uses Bitmap
 uses XML
 
 #$ DEPENDENCIES     = Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue
+#$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
+
+#$ ROGUEC_ARGS      = --libraries=Plasmacore/Libraries/Rogue
+#$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
 
 #$ ROGUEC(macOS)    = Programs/RogueC-macOS
 #$ ROGUEC(Linux)    = roguec
-#$ ROGUEC_ARGS      = --libraries=Plasmacore/Libraries/Rogue
 
 #$ LIBRARIES(macOS) = brew
 #$ LIBRARIES(macOS) = python3
