@@ -13,7 +13,7 @@ TARGET = Web
 CXX = em++
 CC = emcc
 
-SDLCORE_FOLDER = $(PROJECT_ROOT)/Libraries/Plasmacore/SDL
+SDLCORE_FOLDER = $(PROJECT_ROOT)/Plasmacore/Libraries/Plasmacore/SDL
 
 BUILD_FOLDER    := $(PROJECT_ROOT)/Build/$(TARGET)
 

@@ -94,8 +94,7 @@ class Bootstrap [singleton]
 
       local files = Files( "Plasmacore", "**" )
       if (File.exists("README.md")) files.remove( "Plasmacore/README.md" )
-      files.remove( "Plasmacore/Libraries/Box2D/**" )
-      files.remove( "Plasmacore/Libraries/Rogue/**" )
+      files.remove( "Plasmacore/Libraries/**" )
       File.sync_from( files, ".", &keep_unused, &verbose )
 
       if (not File.exists(".gitignore"))

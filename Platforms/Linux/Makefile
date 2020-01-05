@@ -5,7 +5,7 @@ ROOT = ../..
 
 OPT_CFLAGS += -O3
 
-SDLCORE_FOLDER = $(ROOT)/Libraries/Plasmacore/SDL
+SDLCORE_FOLDER = $(ROOT)/Plasmacore/Libraries/Plasmacore/SDL
 
 BUILD_FOLDER    := $(ROOT)/Build/$(TARGET)
 
