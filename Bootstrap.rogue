@@ -13,7 +13,6 @@ else
     # Current folder is ProjectName/
     # This is being run from ProjectName/Plasmacore/
     Bootstrap.sync( "*", &exclude=@["LICENSE","README.md"], &keep_unused )
-    Bootstrap.sync( "Libraries/Box2D/**" )
     Bootstrap.sync( "Libraries/ImageIO/**" )
     Bootstrap.sync( "Libraries/Plasmacore/**" )
     delete( "Libraries/Rogue/AssetCompiler" )  # old structure if present
@@ -94,6 +93,7 @@ class Bootstrap [singleton]
 
       local files = Files( "Plasmacore", "**" )
       if (File.exists("README.md")) files.remove( "Plasmacore/README.md" )
+      files.remove( "Plasmacore/Libraries/Box2D/**" )
       files.remove( "Plasmacore/Libraries/Rogue/**" )
       File.sync_from( files, ".", &keep_unused, &verbose )
 

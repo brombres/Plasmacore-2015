@@ -9,7 +9,7 @@
   },
   "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "B235DC7C-94E8-441C-A7C3-8400A7C31044",
   "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
-    "32BC8F1EBE6195751A3AF787748A5E3CF9A9BEDE" : "Libraries\/Box2D\/",
+    "32BC8F1EBE6195751A3AF787748A5E3CF9A9BEDE" : "Plasmacore\/Libraries\/Box2D\/",
     "127D94E252B6E299ED85EB85D9B0369BE512C243" : "Plasmacore\/"
   },
   "DVTSourceControlWorkspaceBlueprintNameKey" : "Project-macOS",
