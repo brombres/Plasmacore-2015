@@ -2,11 +2,8 @@ uses Geometry
 uses Bitmap
 uses XML
 
-#$ DEPENDENCIES     = Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue
-#$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
-
-#$ ROGUEC_ARGS      = --libraries=Plasmacore/Libraries/Rogue
-#$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
+#$ DEPENDENCIES     = Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue Libraries/Rogue/AssetCompiler/*.rogue
+#$ ROGUEC_ARGS      = --libraries=Plasmacore/Libraries/Rogue --libraries=Libraries/Rogue
 
 #$ ROGUEC(macOS)    = Programs/RogueC-macOS
 #$ ROGUEC(Linux)    = roguec
@@ -380,8 +377,9 @@ class Build [essential singleton]
         others:                target += ",Desktop"
       endWhich
 
-      local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=Libraries/Rogue --output=$/RogueProgram''...
-        (ROGUEC,target,output_folder)
+      local libs_folder = select{ File.is_folder("Plasmacore"):"Plasmacore/Libraries/Rogue" || "Libraries/Rogue" }
+      local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=$ --output=$/RogueProgram''...
+        (ROGUEC,target,libs_folder,output_folder)
       if (Build.ide_mode)   cmd += " --ide"
       if (Build.DEBUG_MODE) cmd += " --debug"
       run( cmd )
