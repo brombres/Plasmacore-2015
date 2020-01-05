@@ -2,7 +2,7 @@
 
 About     | &nbsp;
 ----------|-----------------------
-Version   | 0.11.10.5
+Version   | 0.11.10.6
 Date      | January 5, 2020
 Platforms | macOS, Linux
 Targets   | macOS, iOS, Android, Linux, Web
