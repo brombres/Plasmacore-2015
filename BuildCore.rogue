@@ -2,11 +2,11 @@ uses Geometry
 uses Bitmap
 uses XML
 
-#$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
+#$ DEPENDENCIES     = Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue
 
 #$ ROGUEC(macOS)    = Programs/RogueC-macOS
 #$ ROGUEC(Linux)    = roguec
-#$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
+#$ ROGUEC_ARGS      = --libraries=Plasmacore/Libraries/Rogue
 
 #$ LIBRARIES(macOS) = brew
 #$ LIBRARIES(macOS) = python3
