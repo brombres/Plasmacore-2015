@@ -16,7 +16,7 @@ else
     Bootstrap.sync( "Libraries/Box2D/**" )
     Bootstrap.sync( "Libraries/ImageIO/**" )
     Bootstrap.sync( "Libraries/Plasmacore/**" )
-    delete( "Libraries/Rogue/AssetCompiler" )  # old structure
+    delete( "Libraries/Rogue/AssetCompiler" )  # old structure if present
     delete( "Libraries/Rogue/Plasmacore" )
     Bootstrap.sync( "Platforms/Android/plasmacore/src/main/java/org/plasmacore/*" )
     Bootstrap.sync( "Platforms/Android/plasmacore/src/main/cpp/*" )
