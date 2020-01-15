@@ -1,0 +1,24 @@
+uses Plasmacore
+
+augment Bezier
+  METHODS
+    method draw( color:Color )
+      local prev : XY
+      forEach (point at index in this->XY[])
+        if (index > 0)
+          Line( prev, point ).draw( color )
+        endIf
+        prev = point
+      endForEach
+
+    method transform( m:Matrix )->this
+      forEach (point at index in control_points)
+        control_points[ index ] = m * point
+      endForEach
+      is_modified = true
+      return this
+
+    method transformed( m:Matrix )->this
+      return cloned.transform( m )
+endAugment
+
