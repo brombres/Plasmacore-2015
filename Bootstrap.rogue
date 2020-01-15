@@ -28,6 +28,7 @@ else
          |prefix=https://github.com/AbePralle
          |checkout=master
          |default_actions=--init --update --ff --outdated
+         |
       )
     endIf
     run "depz"
@@ -87,6 +88,7 @@ class Bootstrap [singleton]
            |prefix=https://github.com/AbePralle
            |checkout=BRANCH
            |default_actions=--init --update --ff --outdated
+           |
         depz = depz.replacing( "BRANCH", BRANCH )
         File.save( "Project.depz", depz )
       endIf

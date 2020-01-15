@@ -343,6 +343,7 @@ class Build [essential singleton]
              |prefix=https://github.com/AbePralle
              |checkout=BRANCH
              |default_actions=--init --update --ff --outdated
+             |
           depz = depz.replacing( "BRANCH", BRANCH )
           File.save( "Project.depz", depz )
         endIf
@@ -432,6 +433,7 @@ class Build [essential singleton]
            |prefix=https://github.com/AbePralle
            |checkout=BRANCH
            |default_actions=--init --update --ff --outdated
+           |
         depz = depz.replacing( "BRANCH", BRANCH )
         File.save( "Project.depz", depz )
       endIf
