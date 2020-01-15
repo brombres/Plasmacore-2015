@@ -165,7 +165,7 @@ endClass
 
 routine default_gitignore->String
   return @|BuildLocal.rogue
-          |Plasmacore
+          |/Plasmacore
           |
           |# Vim
           |*.swp
