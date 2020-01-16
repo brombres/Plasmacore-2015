@@ -173,4 +173,22 @@ class Keycode
     F22             222
     F23             223
     F24             224
+
+  GLOBAL PROPERTIES
+    unshifted_keycode_to_unicode =
+      ''                                       '    ,-./0123456789 ; =  '' ...
+      ''@abcdefghijklmnopqrstuvwxyz[\\]  `             \n                 '' ...
+      ''              * +-./0123456789   =''
+
+    shifted_keycode_to_unicode =
+      ''                                       "    <_>?)!@#$%^&*( : +  '' ...
+      ''@ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}  ~             \n                 '' ...
+      ''              * +-./0123456789   =''
+
+  GLOBAL METHODS
+    method keycode_to_unicode( keycode:Int32, &is_shift_pressed )->Character
+      if (keycode < SPACE or keycode >= unshifted_keycode_to_unicode.count) return 0
+      if (keycode == SPACE) return ' '
+      if (is_shift_pressed) return shifted_keycode_to_unicode[ keycode ]
+      return unshifted_keycode_to_unicode[ keycode ]
 endClass

@@ -75,6 +75,9 @@ class KeyEvent : Event
 
        return buffer->String
 
+    method unicode->Character
+      return Keycode.keycode_to_unicode( keycode, is_shift_pressed )
+
 endClass
 
 
