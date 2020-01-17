@@ -1,6 +1,5 @@
 module Plasmacore
 
-
 class ScreenState
   GLOBAL METHODS
     method operator+( a:ScreenState, b:ScreenState )->ScreenState
@@ -180,6 +179,10 @@ endClass
 class ScreenState<<$ScreenType>> : ScreenState
   METHODS
     method screen->$ScreenType
+      if (@screen is null)
+        throw Error( "$.screen is being accessed before the state is fully configured.\n" ...
+                     "If this is being accessed from init(), move the access to on_start() instead." (type_name) )
+      endIf
       return @screen as $ScreenType
 endClass
 
