@@ -2,11 +2,11 @@ uses Plasmacore
 
 augment Bezier
   METHODS
-    method draw( color:Color )
+    method draw( color:Color, thickness=1:Real64 )
       local prev : XY
       forEach (point at index in this->XY[])
         if (index > 0)
-          Line( prev, point ).draw( color )
+          Line( prev, point ).draw( color, thickness )
         endIf
         prev = point
       endForEach
