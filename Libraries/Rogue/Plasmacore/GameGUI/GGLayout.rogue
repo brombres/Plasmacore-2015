@@ -2,8 +2,14 @@ uses  Plasmacore
 
 class GGLayout : GGComponent
   GLOBAL METHODS
+    method h->GGHorizontalLayout
+      return GGHorizontalLayout()
+
     method horizontal->GGHorizontalLayout
       return GGHorizontalLayout()
+
+    method v->GGVerticalLayout
+      return GGVerticalLayout()
 
     method vertical->GGVerticalLayout
       return GGVerticalLayout()
@@ -115,11 +121,16 @@ class GGHorizontalLayout : GGComponent
         x += w
       endForEach
 
+    method vertical_flex->Real64
+      return 0.0
 endClass
 
 class GGVerticalLayout : GGComponent
   METHODS
     method init
+
+    method horizontal_flex->Real64
+      return 0.0
 
     method maximum_height->Real64
       if (fixed_size.y) return fixed_size.y
