@@ -6,7 +6,7 @@ class GGLabel : GGComponent
     font   : Font
 
   METHODS
-    method init( text, font=GGComponentManager.default_font, fixed_size=null:XY?, anchor=Anchor.CENTER )
+    method init( text, font=GGComponentManager.default_font, fixed_size=null:GGSize?, anchor=Anchor.CENTER )
       font = font.cloned
       font.anchor = anchor
       if (fixed_size.exists)
@@ -14,6 +14,12 @@ class GGLabel : GGComponent
       else
         this.fixed_size = font.measure( text )
       endIf
+      size = this.fixed_size
+
+    method init( text, font=GGComponentManager.default_font, fixed_size:XY, anchor=Anchor.CENTER )
+      font = font.cloned
+      font.anchor = anchor
+      this.fixed_size = fixed_size
       size = this.fixed_size
 
     method on_draw

@@ -17,7 +17,7 @@ class GGComponent
   PROPERTIES
     position   : XY
     size       : XY
-    fixed_size : XY
+    fixed_size = GGSize(0,0)
     anchor     = Anchor.CENTER : Anchor
 
     subcomponents : GGComponent[]
@@ -26,7 +26,9 @@ class GGComponent
     method init
 
     method init( fixed_size )
-      size = fixed_size
+
+    method init( fixed_size:XY )
+      this.fixed_size = fixed_size
 
     method init( w:Real64, h:Real64 )
       init( XY(w,h) )
@@ -116,26 +118,26 @@ class GGComponent
       after_update
 
     method horizontal_flex->Real64
-      if (fixed_size.x) return 0.0
-      else              return 1.0
+      if (fixed_size.value.x) return 0.0
+      else                    return 1.0
 
     method maximum_height( parent_size:XY )->Real64
-      return fixed_size.y
+      return fixed_size.y( parent_size )
 
     method maximum_size( parent_size:XY )->XY
       return XY( maximum_width(parent_size), maximum_height(parent_size) )
 
     method maximum_width( parent_size:XY )->Real64
-      return fixed_size.x
+      return fixed_size.x( parent_size )
 
     method minimum_height( parent_size:XY )->Real64
-      return fixed_size.y
+      return fixed_size.y( parent_size )
 
     method minimum_size( parent_size:XY )->XY
       return XY( minimum_width(parent_size), minimum_height(parent_size) )
 
     method minimum_width( parent_size:XY )->Real64
-      return fixed_size.x
+      return fixed_size.x( parent_size )
 
     method on( e:PointerEvent )
       noAction
@@ -156,7 +158,6 @@ class GGComponent
       return this
 
     method set_fixed_size( @fixed_size )->this
-      size = fixed_size
       return this
 
     method update
@@ -173,13 +174,11 @@ class GGComponent
       endIf
 
     method update_layout( new_bounds:Box )
-      size = XY( select{fixed_size.x||new_bounds.width}, select{fixed_size.y||new_bounds.height} )
-      position = bounds.positioned_within( new_bounds ).position
-      size = size.floor
-      position = position.floor
+      size = XY( select{fixed_size.x(new_bounds.size)||new_bounds.width}, select{fixed_size.y(new_bounds.size)||new_bounds.height} ).floor
+      position = bounds.positioned_within( new_bounds ).position.floor
       update_layout
 
     method vertical_flex->Real64
-      if (fixed_size.y) return 0.0
-      else              return 1.0
+      if (fixed_size.value.y) return 0.0
+      else                    return 1.0
 endClass

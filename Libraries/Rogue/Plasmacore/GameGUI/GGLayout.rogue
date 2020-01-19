@@ -18,8 +18,6 @@ endClass
 
 class GGHorizontalLayout : GGComponent
   METHODS
-    method init
-
     method horizontal_flex->Real64
       local flex = 0.0
       if (subcomponents)
@@ -30,7 +28,8 @@ class GGHorizontalLayout : GGComponent
       return flex
 
     method maximum_width( parent_size:XY )->Real64
-      if (fixed_size.x) return fixed_size.x
+      local fixed_x = fixed_size.x( parent_size )
+      if (fixed_x) return fixed_x
       if (not subcomponents) return 0
 
       local max_width = 0
@@ -42,7 +41,8 @@ class GGHorizontalLayout : GGComponent
       return max_width
 
     method maximum_height( parent_size:XY )->Real64
-      if (fixed_size.y) return fixed_size.y
+      local fixed_y = fixed_size.y( parent_size )
+      if (fixed_y) return fixed_y
       if (not subcomponents) return 0
 
       local max_height = 0
@@ -54,7 +54,8 @@ class GGHorizontalLayout : GGComponent
       return max_height
 
     method minimum_width( parent_size:XY )->Real64
-      if (fixed_size.x) return fixed_size.x
+      local fixed_x = fixed_size.x( parent_size )
+      if (fixed_x) return fixed_x
       if (not subcomponents) return 0
 
       local min_width = 0
@@ -64,7 +65,8 @@ class GGHorizontalLayout : GGComponent
       return min_width
 
     method minimum_height( parent_size:XY )->Real64
-      if (fixed_size.y) return fixed_size.y
+      local fixed_y = fixed_size.y( parent_size )
+      if (fixed_y) return fixed_y
       if (not subcomponents) return 0
 
       local min_height = 0
@@ -127,13 +129,12 @@ endClass
 
 class GGVerticalLayout : GGComponent
   METHODS
-    method init
-
     method horizontal_flex->Real64
       return 0.0
 
     method maximum_height( parent_size:XY )->Real64
-      if (fixed_size.y) return fixed_size.y
+      local fixed_y = fixed_size.y( parent_size )
+      if (fixed_y) return fixed_y
       if (not subcomponents) return 0
 
       local max_height = 0
@@ -145,7 +146,8 @@ class GGVerticalLayout : GGComponent
       return max_height
 
     method maximum_width( parent_size:XY )->Real64
-      if (fixed_size.x) return fixed_size.x
+      local fixed_x = fixed_size.x( parent_size )
+      if (fixed_x) return fixed_x
       if (not subcomponents) return 0
 
       local max_width = 0
@@ -157,7 +159,8 @@ class GGVerticalLayout : GGComponent
       return max_width
 
     method minimum_height( parent_size:XY )->Real64
-      if (fixed_size.y) return fixed_size.y
+      local fixed_y = fixed_size.y( parent_size )
+      if (fixed_y) return fixed_y
       if (not subcomponents) return 0
 
       local min_height = 0
@@ -167,7 +170,8 @@ class GGVerticalLayout : GGComponent
       return min_height
 
     method minimum_width( parent_size:XY )->Real64
-      if (fixed_size.x) return fixed_size.x
+      local fixed_x = fixed_size.x( parent_size )
+      if (fixed_x) return fixed_x
       if (not subcomponents) return 0
 
       local min_width = 0

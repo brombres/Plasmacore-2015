@@ -15,13 +15,15 @@ class GGSpacer : GGComponent
       return GGSpacer( XY(1,pixels) )
 
   METHODS
-    method init( fixed_size )
+    method init( fixed_size:XY )
+      this.fixed_size = fixed_size
       size = fixed_size
+
+    method init( fixed_size )
 
     method init( _size:Real64 )
       fixed_size = XY( _size )
       size = fixed_size
-
 
 endClass
 

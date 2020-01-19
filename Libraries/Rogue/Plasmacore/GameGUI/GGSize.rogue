@@ -1,0 +1,55 @@
+module Plasmacore
+
+class GGSize
+  GLOBAL METHODS
+    method percent( x:Real64, y:Real64 )->GGSize
+      return GGSize( XY(x,y), &percent )
+
+    method percent( xy:XY )->GGSize
+      return GGSize( xy, &percent )
+
+    method pixels( x:Real64, y:Real64 )->GGSize
+      return GGSize( XY(x,y) )
+
+    method pixels( xy:XY )->GGSize
+      return GGSize( xy )
+
+  PROPERTIES
+    value      : XY
+    is_percent : Logical
+
+  METHODS
+    method init( x:Real64, y:Real64, &percent )
+      value = XY( x, y )
+      is_percent = percent
+
+    method init( value )
+      # This signature allows automatic casting of XY to GGSize
+
+    method init( value, percent:Logical )
+      is_percent = percent
+
+    method set( @value )
+
+    method set_x( x:Real64 )
+      value.x = x
+
+    method set_y( y:Real64 )
+      value.y = y
+
+    method to->XY
+      return value
+
+    method value( parent_size:XY )->XY
+      if (is_percent) return ((value * parent_size) / 100.0).floor
+      else            return value.floor
+
+    method x( parent_size:XY )->Real64
+      if (is_percent) return ((value.x * parent_size.x) / 100.0).floor
+      else            return value.x.floor
+
+    method y( parent_size:XY )->Real64
+      if (is_percent) return ((value.y * parent_size.y) / 100.0).floor
+      else            return value.y.floor
+endClass
+

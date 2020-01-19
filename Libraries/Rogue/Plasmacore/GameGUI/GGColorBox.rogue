@@ -8,7 +8,9 @@ class GGColorBox : GGComponent
     method init( color )
 
     method init( color, fixed_size )
-      size = fixed_size
+
+    method init( color, fixed_size:XY )
+      this.fixed_size = fixed_size
 
     method init( color, w:Real64, h:Real64 )
       init( color, XY(w,h) )

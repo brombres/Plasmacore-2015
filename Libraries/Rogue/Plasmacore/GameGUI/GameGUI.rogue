@@ -10,5 +10,6 @@ $include "GameGUI/GGImage.rogue"
 $include "GameGUI/GGLabel.rogue"
 $include "GameGUI/GGLayout.rogue"
 $include "GameGUI/GGList.rogue"
+$include "GameGUI/GGSize.rogue"
 $include "GameGUI/GGSpacer.rogue"
 

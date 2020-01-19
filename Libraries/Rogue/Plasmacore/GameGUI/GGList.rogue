@@ -41,7 +41,9 @@ class GGList<<$ItemType>> : GGComponent
       fixed_size = size
 
     method init( fixed_size, is_horizontal=false )
-      size = fixed_size
+
+    method init( fixed_size:XY, is_horizontal=false )
+      this.fixed_size = fixed_size
 
     method adjust_offset( new_pos:XY )
       local delta = new_pos - cur_pos

@@ -2,8 +2,11 @@ uses Plasmacore
 
 class GGCheckbox : GGButton
   METHODS
-    method init( fixed_size )
+    method init( fixed_size:XY )
+      this.fixed_size = fixed_size
       size = fixed_size
+
+    method init( fixed_size )
 
     method init( image, selected_image=null )
       if (image)
