@@ -59,7 +59,25 @@ class Font
 
       if (original_scale.exists) scale = original_scale.value
 
+    method draw( text:StringBuilder, position:XY, max_width=null:Real64? )
+      local original_scale : XY?
+
+      if (max_width.exists)
+        local cur_w = measure( text ).x
+        if (cur_w > max_width.value)
+          original_scale = scale
+          scale = XY( max_width.value / cur_w, 1 ) * original_scale.value
+        endIf
+      endIf
+
+      data.draw( this, text, position )
+
+      if (original_scale.exists) scale = original_scale.value
+
     method draw( text:String, box:Box, max_width=null:Real64? )
+      draw( text, box.at(anchor), max_width )
+
+    method draw( text:StringBuilder, box:Box, max_width=null:Real64? )
       draw( text, box.at(anchor), max_width )
 
     method exists->Logical
@@ -213,6 +231,7 @@ class FontData
     characters       = FontCharacter[]( 128, null )  # first 128 are in correct slots, additional in any order
     character_lookup = Table<<Character,FontCharacter>>()
     snap, snug       : Logical
+    work_buffer      : StringBuilder
 
   GLOBAL METHODS
     method create( name:String )->FontData
@@ -297,15 +316,63 @@ class FontData
 
       if (text.contains('\n'))
         local h = height * font.scale.y
-        forEach (line in text.split('\n'))
-          draw_line( font, line, position )
-          position += XY(0,h)
+        ensure work_buffer
+        work_buffer.clear
+        forEach (ch in text)
+          if (ch == '\n')
+            draw_line( font, work_buffer, position )
+            work_buffer.clear
+            position += XY(0,h)
+          else
+            work_buffer.print( ch )
+          endIf
         endForEach
+        if (work_buffer.count) draw_line( font, work_buffer, position )
+      else
+        draw_line( font, text, position )
+      endIf
+
+    method draw( font:Font, text:StringBuilder, position:XY  )
+      load
+
+      position = position - Box(font.measure(text)).at( font.anchor ).yv
+
+      if (text.contains('\n'))
+        local h = height * font.scale.y
+        ensure work_buffer
+        work_buffer.clear
+        forEach (ch in text)
+          if (ch == '\n')
+            draw_line( font, work_buffer, position )
+            work_buffer.clear
+            position += XY(0,h)
+          else
+            work_buffer.print( ch )
+          endIf
+        endForEach
+        if (work_buffer.count) draw_line( font, work_buffer, position )
       else
         draw_line( font, text, position )
       endIf
 
     method draw_line( font:Font, text:String, position:XY  )
+      local cursor = position - Box(font.measure(text)).at( font.anchor ).xv
+      if (font.snap) cursor = cursor.floor
+      forEach (ch in text)
+        local font_ch = this[ ch ]
+        if (font_ch)
+          local image = font_ch.image
+          image.size = font_ch.size * font.scale
+          image.color = font.color.with_opacity( font.opacity )
+          image.shader = font.shader  # if null, default is used
+          image.position = cursor + font_ch.offset
+          image.opacity = font.opacity
+          image.draw
+          cursor += font_ch.advance * font.scale + XY(font.spacing_adjustment,0) * font.scale
+        endIf
+      endForEach
+
+    method draw_line( font:Font, text:StringBuilder, position:XY  )
       local cursor = position - Box(font.measure(text)).at( font.anchor ).xv
       if (font.snap) cursor = cursor.floor
       forEach (ch in text)
