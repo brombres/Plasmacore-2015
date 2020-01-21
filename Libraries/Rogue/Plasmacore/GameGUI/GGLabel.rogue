@@ -2,31 +2,28 @@ uses  Plasmacore
 
 class GGLabel : GGComponent
   PROPERTIES
-    text   : String
-    font   : Font
+    text   : RichText
 
   METHODS
-    method init( text, font=GGComponentManager.default_font, fixed_size=null:GGSize?, anchor=Anchor.CENTER )
-      font = font.cloned
-      font.anchor = anchor
-      if (fixed_size.exists)
-        this.fixed_size = fixed_size.value
-      else
-        this.fixed_size = font.measure( text )
-      endIf
+    method init( text:String, font=GGComponentManager.default_font:Font, fixed_size=null:GGSize?, anchor=Anchor.CENTER )
+      this.text = RichText( font.cloned, anchor )
+      this.text.print( text )
+      if (fixed_size.exists) this.fixed_size = fixed_size.value
+      else                   this.fixed_size = this.text.measure
       size = this.fixed_size
 
-    method init( text, font=GGComponentManager.default_font, fixed_size:XY, anchor=Anchor.CENTER )
-      font = font.cloned
-      font.anchor = anchor
-      this.fixed_size = fixed_size
+    method init( text:String, font:Font, fixed_size:XY, anchor=Anchor.CENTER )
+      init( text, font, GGSize(fixed_size), anchor )
+
+    method init( text, fixed_size=null:GGSize? )
+      if (fixed_size.exists) this.fixed_size = fixed_size.value
+      else                   this.fixed_size = text.measure
       size = this.fixed_size
+
+    method init( text, fixed_size:XY )
+      init( text, GGSize(fixed_size) )
 
     method on_draw
-      if (anchor == Anchor.CENTER)
-        font.draw( text, bounds, bounds.width )
-      else
-        font.draw( text, bounds.at(anchor) )
-      endIf
+      text.draw( bounds.center )
 endClass
 

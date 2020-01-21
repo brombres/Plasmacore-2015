@@ -3,8 +3,7 @@ uses  Plasmacore
 
 class GGButton : GGComponent
   PROPERTIES
-    text                 : String
-    font                 : Font
+    text                 : RichText
     color                : Color
 
     image                : Image
@@ -31,9 +30,14 @@ class GGButton : GGComponent
 
     method init( fixed_size )
 
-    method init( text, font=GGComponentManager.default_font, fixed_size=GGSize(0,0) )
-      font  = font.cloned
+    method init( text:String, font=GGComponentManager.default_font:Font, fixed_size=GGSize(0,0) )
+      this.text = RichText( font.cloned, Anchor.CENTER )
+      this.text.print( text )
       color = font.color
+
+    method init( text, fixed_size=GGSize(0,0) )
+      text.anchor = Anchor.CENTER
+      color = text.font.color
 
     method init( image, pressed_image=null )
 
@@ -157,9 +161,9 @@ class GGButton : GGComponent
         endIf
       endIf
 
-      if (text and font)
-        font.color = select{ is_disabled:Color.GRAY || color }
-        font.draw( text, bounds )
+      if (text)
+        text.font.color = select{ is_disabled:Color.GRAY || color }
+        text.draw( bounds )
       endIf
 
     method on_press
@@ -191,6 +195,10 @@ class GGButton : GGComponent
       return this
 
     method set_text( @text )->this
+      return this
+
+    method set_text( text:String )->this
+      this.text.clear.println( text )
       return this
 
 endClass

@@ -34,6 +34,11 @@ class RichText : PrintWriter<<print_buffer>>
       lines.clear
       return this
 
+    method draw( bounds:Box, &scale_to_fit )
+      local w : Real64?
+      if (scale_to_fit) w = bounds.width
+      draw( bounds.center, w )
+
     method draw( pos:XY, max_width=null:Real64? )
       local original_scale : XY?
 
