@@ -121,22 +121,22 @@ class GGComponent
       if (fixed_size.value.x) return 0.0
       else                    return 1.0
 
-    method maximum_height( parent_size:XY )->Real64
+    method maximum_height( parent_size:XY, &subcomponents_only )->Real64
       return fixed_size.y( parent_size )
 
-    method maximum_size( parent_size:XY )->XY
+    method maximum_size( parent_size:XY, &subcomponents_only )->XY
       return XY( maximum_width(parent_size), maximum_height(parent_size) )
 
-    method maximum_width( parent_size:XY )->Real64
+    method maximum_width( parent_size:XY, &subcomponents_only )->Real64
       return fixed_size.x( parent_size )
 
-    method minimum_height( parent_size:XY )->Real64
+    method minimum_height( parent_size:XY, &subcomponents_only )->Real64
       return fixed_size.y( parent_size )
 
-    method minimum_size( parent_size:XY )->XY
+    method minimum_size( parent_size:XY, &subcomponents_only )->XY
       return XY( minimum_width(parent_size), minimum_height(parent_size) )
 
-    method minimum_width( parent_size:XY )->Real64
+    method minimum_width( parent_size:XY, &subcomponents_only )->Real64
       return fixed_size.x( parent_size )
 
     method on( e:PointerEvent )

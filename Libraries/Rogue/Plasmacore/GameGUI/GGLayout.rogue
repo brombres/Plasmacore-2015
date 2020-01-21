@@ -16,7 +16,7 @@ class GGLayout : GGComponent
 endClass
 
 
-class GGHorizontalLayout : GGComponent
+class GGHorizontalLayout : GGLayout
   METHODS
     method horizontal_flex->Real64
       local flex = 0.0
@@ -27,9 +27,11 @@ class GGHorizontalLayout : GGComponent
       endIf
       return flex
 
-    method maximum_width( parent_size:XY )->Real64
-      local fixed_x = fixed_size.x( parent_size )
-      if (fixed_x) return fixed_x
+    method maximum_width( parent_size:XY, &subcomponents_only )->Real64
+      if (not subcomponents_only)
+        local fixed_x = fixed_size.x( parent_size )
+        if (fixed_x) return fixed_x
+      endIf
       if (not subcomponents) return 0
 
       local max_width = 0
@@ -40,9 +42,11 @@ class GGHorizontalLayout : GGComponent
       endForEach
       return max_width
 
-    method maximum_height( parent_size:XY )->Real64
-      local fixed_y = fixed_size.y( parent_size )
-      if (fixed_y) return fixed_y
+    method maximum_height( parent_size:XY, &subcomponents_only )->Real64
+      if (not subcomponents_only)
+        local fixed_y = fixed_size.y( parent_size )
+        if (fixed_y) return fixed_y
+      endIf
       if (not subcomponents) return 0
 
       local max_height = 0
@@ -53,9 +57,11 @@ class GGHorizontalLayout : GGComponent
       endForEach
       return max_height
 
-    method minimum_width( parent_size:XY )->Real64
-      local fixed_x = fixed_size.x( parent_size )
-      if (fixed_x) return fixed_x
+    method minimum_width( parent_size:XY, &subcomponents_only )->Real64
+      if (not subcomponents_only)
+        local fixed_x = fixed_size.x( parent_size )
+        if (fixed_x) return fixed_x
+      endIf
       if (not subcomponents) return 0
 
       local min_width = 0
@@ -64,9 +70,11 @@ class GGHorizontalLayout : GGComponent
       endForEach
       return min_width
 
-    method minimum_height( parent_size:XY )->Real64
-      local fixed_y = fixed_size.y( parent_size )
-      if (fixed_y) return fixed_y
+    method minimum_height( parent_size:XY, &subcomponents_only )->Real64
+      if (not subcomponents_only)
+        local fixed_y = fixed_size.y( parent_size )
+        if (fixed_y) return fixed_y
+      endIf
       if (not subcomponents) return 0
 
       local min_height = 0
@@ -80,16 +88,16 @@ class GGHorizontalLayout : GGComponent
       return this
 
     method update_layout
-      local min_width = this.minimum_width( size )
-      local max_width = this.maximum_width( size )
+      local content_width = minimum_width( size, &subcomponents_only )
+      local max_width = maximum_width( size )
 
-      local content_width = this.size.x
-      if (content_width < min_width) content_width = min_width
-      if (max_width and content_width > max_width) content_width = max_width
+      local min_width = this.size.x
+      if (min_width < content_width) min_width = content_width
+      if (max_width and min_width > max_width) min_width = max_width
 
-      if (content_width > min_width)
+      if (min_width > content_width)
         # Distribute extra width (beyond minimum) to components before laying out
-        local extra = content_width - min_width
+        local extra = min_width - content_width
         local total_flex = this.horizontal_flex
         forEach (component in subcomponents)
           local flex = component.horizontal_flex
@@ -127,14 +135,16 @@ class GGHorizontalLayout : GGComponent
       return 0.0
 endClass
 
-class GGVerticalLayout : GGComponent
+class GGVerticalLayout : GGLayout
   METHODS
     method horizontal_flex->Real64
       return 0.0
 
-    method maximum_height( parent_size:XY )->Real64
-      local fixed_y = fixed_size.y( parent_size )
-      if (fixed_y) return fixed_y
+    method maximum_height( parent_size:XY, &subcomponents_only )->Real64
+      if (not subcomponents_only)
+        local fixed_y = fixed_size.y( parent_size )
+        if (fixed_y) return fixed_y
+      endIf
       if (not subcomponents) return 0
 
       local max_height = 0
@@ -145,9 +155,11 @@ class GGVerticalLayout : GGComponent
       endForEach
       return max_height
 
-    method maximum_width( parent_size:XY )->Real64
-      local fixed_x = fixed_size.x( parent_size )
-      if (fixed_x) return fixed_x
+    method maximum_width( parent_size:XY, &subcomponents_only )->Real64
+      if (not subcomponents_only)
+        local fixed_x = fixed_size.x( parent_size )
+        if (fixed_x) return fixed_x
+      endIf
       if (not subcomponents) return 0
 
       local max_width = 0
@@ -158,9 +170,11 @@ class GGVerticalLayout : GGComponent
       endForEach
       return max_width
 
-    method minimum_height( parent_size:XY )->Real64
-      local fixed_y = fixed_size.y( parent_size )
-      if (fixed_y) return fixed_y
+    method minimum_height( parent_size:XY, &subcomponents_only )->Real64
+      if (not subcomponents_only)
+        local fixed_y = fixed_size.y( parent_size )
+        if (fixed_y) return fixed_y
+      endIf
       if (not subcomponents) return 0
 
       local min_height = 0
@@ -169,9 +183,11 @@ class GGVerticalLayout : GGComponent
       endForEach
       return min_height
 
-    method minimum_width( parent_size:XY )->Real64
-      local fixed_x = fixed_size.x( parent_size )
-      if (fixed_x) return fixed_x
+    method minimum_width( parent_size:XY, &subcomponents_only )->Real64
+      if (not subcomponents_only)
+        local fixed_x = fixed_size.x( parent_size )
+        if (fixed_x) return fixed_x
+      endIf
       if (not subcomponents) return 0
 
       local min_width = 0
@@ -185,16 +201,16 @@ class GGVerticalLayout : GGComponent
       return this
 
     method update_layout
-      local min_height = this.minimum_height( size )
+      local content_height = this.minimum_height( size, &subcomponents_only )
       local max_height = this.maximum_height( size )
 
-      local content_height = this.size.y
-      if (content_height < min_height) content_height = min_height
-      if (max_height and content_height > max_height) content_height = max_height
+      local min_height = this.size.y
+      if (min_height < content_height) min_height = content_height
+      if (max_height and min_height > max_height) min_height = max_height
 
-      if (content_height > min_height)
+      if (min_height > content_height)
         # Distribute extra height (beyond minimum) to components before laying out
-        local extra = content_height - min_height
+        local extra = min_height - content_height
         local total_flex = this.vertical_flex
         forEach (component in subcomponents)
           local flex = component.vertical_flex
