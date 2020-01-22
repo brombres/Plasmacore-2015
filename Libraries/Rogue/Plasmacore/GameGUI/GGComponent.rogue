@@ -15,8 +15,9 @@ endClass
 class GGComponent
 
   PROPERTIES
-    position   : XY
-    size       : XY
+    position         : XY
+    size             : XY
+    validated_bounds : Box?
     fixed_size = GGSize(0,0)
     anchor     = Anchor.CENTER : Anchor
 
@@ -121,6 +122,12 @@ class GGComponent
       if (fixed_size.value.x) return 0.0
       else                    return 1.0
 
+    method invalidate
+      validated_bounds = null
+      if (subcomponents)
+        (forEach in subcomponents).invalidate
+      endIf
+
     method maximum_height( parent_size:XY, &subcomponents_only )->Real64
       return fixed_size.y( parent_size )
 
@@ -174,6 +181,10 @@ class GGComponent
       endIf
 
     method update_layout( new_bounds:Box )
+      if (validated_bounds.exists and validated_bounds.value == new_bounds) return
+      invalidate
+      validated_bounds = new_bounds
+
       size = XY( select{fixed_size.x(new_bounds.size)||new_bounds.width}, select{fixed_size.y(new_bounds.size)||new_bounds.height} ).floor
       position = bounds.positioned_within( new_bounds ).position.floor
       update_layout
