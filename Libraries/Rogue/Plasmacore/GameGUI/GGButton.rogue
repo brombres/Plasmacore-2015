@@ -1,16 +1,17 @@
 uses  Plasmacore
 
+enum GGButtonState
+  IDLE
+  TARGETED
+  PRESSED
+  SELECTED
+  DISABLED
+endEnum
 
 class GGButton : GGComponent
   PROPERTIES
     text                 : RichText
-    color                : Color
-
     image                : Image
-    pressed_image        : Image
-    targeted_image       : Image
-    selected_image       : Image
-    disabled_image       : Image
 
     press_timer          = Timer(0.2,&expired)
 
@@ -33,22 +34,41 @@ class GGButton : GGComponent
     method init( text:String, font=GGComponentManager.default_font:Font, fixed_size=GGSize(0,0) )
       this.text = RichText( font.cloned, Anchor.CENTER )
       this.text.print( text )
-      color = font.color
 
     method init( text, fixed_size=GGSize(0,0) )
       text.anchor = Anchor.CENTER
-      color = text.font.color
 
-    method init( image, pressed_image=null )
-
+    method init( image )
       if (image)
         fixed_size = image.size
         size = fixed_size
+      endIf
 
-        if (not pressed_image)  pressed_image  = selected_image
-        targeted_image = image
-        selected_image = pressed_image
-        disabled_image = image
+    method draw_background
+      local img = image
+      if (img)
+        img.anchor = Anchor.TOP_LEFT
+        img.draw( position )
+      else
+        local outline_color = select{ is_disabled:Color.GRAY || Color.WHITE }
+        bounds.fill( outline_color )
+
+        local c : Color
+        if (is_disabled)     c = Color.BLACK
+        elseIf (is_pressed)  c = 0xff8080ff
+        elseIf (is_targeted) c = Color.BLUE
+        else                 c = Color.BLACK
+
+        bounds.cropped(2).fill( c )
+        if (is_toggle and is_selected)
+          bounds.cropped(6).fill( outline_color )
+        endIf
+      endIf
+
+    method draw_text
+      if (text)
+        text.font.color = select{ is_disabled:Color.GRAY || Color.WHITE }
+        text.draw( bounds )
       endIf
 
     method handle( e:PointerEvent )
@@ -109,6 +129,9 @@ class GGButton : GGComponent
         endIf
       endIf
 
+    method image->Image
+      return @image
+
     method is_pressed->Logical
       return (@is_pressed or not press_timer.is_expired)
 
@@ -121,50 +144,16 @@ class GGButton : GGComponent
     method is_toggle->Logical
       return false
 
+    method state->GGButtonState
+      if (is_pressed)  return GGButtonState.PRESSED
+      if (is_selected) return GGButtonState.SELECTED
+      if (is_targeted) return GGButtonState.TARGETED
+      if (is_disabled) return GGButtonState.DISABLED
+      return GGButtonState.IDLE
+
     method on_draw
-      local img : Image
-      local c : Color
-
-      if (image)
-        if (is_pressed)
-          img = pressed_image
-        elseIf (is_selected)
-          img = selected_image
-        elseIf (is_targeted)
-          img = targeted_image
-        elseIf (is_disabled)
-          img = disabled_image
-        else
-          img = image
-        endIf
-      else
-        if (is_disabled)
-          c = Color.BLACK
-        elseIf (is_pressed)
-          c = 0xff8080ff
-        elseIf (is_targeted)
-          c = Color.BLUE
-        else
-          c = Color.BLACK
-        endIf
-      endIf
-
-      if (img)
-        img.anchor = Anchor.TOP_LEFT
-        img.draw( position )
-      else
-        local outline_color = select{ is_disabled:Color.GRAY || Color.WHITE }
-        bounds.fill( outline_color )
-        bounds.cropped(2).fill( c )
-        if (is_toggle and is_selected)
-          bounds.cropped(6).fill( outline_color )
-        endIf
-      endIf
-
-      if (text)
-        text.font.color = select{ is_disabled:Color.GRAY || color }
-        text.draw( bounds )
-      endIf
+      draw_background
+      draw_text
 
     method on_press
       noAction
