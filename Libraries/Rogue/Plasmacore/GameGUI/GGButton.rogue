@@ -19,10 +19,10 @@ class GGButton : GGComponent
     is_selected          : Logical
     is_disabled          : Logical
 
-    on_press_callback    : Function(GGButton)
-    on_release_callback  : Function(GGButton)
-    on_select_callback   : Function(GGButton)
-    on_deselect_callback : Function(GGButton)
+    on_press_callback    : Function()
+    on_release_callback  : Function()
+    on_select_callback   : Function()
+    on_deselect_callback : Function()
 
   METHODS
     method init( fixed_size:XY )
@@ -90,7 +90,7 @@ class GGButton : GGComponent
           is_pressed = true
           press_timer.restart
           on_press
-          if (on_press_callback) on_press_callback( this )
+          if (on_press_callback) on_press_callback()
         endIf
 
       elseIf (e.is_release)
@@ -99,21 +99,21 @@ class GGButton : GGComponent
           GGComponentManager.pointer_focus = null
           if (System.is_mobile) GGComponentManager.pointer_position = null  # don't leave buttons targeted after pointer-up
           on_release
-          if (on_release_callback) on_release_callback( this )
+          if (on_release_callback) on_release_callback()
 
           if (this.contains(e))
             if (this.is_toggle)
               this.is_selected = not this.is_selected
               if (this.is_selected)
                 on_select
-                if (on_select_callback) on_select_callback( this )
+                if (on_select_callback) on_select_callback()
               else
                 on_deselect
-                if (on_deselect_callback) on_deselect_callback( this )
+                if (on_deselect_callback) on_deselect_callback()
               endIf
             else
               on_select
-              if (on_select_callback) on_select_callback( this )
+              if (on_select_callback) on_select_callback()
             endIf
           endIf
         endIf
@@ -124,7 +124,7 @@ class GGButton : GGComponent
             is_pressed = false
             GGComponentManager.pointer_focus = null
             on_release
-            if (on_release_callback) on_release_callback( this )
+            if (on_release_callback) on_release_callback()
           endIf
         endIf
       endIf
