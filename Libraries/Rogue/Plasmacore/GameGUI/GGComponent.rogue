@@ -155,6 +155,9 @@ class GGComponent
     method on_update
       noAction
 
+    method on_update_layout
+      noAction
+
     method operator+( right_component:GGComponent )->GGComponent
       return GGHorizontalLayout().add( this ).add( right_component )
 
@@ -174,7 +177,7 @@ class GGComponent
       update_layout( new_bounds )
       update
 
-    method update_layout
+    method update_subcomponents
       if (subcomponents)
         local my_bounds = bounds
         (forEach in subcomponents).update_layout( my_bounds )
@@ -182,12 +185,14 @@ class GGComponent
 
     method update_layout( new_bounds:Box )
       if (validated_bounds.exists and validated_bounds.value == new_bounds) return
+
       invalidate
       validated_bounds = new_bounds
+      on_update_layout
 
       size = XY( select{fixed_size.x(new_bounds.size)||new_bounds.width}, select{fixed_size.y(new_bounds.size)||new_bounds.height} ).floor
       position = bounds.positioned_within( new_bounds ).position.floor
-      update_layout
+      update_subcomponents
 
     method vertical_flex->Real64
       if (fixed_size.value.y) return 0.0

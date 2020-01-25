@@ -203,7 +203,7 @@ class GGList<<$ItemType>> : GGComponent
         endIf
       endIf
 
-      update_layout
+      update_subcomponents
 
       if (subcomponents)
         (forEach in subcomponents).update
@@ -215,7 +215,7 @@ class GGList<<$ItemType>> : GGComponent
     method on_select_background( on_select_background_callback )->this
       return this
 
-    method update_layout
+    method update_subcomponents
       content_size = 0
 
       if (subcomponents)
