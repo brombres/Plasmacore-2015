@@ -59,6 +59,7 @@ class GGComponent
 
     method clear->this
       if (subcomponents) subcomponents.clear
+      invalidate
       return this
 
     method dispatch( e:PointerEvent )
