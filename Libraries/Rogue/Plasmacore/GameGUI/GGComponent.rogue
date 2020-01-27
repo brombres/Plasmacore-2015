@@ -67,6 +67,10 @@ class GGComponent
       invalidate
       return this
 
+    method count->Int32
+      if (not subcomponents) return 0
+      return subcomponents.count
+
     method dispatch( e:PointerEvent )
       if (subcomponents)
         forEach (component in subcomponents)

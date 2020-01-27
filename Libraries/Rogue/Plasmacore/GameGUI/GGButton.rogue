@@ -194,7 +194,6 @@ class GGButton : GGComponent
       return this
 
     method update_layout( new_bounds:Box )
-      @trace bounds, fixed_size, size
       prior.update_layout( new_bounds )
 
 endClass
