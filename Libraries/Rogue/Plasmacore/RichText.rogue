@@ -3,7 +3,7 @@ module Plasmacore
 
 class RichText : PrintWriter<<print_buffer>>
   PROPERTIES
-    anchor   = Anchor.TOP_LEFT : Anchor
+    anchor   = Anchor.CENTER : Anchor
     font     : Font   # Current font
 
     position : XY
@@ -22,7 +22,7 @@ class RichText : PrintWriter<<print_buffer>>
     method init
       @font = DefaultFont
 
-    method init( @font, anchor=Anchor.TOP_LEFT )
+    method init( @font, anchor=Anchor.CENTER )
 
     method add( fragment:RichTextFragment )->this
       flush
