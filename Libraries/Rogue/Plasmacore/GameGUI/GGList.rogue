@@ -4,11 +4,29 @@ class GGList : GGList<<GGComponent>>;
 
 class GGList<<$ItemType>> : GGComponent
   GLOBAL METHODS
+    method h->GGList
+      return GGList( &is_horizontal )
+
+    method h( bounds:Box )->GGList
+      return GGList( bounds, &is_horizontal )
+
+    method horizontal->GGList
+      return GGList( &is_horizontal )
+
     method horizontal( bounds:Box )->GGList
-      return GGList( bounds, true )
+      return GGList( bounds, &is_horizontal )
+
+    method v->GGList
+      return GGList( &!is_horizontal )
+
+    method v( bounds:Box )->GGList
+      return GGList( bounds, &!is_horizontal )
+
+    method vertical->GGList
+      return GGList( &!is_horizontal )
 
     method vertical( bounds:Box )->GGList
-      return GGList( bounds, false )
+      return GGList( bounds, &!is_horizontal )
 
   PROPERTIES
     is_horizontal   : Logical
@@ -89,7 +107,7 @@ class GGList<<$ItemType>> : GGComponent
 
     method dispatch_draw
       if (subcomponents)
-        Display.push_clipping_region( bounds.transformed(Display.view_transform) )
+        #Display.push_clip( bounds.transformed(Display.render_target.view_transform) )
         local drawn_any = false
         forEach (component in subcomponents)
           if (component.bounds.intersects(bounds))
@@ -102,7 +120,7 @@ class GGList<<$ItemType>> : GGComponent
             endIf
           endIf
         endForEach
-        Display.pop_clipping_region
+        #Display.pop_clip
       endIf
 
     method get( index:Int32 )->$ItemType
@@ -166,10 +184,12 @@ class GGList<<$ItemType>> : GGComponent
       endIf
 
     method on_update
+      local any_movement = false
       if (is_dragging)
         # Save 1/10th second of drag deltas
         drag_deltas.add( drag_delta )
         if (drag_deltas.count > 10) drag_deltas.remove_first
+        any_movement = true
       endIf
 
       if (not velocity.is_zero)
@@ -181,6 +201,7 @@ class GGList<<$ItemType>> : GGComponent
           if (is_horizontal) offset = XY( offset.x.or_larger( max_offset ).or_smaller( 0 ), offset.y )
           else               offset = XY( offset.x, offset.y.or_larger( max_offset ).or_smaller( 0 ) )
         endIf
+        any_movement = true
       endIf
 
       if (not is_dragging)
@@ -188,22 +209,28 @@ class GGList<<$ItemType>> : GGComponent
           if (offset.x > 0)
             offset   *= XY(0.8,1)
             acceleration = 0.50
+            any_movement = true
           elseIf (offset.x < max_offset)
             offset = XY( max_offset + (offset.x - max_offset) * 0.8, offset.y )
             acceleration = 0.50
+            any_movement = true
           endIf
         else
           if (offset.y > 0)
             offset   *= XY(1,0.8)
             acceleration = 0.50
+            any_movement = true
           elseIf (offset.y < max_offset)
             offset = XY( offset.x, max_offset + (offset.y - max_offset) * 0.8 )
             acceleration = 0.50
+            any_movement = true
           endIf
         endIf
       endIf
 
-      update_subcomponents
+      if (any_movement)
+        update_subcomponent_layout
+      endIf
 
       if (subcomponents)
         (forEach in subcomponents).update
@@ -215,12 +242,22 @@ class GGList<<$ItemType>> : GGComponent
     method on_select_background( on_select_background_callback )->this
       return this
 
-    method update_subcomponents
+    method update_subcomponent_layout
       content_size = 0
 
       if (subcomponents)
+        local w = size.x
+        local h = size.y
+        if (is_horizontal) w /= subcomponents.count
+        else               h /= subcomponents.count
+        local nominal_size = XY( w, h )
+
         local pos = position + offset
         forEach (component in subcomponents)
+          #local size = component.minimum_size(
+# TODO: incorporate min & max sizes into layout
+          if (component.size.x == 0) component.size = XY( w, component.size.y )
+          if (component.size.y == 0) component.size = XY( component.size.x, h )
           component.update_layout( Box(pos,component.size) )
           if (is_horizontal) pos += component.size.xv; content_size += component.size.x
           else               pos += component.size.yv; content_size += component.size.y

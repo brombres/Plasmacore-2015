@@ -129,7 +129,7 @@ class PointerEvent : Event
     is_cancelled : Logical
 
   METHODS
-    method init( type, position, delta, index, is_cancelled )
+    method init( type, position, delta, index, is_cancelled=false )
 
     method is_move->Logical [macro]
       return (this.type == PointerEvent.MOVE)

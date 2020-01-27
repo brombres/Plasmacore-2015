@@ -37,6 +37,10 @@ class GGSize
     method set_y( y:Real64 )
       value.y = y
 
+    method to->String
+      if (is_percent) return "($%,$%)"(value.x,value.y)
+      else            return value->String
+
     method to->XY
       return value
 

@@ -35,8 +35,11 @@ class GGButton : GGComponent
       this.text = RichText( font.cloned, Anchor.CENTER )
       this.text.print( text )
 
-    method init( text, fixed_size=GGSize(0,0) )
+    method init( text, fixed_size )
       text.anchor = Anchor.CENTER
+
+    method init( text, fixed_size:XY )
+      init( text, GGSize(fixed_size) )
 
     method init( image )
       if (image)
@@ -189,6 +192,10 @@ class GGButton : GGComponent
     method set_text( text:String )->this
       this.text.clear.println( text )
       return this
+
+    method update_layout( new_bounds:Box )
+      @trace bounds, fixed_size, size
+      prior.update_layout( new_bounds )
 
 endClass
 

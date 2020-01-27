@@ -87,7 +87,7 @@ class GGHorizontalLayout : GGLayout
       add( right_component )
       return this
 
-    method update_subcomponents
+    method update_subcomponent_layout
       local content_width = minimum_width( size, &subcomponents_only )
       local max_width = maximum_width( size )
 
@@ -200,7 +200,7 @@ class GGVerticalLayout : GGLayout
       add( bottom_component )
       return this
 
-    method update_subcomponents
+    method update_subcomponent_layout
       local content_height = this.minimum_height( size, &subcomponents_only )
       local max_height = this.maximum_height( size )
 

@@ -184,7 +184,7 @@ class GGComponent
       update_layout( new_bounds )
       update
 
-    method update_subcomponents
+    method update_subcomponent_layout
       if (subcomponents)
         local my_bounds = bounds
         (forEach in subcomponents).update_layout( my_bounds )
@@ -195,11 +195,11 @@ class GGComponent
 
       invalidate
       validated_bounds = new_bounds
-      on_update_layout
 
       size = XY( select{fixed_size.x(new_bounds.size)||new_bounds.width}, select{fixed_size.y(new_bounds.size)||new_bounds.height} ).floor
       position = bounds.positioned_within( new_bounds ).position.floor
-      update_subcomponents
+      on_update_layout
+      update_subcomponent_layout
 
     method vertical_flex->Real64
       if (fixed_size.value.y) return 0.0
