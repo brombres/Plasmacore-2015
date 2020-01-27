@@ -34,6 +34,11 @@ class GGComponent
     method init( w:Real64, h:Real64 )
       init( XY(w,h) )
 
+    method init( bounds:Box )
+      position = bounds.position
+      size = bounds.size
+      fixed_size = size
+
     method add( component:GGComponent )->this
       ensure subcomponents
       subcomponents.add( component )
@@ -115,6 +120,7 @@ class GGComponent
       after_draw
 
     method handle_update
+      if (not validated_bounds.exists) update_layout( bounds )
       on_update
       dispatch_update
       after_update
