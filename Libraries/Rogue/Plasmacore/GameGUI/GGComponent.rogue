@@ -40,6 +40,7 @@ class GGComponent
       fixed_size = size
 
     method add( component:GGComponent )->this
+      invalidate
       ensure subcomponents
       subcomponents.add( component )
       return this
@@ -134,6 +135,8 @@ class GGComponent
       else                    return 1.0
 
     method invalidate
+      if (not validated_bounds.exists) return
+
       validated_bounds = null
       if (subcomponents)
         (forEach in subcomponents).invalidate
