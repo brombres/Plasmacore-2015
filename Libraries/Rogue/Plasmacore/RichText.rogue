@@ -16,8 +16,6 @@ class RichText : BufferedPrintWriter<<print_buffer>>
     line_positions = XY[]
     # Work buffer used during drawing
 
-    print_buffer = StringBuilder()
-
   METHODS
     method init
       @font = DefaultFont

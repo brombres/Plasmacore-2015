@@ -10,7 +10,6 @@ class OverlayLog : BufferedPrintWriter<<output_buffer>> [essential singleton]
   PROPERTIES
     lines = String[]
     timer = Timer(6)  # time until lines removed
-    output_buffer = StringBuilder()
     max_lines = 20 : Int32?
 
   METHODS

@@ -2,8 +2,8 @@
 # Plasmacore.rogue
 #==============================================================================
 
-$if compareVersions(rogueVersion,"1.6.9") < 0
-  $error "RogueC version 1.6.9 or better is required to compile Plasmacore. CD to your Rogue folder and 'git pull && make'."
+$if compareVersions(rogueVersion,"1.6.10") < 0
+  $error "RogueC version 1.6.10 or better is required to compile Plasmacore. CD to your Rogue folder and 'git pull && make'."
 $endIf
 
 # You application can set up the following listeners to hook into app lifecycle events.
