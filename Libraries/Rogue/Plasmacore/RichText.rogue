@@ -1,7 +1,7 @@
 module Plasmacore
 
 
-class RichText : PrintWriter<<print_buffer>>
+class RichText : BufferedPrintWriter<<print_buffer>>
   PROPERTIES
     anchor   = Anchor.CENTER : Anchor
     font     : Font   # Current font
@@ -89,6 +89,25 @@ class RichText : PrintWriter<<print_buffer>>
       font.anchor = prior_anchor
       if (original_scale.exists) font.scale = original_scale.value
 
+    method flush( buffer:StringBuilder )
+      if (buffer.count == 0) return
+
+      local st = buffer->String
+      buffer.clear
+
+      local next_newline = st.locate( '\n' )
+      while (next_newline.exists)
+        if (next_newline.value > 0)
+          add( RichTextFragmentText(st.leftmost(next_newline.value)) )
+        endIf
+        lines.add( RichTextFragment[] ) # newline
+        st = st.from( next_newline.value + 1 )
+        next_newline = st.locate( '\n' )
+      endWhile
+
+      # Remaining text after newline
+      if (st.count) add( RichTextFragmentText(st) )
+
     method measure->XY
       flush
 
@@ -131,27 +150,6 @@ class RichText : PrintWriter<<print_buffer>>
 
     method set_scale( k:XY )->this
       add( RichTextFragmentStyle( (rt) with(k) =>rt.font.scale = k ) )
-      return this
-
-    method write( buffer:StringBuilder )->this
-      if (buffer.count == 0) return this
-
-      local st = buffer->String
-      buffer.clear
-
-      local next_newline = st.locate( '\n' )
-      while (next_newline.exists)
-        if (next_newline.value > 0)
-          add( RichTextFragmentText(st.leftmost(next_newline.value)) )
-        endIf
-        lines.add( RichTextFragment[] ) # newline
-        st = st.from( next_newline.value + 1 )
-        next_newline = st.locate( '\n' )
-      endWhile
-
-      # Remaining text after newline
-      if (st.count) add( RichTextFragmentText(st) )
-
       return this
 endClass
 

@@ -6,7 +6,7 @@ augment Display
     overlay_log_font : Font
 endAugment
 
-class OverlayLog : PrintWriter<<output_buffer>> [essential singleton]
+class OverlayLog : BufferedPrintWriter<<output_buffer>> [essential singleton]
   PROPERTIES
     lines = String[]
     timer = Timer(6)  # time until lines removed
@@ -58,11 +58,8 @@ class OverlayLog : PrintWriter<<output_buffer>> [essential singleton]
 
       Display.pop_clip
 
-    method update
-      if (timer.is_expired) lines.clear
-
-    method write( buffer:StringBuilder )->this
-      if (buffer.count == 0) return this  # flush operation
+    method flush( buffer:StringBuilder )
+      if (buffer.count == 0) return # flush operation
 
       timer.restart
       Console.write( buffer )  # echo the message to the console
@@ -71,6 +68,10 @@ class OverlayLog : PrintWriter<<output_buffer>> [essential singleton]
       else
         lines.add( buffer->String )
       endIf
-      return this
+      buffer.clear
+
+    method update
+      if (timer.is_expired) lines.clear
+
 endClass
 
