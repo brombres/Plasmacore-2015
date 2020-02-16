@@ -4,7 +4,9 @@ module Plasmacore
 class RichText : BufferedPrintWriter<<print_buffer>>
   PROPERTIES
     anchor   = Anchor.CENTER : Anchor
-    font     : Font   # Current font
+    font     : Font
+    # Current font. The font and font characteristics will change as this RichText is
+    # built and then change again as the RichText "replays" while drawing.
 
     position : XY
     # Automatically adjusted during measure() and draw(); rich text fragment styles
@@ -18,9 +20,12 @@ class RichText : BufferedPrintWriter<<print_buffer>>
 
   METHODS
     method init
-      @font = DefaultFont
+      init( DefaultFont )
 
-    method init( @font, anchor=Anchor.CENTER )
+    method init( font:Font, anchor=Anchor.CENTER )
+      set_font( font )
+      set_color( font.color )
+      set_scale( font.scale )
 
     method add( fragment:RichTextFragment )->this
       flush
@@ -28,9 +33,18 @@ class RichText : BufferedPrintWriter<<print_buffer>>
       lines.last.add( fragment )
       return this
 
+    method add( fragment:RichTextFragmentStyle )->this
+      add( fragment as RichTextFragment )
+      fragment.fn( this ) # apply each style as we're building this RichText
+      return this
+
     method clear->this
       lines.clear
       return this
+
+    method color->Color
+      if (font) return font.color
+      else      return Color.WHITE
 
     method draw( bounds:Box, &scale_to_fit )
       local w : Real64?
@@ -130,6 +144,10 @@ class RichText : BufferedPrintWriter<<print_buffer>>
 
       return bounds.size
 
+    method scale->XY
+      if (font) return font.scale
+      else      return XY(1,1)
+
     method set( style_fn:Function(RichText) )->this
       add( RichTextFragmentStyle(style_fn) )
       return this
@@ -139,12 +157,11 @@ class RichText : BufferedPrintWriter<<print_buffer>>
       return this
 
     method set_font( new_font:Font )->this
-      add( RichTextFragmentStyle( (rt) with(new_font) =>rt.font = new_font ) )
+      add( RichTextFragmentStyle( (rt) with(new_font) =>rt.@font = new_font ) )
       return this
 
     method set_scale( k:Real64 )->this
-      add( RichTextFragmentStyle( (rt) with(k) =>rt.font.scale = k ) )
-      return this
+      return set_scale( XY(k,k) )
 
     method set_scale( k:XY )->this
       add( RichTextFragmentStyle( (rt) with(k) =>rt.font.scale = k ) )
