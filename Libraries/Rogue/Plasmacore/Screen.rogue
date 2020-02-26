@@ -117,6 +117,7 @@ class Screen
       elseIf (state.prior_state)
         new_state = state.prior_state
       else
+        println "ERROR: Screen/ScreenState.exit_state called with no next or prior state"
         new_state = ScreenState()
       endIf
 
