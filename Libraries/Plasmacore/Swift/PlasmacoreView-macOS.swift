@@ -54,7 +54,7 @@ class PlasmacoreView: NSOpenGLView
   {
     if ( !super.becomeFirstResponder() ) { return false }
     configure()
-    let m = PlasmacoreMessage( type:"Display.focus_gained" )
+    let m = PlasmacoreMessage( type:"Display.on_focus_gained" )
     m.set( name:"window_id", value:windowID )
     m.set( name:"display_name", value:name )
     m.post()
