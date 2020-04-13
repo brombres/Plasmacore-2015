@@ -45,6 +45,9 @@ class ScreenState
       return screen.change_screen( new_screen )
 
     method exit_state
+      screen.@state = this
+      # This should already be the case but the error is hard to track down if it's not!
+
       screen.exit_state
 
     method handle( e:KeyEvent )

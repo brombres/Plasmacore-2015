@@ -2,11 +2,17 @@ module Plasmacore
 
 class GGSize
   GLOBAL METHODS
+    method percent( size:Real64 )->GGSize
+      return GGSize( XY(size,size), &percent )
+
     method percent( x:Real64, y:Real64 )->GGSize
       return GGSize( XY(x,y), &percent )
 
     method percent( xy:XY )->GGSize
       return GGSize( xy, &percent )
+
+    method pixels( size:Real64 )->GGSize
+      return GGSize( XY(size,size) )
 
     method pixels( x:Real64, y:Real64 )->GGSize
       return GGSize( XY(x,y) )
@@ -19,6 +25,10 @@ class GGSize
     is_percent : Logical
 
   METHODS
+    method init( size:Real64, &percent )
+      value = XY( size, size )
+      is_percent = percent
+
     method init( x:Real64, y:Real64, &percent )
       value = XY( x, y )
       is_percent = percent

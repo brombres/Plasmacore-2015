@@ -12,6 +12,10 @@ class Keyboard [singleton]
     key_pressed = Array<<Logical>>( 256 )
 
   METHODS
+    method clear_pressed_keys
+      # Clears the key_pressed array - used when window focus is lost and regained
+      key_pressed[ forEach of key_pressed ] = false
+
     method modifier_key_state->Int32
       local state = 0
       if (is_shift_pressed)   state |= SHIFT_MODIFIER_FLAG

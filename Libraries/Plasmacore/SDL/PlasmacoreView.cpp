@@ -198,7 +198,7 @@ void PlasmacoreView::on_key_event( int syscode, bool is_press, bool is_repeat )
 void PlasmacoreView::on_focus_gained  (void)
 {
   configure();
-  auto m = PlasmacoreMessage( "Display.focus_gained" );
+  auto m = PlasmacoreMessage( "Display.on_focus_gained" );
   m.set( "window_id", pwindowID );
   m.set( "display_name", name );
   m.post();

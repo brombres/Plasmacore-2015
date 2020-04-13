@@ -182,6 +182,16 @@ class Plasmacore [essential singleton]
           endTry
         endFunction )
 
+      MessageManager.set_listener( "Display.on_focus_gained",
+        function(m:Message)
+          try
+            Keyboard.clear_pressed_keys
+          catch (e:Error)
+            println e
+            Log.println( e.stack_trace )
+          endTry
+        endFunction )
+
       MessageManager.set_listener( "Display.on_pointer_event",
         function(m:Message)
           try
