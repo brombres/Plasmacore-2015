@@ -115,7 +115,7 @@ Plasmacore & Plasmacore::configure()
   #endif
 
 #ifdef __EMSCRIPTEN__
-  emscripten_set_resize_callback( nullptr, nullptr, false, on_emscripten_display_size_changed );
+  emscripten_set_resize_callback( EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_emscripten_display_size_changed );
 #endif
 
   RogueInterface_set_arg_count( gargc );

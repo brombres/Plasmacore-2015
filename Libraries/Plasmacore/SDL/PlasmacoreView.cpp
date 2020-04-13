@@ -42,7 +42,7 @@ void PlasmacoreView::create_window ()
 {
 #ifdef __EMSCRIPTEN__
   double w, h;
-  emscripten_get_element_css_size( 0, &w, &h );
+  emscripten_get_element_css_size( "#canvas", &w, &h );
   printf( "LOG: initial display size: %dx%d\n", (int)w, (int)h );
   initial_width  = (int) w;
   initial_height = (int) h;
@@ -111,7 +111,7 @@ void PlasmacoreView::redraw ()
   if (display_size_changed)
   {
     double w, h;
-    emscripten_get_element_css_size( 0, &w, &h );
+    emscripten_get_element_css_size( "#canvas", &w, &h );
     printf( "LOG: Display size changed to %dx%d\n", (int)w, (int)h );
     SDL_SetWindowSize( window, (int)w, (int) h );
   }
