@@ -1,6 +1,6 @@
 uses Geometry
 uses Bitmap
-uses XML
+uses Utility/XML
 
 #$ DEPENDENCIES     = Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue
 #$ ROGUEC_ARGS      = --libraries=Plasmacore/Libraries/Rogue
