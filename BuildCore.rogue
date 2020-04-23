@@ -373,7 +373,7 @@ class Build [essential singleton]
 
       if (not needs_compile(platform,output_folder)) return
 
-      local target = platform + ",C++"
+      local target = platform + ",Plasmacore,C++"
       which (platform)
         case "macOS", "iOS": target += ",ObjC"
         case "Linux":        target += ",SDL"
