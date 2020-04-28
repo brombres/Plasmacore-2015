@@ -448,12 +448,12 @@ class Background : Sprite
     method compute_bounds
       which (style)
         case FIT
-          local parent_size = select{ parent:parent.size || Display.size }
+          local parent_size = which{ parent:parent.size || Display.size }
           position = parent_size / 2
           scale = (parent_size / size).min
 
         case FILL
-          local parent_size = select{ parent:parent.size || Display.size }
+          local parent_size = which{ parent:parent.size || Display.size }
           position = parent_size / 2
           local essential_scale = (parent_size / (size*essential_content)).min
           local whole_scale = (parent_size / size).max

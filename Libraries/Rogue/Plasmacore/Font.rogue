@@ -239,7 +239,7 @@ class FontData
       if (entry) return entry.value
 
       local loader = FontLoaders[ name ]
-      local font_data = select{ loader:loader(name) || FontData(name, Plasmacore.find_image_info(name)) }
+      local font_data = which{ loader:loader(name) || FontData(name, Plasmacore.find_image_info(name)) }
       Display.font_data_by_name[ name ] = font_data
 
       return font_data
@@ -433,7 +433,7 @@ class FontData
 
       local prev_advance : Int32
       local prev_width   : Int32
-      forEach (index in select{i1||0}..select{i2||max_i2})
+      forEach (index in which{i1||0}..which{i2||max_i2})
         local ch = text[index]
         if (ch == '\n')
           h += line_height
@@ -468,7 +468,7 @@ class FontData
 
       local prev_advance : Int32
       local prev_width   : Int32
-      forEach (index in select{i1||0}..select{i2||max_i2})
+      forEach (index in which{i1||0}..which{i2||max_i2})
         local ch = text[index]
         if (ch == '\n')
           h += line_height
