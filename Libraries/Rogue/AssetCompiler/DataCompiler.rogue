@@ -133,7 +133,7 @@ class DataCompiler
       (forEach in commands//Global).execute
 
     method execute_platform_commands
-      local working_platform = select{ commands.contains(platform):platform || "Default" }
+      local working_platform = which{ commands.contains(platform):platform || "Default" }
       if (commands.contains(working_platform))
         (forEach in commands[working_platform]).execute
       else
