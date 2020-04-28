@@ -385,7 +385,7 @@ class Build [essential singleton]
         others:                target += ",Desktop"
       endWhich
 
-      local libs_folder = select{ File.is_folder("Plasmacore"):"Plasmacore/Libraries/Rogue" || "Libraries/Rogue" }
+      local libs_folder = which{ File.is_folder("Plasmacore"):"Plasmacore/Libraries/Rogue" || "Libraries/Rogue" }
       local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=$ --output=$/RogueProgram''...
         (ROGUEC,target,libs_folder,output_folder)
       if (Build.ide_mode)   cmd += " --ide"
@@ -447,7 +447,7 @@ class Build [essential singleton]
       run "depz"
 
     method install_rogue
-      print select{ File.exists("Libraries/Rogue/Standard"):"Updating" || "Installing" }
+      print which{ File.exists("Libraries/Rogue/Standard"):"Updating" || "Installing" }
       println " embedded copy of Rogue compiler."
 
       local roguec_folder = ""

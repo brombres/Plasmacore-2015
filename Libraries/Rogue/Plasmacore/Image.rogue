@@ -195,7 +195,7 @@ class Image
       if (opacity <= 0.0) return false
 
       if (not load)
-        println "Error loading " + select{ name || image_info.name }
+        println "Error loading " + which{ name || image_info.name }
         data = ColorFillImageData
         colors = Colors( Color.WHITE )
         render_mode = RenderMode.OPAQUE_SHAPE

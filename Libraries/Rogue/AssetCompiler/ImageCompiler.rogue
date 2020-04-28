@@ -192,7 +192,7 @@ class ImageCompiler
       (forEach in commands//Global).execute
 
     method execute_platform_commands
-      local working_platform = select{ commands.contains(platform):platform || "Default" }
+      local working_platform = which{ commands.contains(platform):platform || "Default" }
       if (commands.contains(working_platform))
         (forEach in commands[working_platform]).execute
       else
@@ -514,7 +514,7 @@ class ImageCommand
       local placements = Placement[]
       (forEach in assets).collect_placements( placements )
 
-      local max_w = select{ icom.settings//image_sheet_size->Int32 || 2048 }.to_power_of_two
+      local max_w = which{ icom.settings//image_sheet_size->Int32 || 2048 }.to_power_of_two
       local max_h = max_w
 
       local sheets = ImageSheet[]
@@ -951,7 +951,7 @@ class ImageCommand
 
       println "Image Copy $ -> $" (from_filepath.after_first("Assets/Images/"),to_filepath.after_first("Assets/Images/"))
 
-      local scale = Convert.parse_scale( this, select{ args.contains("scale"):args//scale || args//rescale } )
+      local scale = Convert.parse_scale( this, which{ args.contains("scale"):args//scale || args//rescale } )
 
       local resize = false
       local fixed_resize = false
@@ -1070,7 +1070,7 @@ class ImageCommand
         throw error( ''Cannot 'crop' and scale/resize in the same command.'' )
       endIf
 
-      local scale = Convert.parse_scale( this, select{ args.contains("scale"):args//scale || args//rescale } )
+      local scale = Convert.parse_scale( this, which{ args.contains("scale"):args//scale || args//rescale } )
 
       local resize = false
       local fixed_resize = false
@@ -1241,8 +1241,8 @@ class ImageCommand
           local last_st = part.after_first( '-' )
           if (first_st.count == 0) first_st = "0"
           if (last_st.count == 0)  last_st = "0"
-          local first_ch = select{ first_st.is_integer:first_st->Int32 || first_st[0]->Int32 }
-          local last_ch = select{ last_st.is_integer:last_st->Int32 || last_st[0]->Int32 }
+          local first_ch = which{ first_st.is_integer:first_st->Int32 || first_st[0]->Int32 }
+          local last_ch = which{ last_st.is_integer:last_st->Int32 || last_st[0]->Int32 }
           forEach (ch in first_ch..last_ch) list.add( ch )
         elseIf (part.is_integer)
           list.add( part->Int32 )

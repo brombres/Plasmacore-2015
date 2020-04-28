@@ -51,7 +51,7 @@ class ProgressFn [singleton]
                         endIf
                       endFunction
     LINEAR          = function(p:Real64)->Real64: return p
-    QUADRATIC       = function(p:Real64)->Real64: return select{ p<0.5:2*p*p || 0.5 + (0.5-p) * (2*p-3) }
+    QUADRATIC       = function(p:Real64)->Real64: return which{ p<0.5:2*p*p || 0.5 + (0.5-p) * (2*p-3) }
     QUARTIC         = function(p:Real64)->Real64
                         if (p < 0.5)
                           p *= p
