@@ -121,6 +121,10 @@ class PointerEvent : Event
     PRESS    = 1
     RELEASE  = 2
 
+    LEFT     = 0
+    RIGHT    = 1
+    MIDDLE   = 2
+
   PROPERTIES
     type         : Int32
     position     : XY
