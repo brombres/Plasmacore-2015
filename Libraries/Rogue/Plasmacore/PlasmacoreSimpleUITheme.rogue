@@ -1,0 +1,39 @@
+module PlasmacoreSimpleUITheme
+  uses UI
+  uses Plasmacore
+
+$localMacro CLASS(RendererType,ComponentType)
+augment PlasmacoreSimpleUITheme
+  METHODS
+    method renderer( component:ComponentType )->UIRenderer
+      return RendererType
+endAugment
+
+class RendererType : UIRenderer<<ComponentType>> [singleton]
+  METHODS
+$endMacro
+
+
+class PlasmacoreSimpleUITheme : UITheme<<PlasmacoreSimpleUITheme>>
+  METHODS
+    method renderer( component:UIComponent )->UIRenderer
+      return null
+endClass
+
+class SimpleRenderer : UIRenderer [singleton]
+  METHODS
+    method render( component:UIComponent )
+      component.bounds.fill( Color.RED )
+endClass
+
+CLASS( SimpleDisplayViewRenderer, UIDisplayView )
+  METHODS
+    method render( component:UIDisplayView )
+      component.bounds.fill( Color.GREEN )
+endClass
+
+CLASS( SimpleColorAreaRenderer, UIColorArea )
+    method render( component:UIColorArea )
+      component.bounds.fill( component.color )
+endClass
+

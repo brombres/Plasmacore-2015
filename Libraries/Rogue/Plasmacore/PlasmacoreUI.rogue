@@ -1,0 +1,10 @@
+module Plasmacore
+  uses UI
+  uses PlasmacoreSimpleUITheme [export]
+
+class UIDisplayView : UIView
+  METHODS
+    method update_layout
+      update_layout( Display.bounds )
+endClass
+
