@@ -53,7 +53,7 @@ class GGButton : GGComponent
         img.anchor = Anchor.TOP_LEFT
         img.draw( position )
       else
-        local outline_color = select{ is_disabled:Color.GRAY || Color.WHITE }
+        local outline_color = which{ is_disabled:Color.GRAY || Color.WHITE }
         bounds.fill( outline_color )
 
         local c : Color
@@ -70,7 +70,7 @@ class GGButton : GGComponent
 
     method draw_text
       if (text)
-        text.font.color = select{ is_disabled:Color.GRAY || Color.WHITE }
+        text.font.color = which{ is_disabled:Color.GRAY || Color.WHITE }
         text.draw( bounds )
       endIf
 
