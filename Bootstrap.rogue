@@ -27,6 +27,7 @@ else
         @|[REPO Plasmacore]
          |prefix=https://github.com/AbePralle
          |checkout=master
+         |fetch_full=False
          |default_actions=--init --update --ff --outdated
          |
       )
@@ -87,6 +88,7 @@ class Bootstrap [singleton]
           @|[REPO Plasmacore]
            |prefix=https://github.com/AbePralle
            |checkout=BRANCH
+           |fetch_full=False
            |default_actions=--init --update --ff --outdated
            |
         depz = depz.replacing( "BRANCH", BRANCH )
