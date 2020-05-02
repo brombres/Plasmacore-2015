@@ -369,11 +369,19 @@ class Build [essential singleton]
       local output_folder = File.fix_slashes( "Build/$/Source" (platform) )
       create_folder( output_folder )
 
-      launch_asset_compiler( platform )
+      local m_launch_asset_compiler = <<Global>>.find_method( "launch_asset_compiler" )
+      if (m_launch_asset_compiler)
+        # This won't be available until depz has downloaded the Plasmacore repo.
+        # Which is always has by this point, but using introspection to get things
+        # to compile in the first place.
+        m_launch_asset_compiler( Global, platform )
+      else
+        throw Error( "Please re-run 'rogo $' for the Plasmacore library installation to take effect." (platform.to_lowercase) )
+      endIf
 
       if (not needs_compile(platform,output_folder)) return
 
-      local target = platform + ",C++"
+      local target = platform + ",Plasmacore,C++"
       which (platform)
         case "macOS", "iOS": target += ",ObjC"
         case "Linux":        target += ",SDL"
