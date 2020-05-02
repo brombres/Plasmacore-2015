@@ -377,7 +377,7 @@ class Build [essential singleton]
         # This won't be available until depz has downloaded the Plasmacore repo.
         # Which is always has by this point, but using introspection to get things
         # to compile in the first place.
-        m_launch_asset_compiler( Global, platform )
+        m_launch_asset_compiler( Global, @[platform] )
       else
         throw Error( "Please re-run 'rogo $' for the Plasmacore library installation to take effect." (platform.to_lowercase) )
       endIf
