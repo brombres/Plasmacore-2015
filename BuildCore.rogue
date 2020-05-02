@@ -48,6 +48,8 @@ routine rogo_android_keystore
   execute "cd Platforms/Android && rogo keystore"
 endRoutine
 
+Dependencies.check
+
 routine rogo_ios
   Build.build( "iOS" )
 endRoutine
@@ -821,3 +823,20 @@ routine get_description( m_name:String )->String
     return null
   endIf
 endRoutine
+
+class Dependencies [singleton]
+  METHODS
+    method check
+      require_depz
+
+    method exists( command:String )->Logical
+      return (Process.run("which "+command,&inherit_environment).success)
+
+    method require_depz
+      if (Process.run("depz -h",&inherit_environment).success) return  # already installed
+      require_pip3
+      run @|pip3 install --user git+https://github.com/MurphyMc/depz.git
+
+    method require_pip3
+      if (not exists("pip3")) throw Error( "Please install pip3 and then re-run the command." )
+endClass
