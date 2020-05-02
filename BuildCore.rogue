@@ -103,6 +103,7 @@ routine rogo_xclean
 endRoutine
 
 routine rogo_version( text="Updated to":String, &silent )->String
+  if (not File.exists("PlasmacoreVersion.txt")) return "0"
   local v = String( File("PlasmacoreVersion.txt") ).trimmed
   if (not silent) print( text ).print( " Plasmacore v" ).println( v )
   return v
