@@ -2,8 +2,8 @@
 
 About     | &nbsp;
 ----------|-----------------------
-Version   | 0.14.4
-Date      | 2020-05-01
+Version   | 0.14.5
+Date      | 2020-05-02
 Platforms | macOS, Linux
 Targets   | macOS, iOS, Android, Linux, Web
 
