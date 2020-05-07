@@ -23,17 +23,19 @@ endClass
 class SimpleRenderer : UIRenderer [singleton]
   METHODS
     method render( component:UIComponent )
-      component.bounds.fill( Color.RED )
+      component.display_bounds.fill( Color.RED )
 endClass
 
+#{
 CLASS( SimpleDisplayViewRenderer, UIDisplayView )
   METHODS
     method render( component:UIDisplayView )
       component.bounds.fill( Color.GREEN )
 endClass
+}#
 
-CLASS( SimpleColorAreaRenderer, UIColorArea )
-    method render( component:UIColorArea )
-      component.bounds.fill( component.color )
+CLASS( SimpleColorFillRenderer, UIColorFill )
+    method render( component:UIColorFill )
+      component.content_bounds.fill( component.color )
 endClass
 
