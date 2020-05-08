@@ -36,6 +36,8 @@ endClass
 
 CLASS( SimpleColorFillRenderer, UIColorFill )
     method render( component:UIColorFill )
-      component.content_bounds.fill( component.color )
+      local bounds = component.content_bounds & component.display_bounds
+      if (bounds) bounds.value.fill( component.color )
+      component.display_bounds.draw( Color.RED )
 endClass
 
