@@ -1,9 +1,9 @@
-module PlasmacoreSimpleUITheme
+module SimpleUITheme
   uses UI
   uses Plasmacore
 
 $localMacro CLASS(RendererType,ComponentType)
-augment PlasmacoreSimpleUITheme
+augment SimpleUITheme
   METHODS
     method renderer( component:ComponentType )->UIRenderer
       return RendererType
@@ -14,8 +14,14 @@ class RendererType : UIRenderer<<ComponentType>> [singleton]
 $endMacro
 
 
-class PlasmacoreSimpleUITheme : UITheme<<PlasmacoreSimpleUITheme>>
+class SimpleUITheme : UITheme<<SimpleUITheme>> [singleton]
+  PROPERTIES
+    default_font : UIFont
+
   METHODS
+    method init
+      default_font = UIFont( "Default", 24*Display.density )
+
     method renderer( component:UIComponent )->UIRenderer
       return null
 endClass
@@ -39,5 +45,20 @@ CLASS( SimpleColorFillRenderer, UIColorFill )
       local bounds = component.content_bounds & component.display_bounds
       if (bounds) bounds.value.fill( component.color )
       component.display_bounds.draw( Color.RED )
+endClass
+
+CLASS( SimpleTextRenderer, UIText )
+    method render( component:UIText )
+      if (component.font is null)
+        component.font = SimpleUITheme.default_font
+      endIf
+
+      local content_bounds = component.content_bounds
+      local bounds = content_bounds & component.display_bounds
+      if (bounds)
+        component.font.draw( component, content_bounds )
+        bounds.value.draw( Color.YELLOW )
+        content_bounds.draw( Color.WHITE )
+      endIf
 endClass
 

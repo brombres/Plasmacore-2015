@@ -1,6 +1,6 @@
 module Plasmacore
   uses UI
-  uses PlasmacoreSimpleUITheme [export]
+  uses SimpleUITheme [export]
 
 class UIDisplayView : UIView
   METHODS
@@ -8,3 +8,21 @@ class UIDisplayView : UIView
       update_layout( Display.bounds )
 endClass
 
+augment UIFont
+  PROPERTIES
+    image_font : Font
+
+  METHODS
+    method load
+      if (image_font) return
+      which (name)
+        others
+          image_font = DefaultFont.cloned
+          image_font.height = height
+          image_font.anchor = Anchor.CENTER
+      endWhich
+
+    method draw( text:UIText, bounds:Box )
+      load
+      image_font.draw( text.value, bounds )
+endAugment
