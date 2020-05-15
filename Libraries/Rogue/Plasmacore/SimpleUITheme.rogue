@@ -2,6 +2,22 @@ module SimpleUITheme
   uses UI
   uses Plasmacore
 
+class SimpleUITheme : UITheme<<SimpleUITheme>> [singleton]
+  PROPERTIES
+    default_font : UIFont
+
+  METHODS
+    method init
+      default_font = UIFont( "Default", 24*Display.density )
+
+    method after_render( component:UIComponent )
+      noAction
+
+    method on_configure( component:UIComponent )
+      noAction
+endClass
+
+  #{
 $localMacro CLASS(RendererType,ComponentType)
 augment SimpleUITheme
   METHODS
@@ -62,3 +78,4 @@ CLASS( SimpleTextRenderer, UIText )
       endIf
 endClass
 
+}#
