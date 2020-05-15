@@ -434,6 +434,13 @@ static void do_iteration (void)
         w->on_mouse_move(e.motion.x, e.motion.y);
         break;
       }
+      case SDL_MOUSEWHEEL:
+      {
+        auto w = plasmacore_get_window(e.motion.windowID);
+        if (!w) break;
+        w->on_scroll(-e.wheel.x, e.wheel.y);
+        break;
+      }
       case SDL_KEYDOWN:
       {
         auto w = plasmacore_get_window(e.key.windowID);
