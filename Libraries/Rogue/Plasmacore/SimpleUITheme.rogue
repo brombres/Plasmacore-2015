@@ -2,7 +2,7 @@ module SimpleUITheme
   uses UI
   uses Plasmacore
 
-class SimpleUITheme : UITheme<<SimpleUITheme>> [singleton]
+class SimpleUITheme : UITheme [singleton]
   PROPERTIES
     default_font : UIFont
 
@@ -10,61 +10,11 @@ class SimpleUITheme : UITheme<<SimpleUITheme>> [singleton]
     method init
       default_font = UIFont( "Default", 24*Display.density )
 
-    method after_render( component:UIComponent )
-      noAction
-
-    method on_configure( component:UIComponent )
-      noAction
-endClass
-
-  #{
-$localMacro CLASS(RendererType,ComponentType)
-augment SimpleUITheme
-  METHODS
-    method renderer( component:ComponentType )->UIRenderer
-      return RendererType
-endAugment
-
-class RendererType : UIRenderer<<ComponentType>> [singleton]
-  METHODS
-$endMacro
-
-
-class SimpleUITheme : UITheme<<SimpleUITheme>> [singleton]
-  PROPERTIES
-    default_font : UIFont
-
-  METHODS
-    method init
-      default_font = UIFont( "Default", 24*Display.density )
-
-    method renderer( component:UIComponent )->UIRenderer
-      return null
-endClass
-
-class SimpleRenderer : UIRenderer [singleton]
-  METHODS
-    method render( component:UIComponent )
-      component.display_bounds.fill( Color.RED )
-endClass
-
-#{
-CLASS( SimpleDisplayViewRenderer, UIDisplayView )
-  METHODS
-    method render( component:UIDisplayView )
-      component.bounds.fill( Color.GREEN )
-endClass
-}#
-
-CLASS( SimpleColorFillRenderer, UIColorFill )
-    method render( component:UIColorFill )
+    method on_draw( component:UIColorFill )
       local bounds = component.content_bounds & component.display_bounds
       if (bounds) bounds.value.fill( component.color )
-      component.display_bounds.draw( Color.RED )
-endClass
 
-CLASS( SimpleTextRenderer, UIText )
-    method render( component:UIText )
+    method on_draw( component:UIText )
       if (component.font is null)
         component.font = SimpleUITheme.default_font
       endIf
@@ -77,5 +27,3 @@ CLASS( SimpleTextRenderer, UIText )
         content_bounds.draw( Color.WHITE )
       endIf
 endClass
-
-}#
