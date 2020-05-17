@@ -14,6 +14,23 @@ class SimpleUITheme : UITheme [singleton]
       local bounds = component.content_bounds & component.display_bounds
       if (bounds) bounds.value.fill( component.color )
 
+    method on_draw( component:UIImage )
+      local content_bounds = component.content_bounds
+      local display_bounds = component.display_bounds
+      temporarily Display.clip = display_bounds
+        local image = component.image
+        if (component.scale_to_fill)
+          image.scale_to_fill( display_bounds )
+          #@trace display_bounds, image.position, image.size
+          #@trace image.original_size
+          image.draw
+        else
+          image.anchor = Anchor.TOP_LEFT
+          image.size = content_bounds.size
+          image.draw( content_bounds.position )
+        endIf
+      endTemporarily
+
     method on_draw( component:UIText )
       if (component.font is null)
         component.font = SimpleUITheme.default_font

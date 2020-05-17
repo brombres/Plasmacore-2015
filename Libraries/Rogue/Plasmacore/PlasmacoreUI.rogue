@@ -26,3 +26,20 @@ augment UIFont
       load
       image_font.draw( text.value, bounds )
 endAugment
+
+augment UIImage
+  PROPERTIES
+    image : Image
+
+  METHODS
+    method init( filename, scale_to_fill=false )
+      local info = Plasmacore.image_info_lookup[ filename ]
+      if (info)
+        image = Image( filename )
+      elseIf (File.exists(filename))
+        image = Image( Bitmap(File(filename)) )
+      else
+        image = Image( Bitmap(16,16,Color.WHITE) )
+      endIf
+      if (not scale_to_fill) size = image.size
+endAugment
