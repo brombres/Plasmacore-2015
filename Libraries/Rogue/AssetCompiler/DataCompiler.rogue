@@ -105,20 +105,33 @@ class DataCompiler
       included_data.remove( "Assets/Data/DataConfig.txt" )
 
       local dest_folder = asset_folder( platform, "Data/" )
+      local unused_files = File.listing( dest_folder, "**", &omit_path, &files )
+
       if (not File.is_folder(dest_folder)) File.create_folder( dest_folder )
       forEach (filepath in included_data)
         if (not File.is_folder(filepath))
           local attr = data_attributes( filepath )
-          copy_data( filepath, dest_folder+filepath.after_first("Data/"), attr )
+          local relative_filename = filepath.after_first( "/Data/" )
+          unused_files.remove( relative_filename )
+          copy_data( filepath, dest_folder+relative_filename, attr )
         endIf
       endForEach
+
+      if (not unused_files.is_empty)
+        files_written = true
+        forEach (filename in unused_files)
+          local filepath = dest_folder + filename
+          println "  Deleting unused " + filepath
+          File.delete( filepath )
+        endForEach
+      endIf
 
       if (not files_written)
         println "Data up to date."
       endIf
 
     method copy_data( from_filepath:String, to_filepath:String, attr:Value )
-      if (not File.exists(to_filepath) or File.timestamp(to_filepath) < File.timestamp(from_filepath))
+      if (File.is_different_than(to_filepath,from_filepath))
         File.create_folder( File.folder(to_filepath) )
 
         print   "  Writing "
