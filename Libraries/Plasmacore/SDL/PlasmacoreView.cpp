@@ -181,6 +181,18 @@ void PlasmacoreView::on_mouse_move (int x, int y)
   m.post();
 }
 
+void PlasmacoreView::on_scroll (int dx, int dy)
+{
+  configure();
+  auto m = PlasmacoreMessage( "Display.on_scroll_event" );
+  m.set( "window_id", pwindowID ).set( "display_name", name );
+  m.set( "type", 0 );  // 0=move
+  m.set( "dx", dx );
+  m.set( "dy", dy );
+  m.post();
+}
+
+
 int Plasmacore_syscode_to_keycode( int syscode );
 
 void PlasmacoreView::on_key_event( int syscode, bool is_press, bool is_repeat )
