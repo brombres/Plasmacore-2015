@@ -147,12 +147,12 @@ class Texture
         bitmap.premultiply_alpha
       endIf
 
+      image_size = bitmap.size
+
       if (not bitmap.size.is_power_of_two)
         if (bitmap is original_bitmap) bitmap = bitmap.cloned
         bitmap.expand_to_power_of_two
       endIf
-
-      image_size = bitmap.size
 
       if (not id)
         # First time being defined - otherwise this same texture is being redefined
