@@ -1300,7 +1300,7 @@ class ImageCommand
       endIf
       return buffer->String
 
-    method require_arg( args:@{}, name:String  )->Value
+    method require_arg( args:Value, name:String  )->Value
       if (not args.contains(name)) throw error( "Missing required argument '$'." (name) )
       return args[ name ]
 
@@ -1387,7 +1387,7 @@ class Asset
   PROPERTIES
     cmd          : ImageCommand
     filepath     : String
-    attributes   : @{}
+    attributes   : Value
     placements   = Placement[]
     type         = "TextureImage"
 
@@ -1489,7 +1489,7 @@ class Placement
   PROPERTIES
     asset          : Asset
     bitmap         : Bitmap
-    attributes     : @{}
+    attributes     : Value
     x              : Int32
     y              : Int32
     width          : Int32
