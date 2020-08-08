@@ -183,6 +183,7 @@ class Display [singleton]
       return bounds.center
 
     method clear->this
+      flush
       native "int gl_flags = GL_COLOR_BUFFER_BIT;"
       native @|int c = $background_color.argb;
               |gl_flags |= GL_COLOR_BUFFER_BIT;
