@@ -321,7 +321,7 @@ class Plasmacore
     let received_data = RogueInterface_post_messages( io_buffer, Int32(io_buffer.count) )
     let count = received_data!.count
     received_data!.withUnsafeBytes
-    { (bytes:UnsafePointer<UInt8>)->Void in
+    { (bytes:UnsafeRawBufferPointer)->Void in
       //Use `bytes` inside this closure
       //...
 
