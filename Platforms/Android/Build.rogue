@@ -198,7 +198,7 @@ routine rogo_debug
   uninstall( package )
   install( apk_filepath )
 
-  local launch_timestamp = "$-$ $" (Date.now.month.format("02"),Date.now.day.format("02"),Date.now->String(&hms,&ms))
+  local launch_timestamp = "$-$ $" (Date.today.month.format("02"),Date.today.day.format("02"),Time.now->String("hh:mm:ss.ms"))
   local launchable_activity = package + ".MainActivity"
   execute( "adb shell am start -n $/$" (package,launchable_activity) )
 
@@ -366,7 +366,7 @@ routine configure_local_properties
                    |#
                    |# Location of the Android SDK and NDK. This is only used by Gradle and Android
                    |# Studio.
-  builder.println( "# " + Date.now )
+  builder.println( "# " + DateTime.now )
   if (sdk_folder) builder.println"sdk.dir=$" (sdk_folder)
   else            builder.println"#sdk.dir=<folder>  # Specify the correct folder and uncomment this line"
   if (ndk_folder) builder.println"ndk.dir=$" (ndk_folder)
