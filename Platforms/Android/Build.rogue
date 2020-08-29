@@ -42,6 +42,12 @@
 #$ LIBRARIES(Linux) = gradle
 #$ LIBRARIES(Linux) = ninja-build(package:ninja which:ninja)
 
+#$ LINK                 = true
+#$ LIBRARIES(macOS)     = libpng libjpeg zlib
+#$ LIBRARIES(Linux-apt) = libpng-dev libjpeg-dev
+
+uses Bitmap
+
 # description()s are optional - Rogo uses introspection to determine which commands are available.
 # 'rogo help default' displays the description for "default", etc.
 description( "default", "The default action is performed when no other actions are specified. Use 'rogo default' to explicitly perform the default option." )
@@ -113,6 +119,19 @@ endRoutine
 
 routine rogo_default
   rogo_help
+endRoutine
+
+description( "icon", "Changes the icon used for by Android." )
+routine rogo_icon( new_icon_png:String )
+  if (not String.exists(new_icon_png)) throw Error( "PNG filename expected." )
+  if (not File.exists(new_icon_png)) new_icon_png = "../../" + new_icon_png
+  local new_icon = Bitmap( File(new_icon_png) )
+  local files = Files( "app/src/main/res", "*/*.png" )
+  forEach (filepath in files)
+    println filepath
+    local icon = Bitmap( File(filepath) )
+    File.save( filepath, new_icon.cloned.resize( icon.size ).to_png_bytes )
+  endForEach
 endRoutine
 
 routine rogo_keystore
