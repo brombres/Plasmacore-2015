@@ -43,6 +43,11 @@ routine rogo_android_debug
   execute "cd Platforms/Android && rogo debug"
 endRoutine
 
+description( "android_icon", "Changes the icon used for by Android." )
+routine rogo_android_icon( new_icon_png:String )
+  execute ''cd Platforms/Android && rogo icon $'' (File.shell_escaped(new_icon_png))
+endRoutine
+
 description( "android_keystore", "Creates an Android release keystore." )
 routine rogo_android_keystore
   execute "cd Platforms/Android && rogo keystore"
