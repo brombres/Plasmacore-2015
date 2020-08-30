@@ -7,15 +7,18 @@ Dependencies.check
 local args = System.command_line_arguments
 if (args.is_empty)
   Bootstrap.install
+elseIf (args.first.begins_with("--branch="))
+  Bootstrap.install( args.first.after_first('=') )
 else
   local cmd = args.join( " " )
   if (cmd == "install update")
     # Current folder is ProjectName/
     # This is being run from ProjectName/Plasmacore/
-    Bootstrap.sync( "*", &exclude=@["LICENSE","README.md"], &keep_unused )
+    Bootstrap.sync( "*", &exclude=@["LICENSE","README.md","Project.depz"], &keep_unused )
     Bootstrap.sync( "Platforms/Android/plasmacore/src/main/java/org/plasmacore/*" )
     Bootstrap.sync( "Platforms/Android/plasmacore/src/main/cpp/*" )
     Bootstrap.sync( "Platforms/Android/Build.rogue" )
+    Bootstrap.sync( "Platforms/Android/.gitignore" )
 
     # Remove vestigial folders from old structure, if present.
     delete( "Libraries/ImageIO" )
@@ -23,14 +26,7 @@ else
     delete( "Libraries/Rogue/Plasmacore" )
 
     if (not File.exists("Project.depz"))
-      File.save( "Project.depz",
-        @|[REPO Plasmacore]
-         |prefix=https://github.com/AbePralle
-         |checkout=master
-         |fetch_full=False
-         |default_actions=--init --update --ff --outdated
-         |
-      )
+      File.save( "Project.depz", Bootstrap.default_depz )
     endIf
     run "depz"
   else
@@ -76,7 +72,18 @@ class Bootstrap [singleton]
         endForEach
       endIf
 
-    method install
+    method default_depz->String
+      local result =
+        @|[REPO Plasmacore]
+         |prefix=https://github.com/AbePralle
+         |checkout=BRANCH
+         |fetch_full=False
+         |default_actions=--init --update --ff --outdated
+         |
+      result = result.replacing( "BRANCH", BRANCH )
+      return result
+
+    method install( BRANCH="master" )
       # Don't overwrite existing installation
       if (File.exists("Source") or File.exists("Platforms"))
         println "Plasmacore is already installed. Use 'rogo update' to update it."
@@ -84,15 +91,7 @@ class Bootstrap [singleton]
       endIf
 
       if (not File.exists("Project.depz"))
-        local depz =
-          @|[REPO Plasmacore]
-           |prefix=https://github.com/AbePralle
-           |checkout=BRANCH
-           |fetch_full=False
-           |default_actions=--init --update --ff --outdated
-           |
-        depz = depz.replacing( "BRANCH", BRANCH )
-        File.save( "Project.depz", depz )
+        File.save( "Project.depz", default_depz )
       endIf
       if (not File.exists("Plasmacore")) run "depz"
 
@@ -105,6 +104,8 @@ class Bootstrap [singleton]
         println "Creating default .gitignore"
         File.save( ".gitignore", default_gitignore )
       endIf
+
+      sync( "Platforms/Android/.gitignore" )
 
       System.run @|rogo version Installed
 
