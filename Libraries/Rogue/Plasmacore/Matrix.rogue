@@ -131,6 +131,20 @@ class Matrix( ...
     method scale( k:XYZ, origin:XYZ )->Matrix
       return Matrix.translate(origin) * Matrix.scale(k) * Matrix.translate(-origin)
 
+    method shear( xy:XY )->Matrix
+      return shear( xy.xv, XY(xy.y,0), XY.zero )
+
+    method shear( x_yz:XY, y_xz:XY, z_xy:XY )->Matrix
+      # x_yz: amount that x is sheared proportional to changes in y and z
+      # y_xz: amount that y is sheared proportional to changes in x and z
+      # z_xy: amount that z is sheared proportional to changes in x and y
+      return Matrix(
+             1, y_xz.x, z_xy.x,      0,
+        x_yz.x,      1, z_xy.y,      0,
+        x_yz.y, y_xz.y,      1,      0,
+             0,      0,      0,      1
+      )
+
     METHODS
       method count->Int32 [macro]
         return 16
