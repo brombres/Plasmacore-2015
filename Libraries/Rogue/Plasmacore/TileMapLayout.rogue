@@ -1,6 +1,5 @@
 module Plasmacore
 
-
 class TileMapLayout
   PROPERTIES
     # Settings
@@ -35,6 +34,9 @@ class TileMapLayout
       clip_j1 = 0
       clip_i2 = tiles_wide - 1
       clip_j2 = tiles_high - 1
+
+    method init( tiles_wide:Int32, tiles_high:Int32, tile_size:Int32 )
+      init( tiles_wide, tiles_high, XY(tile_size,tile_size) )
 
     method draw_column( column_i:Int32, callback:Function(index:Int32,ij:XY,bounds:Box) )
       draw_subset( column_i, 0, column_i, tiles_high-1, callback )
