@@ -1,40 +1,6 @@
 module Plasmacore
 
-
-class Sound [abstract]
-  GLOBAL METHODS
-    method create( name:String, is_music=null:Logical?, is_repeating=false:Logical )->Sound
-      return BasicSound( name, is_music, is_repeating )
-
-    method create( name:String, channels=1:Int32, is_music=null:Logical? )->Sound
-      return SoundGroup( name, channels, is_music )
-
-  GLOBAL PROPERTIES
-    mute : Logical
-
-  METHODS
-    method duration->Real64  [abstract]
-    method can_play->Logical [abstract]
-    method is_finished->Logical  [abstract]
-    method is_playing->Logical  [abstract]
-    method load->this  [abstract]
-    method pause->this  [abstract]
-    method play->this  [abstract]
-    method play( is_repeating:Logical )->this  [abstract]
-    method position->Real64  [abstract]
-    method set_position( time:Real64 )->this  [abstract]
-    method set_volume( new_volume:Real64 )->this  [abstract]
-
-    method reset->this
-      # No effect on simple sounds; resets the playlist on SoundGroup
-      return this
-
-    method resume->this  [abstract]
-    method stop->this  [abstract]
-    method unload  [abstract]
-endClass
-
-class BasicSound : Sound
+class Sound
   DEPENDENCIES
 $if not target("Android")
     nativeHeader void*  PlasmacoreSound_create( RogueString* filepath, bool is_music );
@@ -47,6 +13,10 @@ $if not target("Android")
     nativeHeader void   PlasmacoreSound_set_position( void* sound, double to_time );
     nativeHeader void   PlasmacoreSound_set_volume( void* sound, double volume );
 $endIf
+
+  GLOBAL PROPERTIES
+    mute_sound = false
+    mute_music = false
 
   PROPERTIES
     name         : String
@@ -118,45 +88,43 @@ $endIf
       if (id) return SoundManager[ id ].is_playing
       else    return false
 
-    method load->this
+    method load
       if (not id) id = SoundManager.load( filepath, is_music )
-      return this
 
     method on_cleanup
       unload
 
-    method pause->this
+    method pause
       if (id) SoundManager[ id ].pause
-      return this
 
-    method play->this
-      if (Sound.mute) return this
+    method play
+      if (Sound.mute_sound and not is_music) return
+      if (Sound.mute_music and is_music) return
       if (id) SoundManager[ id ].play( is_repeating )
-      return this
 
-    method play( is_repeating )->this
-      return play
+    method play( is_repeating )
+      play
 
     method position->Real64
       if (id) return SoundManager[ id ].position
       else    return 0
 
-    method set_position( time:Real64 )->this
+    method set_position( time:Real64 )
       if (id) SoundManager[ id ].set_position( time )
-      return this
 
-    method set_volume( new_volume:Real64 )->this
+    method set_volume( new_volume:Real64 )
       if (not System.is_web and id) SoundManager[ id ].set_volume( new_volume )
-      return this
 
-    method resume->this
+    method reset
+      # No effect on simple sounds; resets the playlist on SoundGroup
+      noAction
+
+    method resume
       # Resumes playing the sound only if it was previously paused
       if (id) SoundManager[ id ].resume
-      return this
 
-    method stop->this
+    method stop
       if (id) SoundManager[ id ].stop
-      return this
 
     method unload
       SoundManager.unload( id )
@@ -228,16 +196,13 @@ class SoundGroup : Sound
       if ((forEach in sounds).is_playing) return true
       return false
 
-    method load->this
+    method load
       (forEach in sounds).load
-      return this
 
-    method pause->this
+    method pause
       forEach (sound in sounds) sound.pause
-      return this
 
-    method play->this
-      if (Sound.mute) return this
+    method play
       if (not playlist.count) playlist.add( sounds )
       if (random or random_order) playlist.shuffle
 
@@ -262,10 +227,8 @@ class SoundGroup : Sound
         autoplay_task.start
       endIf
 
-      return this
-
-    method play( autoplay )->this
-      return play
+    method play( autoplay )
+      play
 
     method position->Real64
       forEach (sound in sounds)
@@ -273,31 +236,26 @@ class SoundGroup : Sound
       endForEach
       return 0.0
 
-    method reset->this
+    method reset
       playlist.clear
-      return stop
 
-    method resume->this
+    method resume
       (forEach in sounds).resume
-      return this
 
-    method set_position( time:Real64 )->this
+    method set_position( time:Real64 )
       forEach (sound in sounds)
         if (sound.is_playing) sound.set_position( time ); escapeForEach
       endForEach
-      return this
 
-    method set_volume( new_volume:Real64 )->this
+    method set_volume( new_volume:Real64 )
       (forEach in sounds).set_volume( new_volume )
-      return this
 
-    method stop->this
+    method stop
       if (autoplay_task)
         autoplay_task.stop
         autoplay_task = null
       endIf
       forEach (sound in sounds) sound.stop
-      return this
 
     method unload
       (forEach in sounds).unload
