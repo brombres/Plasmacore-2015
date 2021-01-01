@@ -553,6 +553,8 @@ class TextureImageData : ImageData
         Display.push_object_transform( Matrix.translate(XYZ(pos,z)-handle) )
       endIf
 
+      #Display.push_object_transform( Matrix.shear(XY(0,0.1)) ) #FIXME
+
       local transform = Display.transform
 
       z += Display.z
@@ -572,6 +574,7 @@ class TextureImageData : ImageData
       Display.fill_textured_quad( @texture, quad, image.colors.with_opacity(image.opacity),
         _uv, image.selected_render_mode, image.selected_shader )
 
+      #Display.pop_object_transform # FIXME
       Display.pop_object_transform
 
     method load

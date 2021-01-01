@@ -452,31 +452,31 @@ class Message
 
     method set( name:String, _value:Real64 )->this
       _write_string( name )
-      writer.write_byte( Message.DATA_TYPE_REAL64 ).write_int32( 8 )
+      writer.[ write_byte( Message.DATA_TYPE_REAL64 ), write_int32( 8 ) ]
       writer.write_real64( _value )
       return this
 
     method set( name:String, _value:Int64 )->this
       _write_string( name )
-      writer.write_byte( Message.DATA_TYPE_INT64 ).write_int32( 8 )
+      writer.[ write_byte( Message.DATA_TYPE_INT64 ), write_int32( 8 ) ]
       writer.write_int64( _value )
       return this
 
     method set( name:String, _value:Int32 )->this
       _write_string( name )
-      writer.write_byte( Message.DATA_TYPE_INT32 ).write_int32( 4 )
+      writer.[ write_byte( Message.DATA_TYPE_INT32 ), write_int32( 4 ) ]
       writer.write_int32( _value )
       return this
 
     method set( name:String, _value:Logical )->this
       _write_string( name )
-      writer.write_byte( Message.DATA_TYPE_BYTE ).write_int32( 1 )
+      writer.[ write_byte( Message.DATA_TYPE_BYTE ), write_int32( 1 ) ]
       writer.write_byte( _value->Int32 )
       return this
 
     method set( name:String, bytes:Byte[] )->this
       _write_string( name )
-      writer.write_byte( Message.DATA_TYPE_BYTE ).write_int32( bytes.count )
+      writer.[ write_byte(Message.DATA_TYPE_BYTE), write_int32(bytes.count) ]
       forEach (b in bytes) writer.write_byte( b )
       return this
 

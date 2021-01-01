@@ -4,7 +4,7 @@ module Plasmacore
 class Log : BufferedPrintWriter<<output_buffer>> [singleton]
   METHODS
     method flush( buffer:StringBuilder )
-      Console.write( buffer ).flush
+      Console.[ write( buffer ), flush ]
       buffer.clear
 endClass
 
