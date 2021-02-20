@@ -3,8 +3,15 @@ module Plasmacore
   uses SimpleUITheme [export]
 
 class UIDisplayView : UIView
+  PROPERTIES
+    auto_invalidate = true
+
   METHODS
+    method init_component
+      UIManager.drag_threshold = 8 * Display.density
+
     method update_layout
+      if (auto_invalidate) invalidate
       update_layout( Display.bounds )
 endClass
 

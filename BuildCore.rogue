@@ -378,12 +378,12 @@ class Build [essential singleton]
       local output_folder = File.fix_slashes( "Build/$/Source" (platform) )
       create_folder( output_folder )
 
-      local m_launch_asset_compiler = <<Global>>.find_method( "launch_asset_compiler" )
+      local m_launch_asset_compiler = <<Global>>.find_global_method( "launch_asset_compiler" )
       if (m_launch_asset_compiler)
         # This won't be available until depz has downloaded the Plasmacore repo.
         # Which is always has by this point, but using introspection to get things
         # to compile in the first place.
-        m_launch_asset_compiler( Global, @[platform] )
+        m_launch_asset_compiler( @[platform] )
       else
         throw Error( "Please re-run 'rogo $' for the Plasmacore library installation to take effect." (platform.to_lowercase) )
       endIf
@@ -753,7 +753,7 @@ catch (err:Error)
 endTry
 
 routine dispatch( cmd:String[], string_args:String[] )->Logical
-  local m = <<Global>>.find_method( prefix + cmd.join("_") )
+  local m = <<Global>>.find_global_method( prefix + cmd.join("_") )
   if (not m) return false
 
   local args = @[]
@@ -766,7 +766,7 @@ routine dispatch( cmd:String[], string_args:String[] )->Logical
     endWhich
   endForEach
   if (m.parameter_count == 1 and args.count > 1) args = @[ args ] # Wrap args in a ValueList.
-  m.call( Global, args )
+  m( args )
   return true
 endRoutine
 
@@ -802,7 +802,7 @@ routine rogo_help( command="":String )
 
   println "USAGE"
   local lines = String[]
-  forEach (m in <<Global>>.methods)
+  forEach (m in <<Global>>.global_methods)
     if (m.name.begins_with(prefix))
       lines.add( "  " + get_syntax(m.name.after_first(prefix)) )
     endIf
@@ -816,7 +816,7 @@ routine get_syntax( m_name:String )->String
   if (CommandSyntax.contains(m_name))
     return "rogo " + CommandSyntax[ m_name ]
   else
-    local m = <<Global>>.find_method( prefix + m_name )
+    local m = <<Global>>.find_global_method( prefix + m_name )
     if (not m) return null
     local line = "rogo $" (m_name.replacing('_',' '))
     line += " <$>" (m.parameter_name(forEach in 0..<m.parameter_count))
