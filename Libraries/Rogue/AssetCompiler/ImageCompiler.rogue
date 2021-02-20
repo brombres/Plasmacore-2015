@@ -628,7 +628,7 @@ class ImageCommand
     method get_attributes( filepath:String )->Value
       local attributes = @{}
       forEach (attr in icom.attributes)
-        if (File.matches_wildcard_pattern(filepath,attr//pattern))
+        if (File.matches_wildcard_pattern(filepath,attr//pattern->String))
           forEach (a in attr//attributes)
             if (a//value) attributes[ a//name ]         = a//value
             else          attributes[ a//name->String ] = true
@@ -941,7 +941,7 @@ class ImageCommand
     method copy_image( from_filepath:String, to_filepath:String, args:Value )
       local attributes = @{}
       forEach (attr in icom.attributes)
-        if (File.matches_wildcard_pattern(from_filepath,attr//pattern))
+        if (File.matches_wildcard_pattern(from_filepath,attr//pattern->String))
           forEach (a in attr//attributes)
             if (a//value) attributes[ a//name ]         = a//value
             else          attributes[ a//name->String ] = true
@@ -1055,7 +1055,7 @@ class ImageCommand
     method adjust_image( filepath:String, args:Value )
       local attributes = @{}
       forEach (attr in icom.attributes)
-        if (File.matches_wildcard_pattern(filepath,attr//pattern))
+        if (File.matches_wildcard_pattern(filepath,attr//pattern->String))
           forEach (a in attr//attributes)
             if (a//value) attributes[ a//name ]         = a//value
             else          attributes[ a//name->String ] = true
