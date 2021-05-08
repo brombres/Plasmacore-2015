@@ -1,5 +1,5 @@
 module Plasmacore
-$include "ProgressFn.rogue"
+$include "Utility/ProgressFn.rogue"
 
 class DisplayEffect
   PROPERTIES

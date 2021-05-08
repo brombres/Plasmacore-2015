@@ -21,7 +21,6 @@ $if not target("Console")
 
 $if (target("Web")) nativeHeader #include <emscripten.h>
 
-$include "Action.rogue"
 $include "Angles.rogue"
 $include "Assets.rogue"
 $include "Bezier.rogue"
@@ -33,7 +32,6 @@ $include "Circle.rogue"
 $include "DefaultFont.rogue"
 $include "Display.rogue"
 $include "DisplayEffect.rogue"
-#$include "Entity.rogue"
 $include "Font.rogue"
 $include "GameGUI"
 $include "Image.rogue"
@@ -56,7 +54,6 @@ $include "OverlayLog.rogue"
 $include "PlasmacoreTiming.rogue"
 $include "PlasmacoreUI.rogue"
 $include "Polygon.rogue"
-$include "ProgressFn.rogue"
 $include "ProjectionMode.rogue"
 $include "Quad.rogue"
 $include "Quaternion.rogue"
@@ -84,9 +81,11 @@ $include "XYZ.rogue"
 $include "XYZW.rogue"
 
 module Plasmacore
-  uses Geometry [export]
-  uses Bitmap   [export]
-  uses UI       [export]
+  uses Geometry           [export]
+  uses Bitmap             [export]
+  uses UI                 [export]
+  uses Utility/Action     [export]
+  uses Utility/ProgressFn [export]
 
 class Plasmacore [essential singleton]
   PROPERTIES
