@@ -8,7 +8,8 @@ local args = System.command_line_arguments
 if (args.is_empty)
   Bootstrap.install
 elseIf (args.first.begins_with("--branch="))
-  Bootstrap.install( args.first.after_first('=') )
+  Bootstrap.BRANCH = args.first.after_first('=')
+  Bootstrap.install
 else
   local cmd = args.join( " " )
   if (cmd == "install update")
@@ -83,7 +84,7 @@ class Bootstrap [singleton]
       result = result.replacing( "BRANCH", BRANCH )
       return result
 
-    method install( BRANCH="master" )
+    method install
       # Don't overwrite existing installation
       if (File.exists("Source") or File.exists("Platforms"))
         println "Plasmacore is already installed. Use 'rogo update' to update it."
