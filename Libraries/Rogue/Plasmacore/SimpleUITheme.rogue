@@ -3,44 +3,38 @@ module SimpleUITheme
   uses Plasmacore
 
 class SimpleUITheme : UITheme [singleton]
+  METHODS
+    method default_font->UIFont [override]
+      if (not @default_font) @default_font = SimpleUIDefaultFont
+      return @default_font
+
+    method on_draw( component:UIText )
+      component.font.draw( component.text, component.display_position )
+endClass
+
+
+class SimpleUIDefaultFont : UIFont [singleton]
   PROPERTIES
-    default_font : UIFont
+    font : Font
 
   METHODS
     method init
-      default_font = UIFont( "Default", 24*Display.density )
+      prior.init( "SimpleUIDefaultFont" )
+      font = DefaultFont
+      font.anchor = Anchor.TOP_LEFT
+      font.height = 24 * Display.density
 
-    method on_draw( component:UIColorFill )
-      local bounds = component.content_bounds & component.display_bounds
-      if (bounds) bounds.value.fill( component.color )
+    method draw( text:String, position:XY )
+      font.draw( text, position )
 
-    method on_draw( component:UIImage )
-      local content_bounds = component.content_bounds
-      local display_bounds = component.display_bounds
-      temporarily Display.clip = display_bounds
-        local image = component.image
-        if (component.scale_to_fill)
-          image.scale_to_fill( display_bounds )
-          #@trace display_bounds, image.position, image.size
-          #@trace image.original_size
-          image.draw
-        else
-          image.anchor = Anchor.TOP_LEFT
-          image.size = content_bounds.size
-          image.draw( content_bounds.position )
-        endIf
-      endTemporarily
+    method height->Real64
+      return font.height
 
-    method on_draw( component:UIText )
-      if (component.font is null)
-        component.font = SimpleUITheme.default_font
-      endIf
+    method measure( ch:Character )->XY
+      return font.measure( ch )
 
-      local content_bounds = component.content_bounds
-      local bounds = content_bounds & component.display_bounds
-      if (bounds)
-        component.font.draw( component, content_bounds )
-        bounds.value.draw( Color.YELLOW )
-        content_bounds.draw( Color.WHITE )
-      endIf
+    method measure( text:String, i1=0:Int32, count=-1:Int32 )->XY
+      if (count == -1) count = text.count
+      return font.measure( text, i1, count )
 endClass
+

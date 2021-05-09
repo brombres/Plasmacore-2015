@@ -15,7 +15,7 @@ class DefaultFontData : FontData
     method init
       name = "DefaultFont"
       exists = true
-      height = Int32( 34 * Display.height / 960.0 )
+      height = Int32( (34 * Display.height * Display.density) / 960.0 )
 
       local bitmap = Bitmap( png_data )
 

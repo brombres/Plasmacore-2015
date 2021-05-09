@@ -2,51 +2,19 @@ module Plasmacore
   uses UI
   uses SimpleUITheme [export]
 
-class UIDisplayView : UIView
-  PROPERTIES
-    auto_invalidate = true
-
+class PlasmacoreUI : UI
   METHODS
-    method init_component
-      UIManager.drag_threshold = 8 * Display.density
+    method init
+      prior.init( SimpleUITheme )
 
-    method update_layout
-      if (auto_invalidate) invalidate
-      update_layout( Display.bounds )
+    method init( theme:UITheme )
+      prior.init( theme )
+
+    method update
+      prior.update
+      request_redraw
+
+    method set_clip( @clip )
+      Display.clip = clip
 endClass
 
-augment UIFont
-  PROPERTIES
-    image_font : Font
-
-  METHODS
-    method load
-      if (image_font) return
-      which (name)
-        others
-          image_font = DefaultFont.cloned
-          image_font.height = height
-          image_font.anchor = Anchor.CENTER
-      endWhich
-
-    method draw( text:UIText, bounds:Box )
-      load
-      image_font.draw( text.value, bounds )
-endAugment
-
-augment UIImage
-  PROPERTIES
-    image : Image
-
-  METHODS
-    method init( filename, scale_to_fill=false )
-      local info = Plasmacore.image_info_lookup[ filename ]
-      if (info)
-        image = Image( filename )
-      elseIf (File.exists(filename))
-        image = Image( Bitmap(File(filename)) )
-      else
-        image = Image( Bitmap(16,16,Color.WHITE) )
-      endIf
-      if (not scale_to_fill) size = image.size
-endAugment

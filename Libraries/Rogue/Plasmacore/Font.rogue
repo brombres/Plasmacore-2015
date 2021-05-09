@@ -122,7 +122,6 @@ class Font
 
     method measure( ch:Character, &visual )->XY
       local result = data.measure( this, ch, visual ) * scale
-      if (snap) result = result.floor
       return result
 
     method set_height( h:Real64 )
@@ -494,8 +493,8 @@ class FontData
       if (ch == '\n') return XY(0,height)
       local info = this[ ch ]
       if (not info) return XY(0,0)
-      if (visual) return info.size.xv + XY(font.spacing_adjustment,0)
-      else        return info.advance + XY(font.spacing_adjustment,0)
+      local result = which{ visual:info.size.xv || info.advance }
+      return result + XY(font.spacing_adjustment,height)
 
     method reload->FontData
       if (name and image_info)
