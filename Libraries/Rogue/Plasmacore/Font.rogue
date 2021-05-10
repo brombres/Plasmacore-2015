@@ -425,7 +425,8 @@ class FontData
 
       local max_w = 0.0
       local w = 0.0
-      local h = line_height : Real64
+      local h = 0.0
+      local cur_h = 0.0
       local max_i2 = text.count - 1
       if (i1) i1 = i1.value.clamped(0,max_i2)
       if (i2) i2 = i2.value.clamped(0,max_i2)
@@ -434,10 +435,12 @@ class FontData
       local prev_width   : Int32
       forEach (index in which{i1||0}..which{i2||max_i2})
         local ch = text[index]
+        cur_h = line_height
         if (ch == '\n')
-          h += line_height
           max_w = max_w.or_larger( (w-prev_advance)+prev_width )
           w = 0.0
+          h += cur_h
+          cur_h = 0.0
           prev_advance = 0
           prev_width = 0
         else
@@ -452,6 +455,8 @@ class FontData
       endForEach
 
       max_w = max_w.or_larger( (w-prev_advance)+prev_width )
+      h += cur_h
+
       return XY( max_w*font.scale.x, h )
 
     method measure( font:Font, text:StringBuilder, i1=null:Int32?, i2=null:Int32?, &visual )->XY
@@ -460,7 +465,8 @@ class FontData
 
       local max_w = 0.0
       local w = 0.0
-      local h = line_height : Real64
+      local h = 0.0
+      local cur_h = 0.0
       local max_i2 = text.count - 1
       if (i1) i1 = i1.value.clamped(0,max_i2)
       if (i2) i2 = i2.value.clamped(0,max_i2)
@@ -469,10 +475,12 @@ class FontData
       local prev_width   : Int32
       forEach (index in which{i1||0}..which{i2||max_i2})
         local ch = text[index]
+        cur_h = line_height
         if (ch == '\n')
-          h += line_height
           max_w = max_w.or_larger( (w-prev_advance)+prev_width )
           w = 0.0
+          h += cur_h
+          cur_h = 0.0
           prev_advance = 0
           prev_width = 0
         else
@@ -487,6 +495,7 @@ class FontData
       endForEach
 
       max_w = max_w.or_larger( (w-prev_advance)+prev_width )
+      h += cur_h
       return XY( max_w*font.scale.x, h )
 
     method measure( font:Font, ch:Character, &visual )->XY

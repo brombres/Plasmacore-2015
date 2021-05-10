@@ -36,5 +36,8 @@ class SimpleUIDefaultFont : UIFont [singleton]
     method measure( text:String, i1=0:Int32, count=-1:Int32 )->XY
       if (count == -1) count = text.count
       return font.measure( text, i1, count )
+
+    method set_color( new_color:Color )
+      font.color = new_color
 endClass
 
