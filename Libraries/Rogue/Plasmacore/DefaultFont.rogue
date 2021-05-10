@@ -42,6 +42,8 @@ $endIf
         character_lookup[ unicode ] = ch
       endForEach
 
+      character_lookup[ ' ' ].advance = XY(12,0)
+
       forEach (i in 160..255)
         local unicode = Character( i )
         local ch = FontCharacter( unicode, char_bounds[i-65].size )
