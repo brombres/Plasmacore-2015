@@ -13,7 +13,7 @@ class SimpleUITheme : UITheme [singleton]
 endClass
 
 
-class SimpleUIDefaultFont : UIFont [singleton]
+class SimpleUIDefaultFont : PlasmacoreUIFont [singleton]
   PROPERTIES
     font : Font
 

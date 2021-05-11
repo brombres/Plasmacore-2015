@@ -18,3 +18,33 @@ class PlasmacoreUI : UI
       Display.clip = clip
 endClass
 
+class PlasmacoreUIFont : UIFont
+  PROPERTIES
+    font : Font
+
+  METHODS
+    method init( name:String )
+      prior.init( name.before_last(".png",&ignore_case) )
+      if (not name.ends_with(".png",&ignore_case)) name += ".png"
+      font = Font( name )
+      font.anchor = Anchor.TOP_LEFT
+
+    method draw( text:String, position:XY )
+      font.draw( text, position )
+
+    method height->Real64
+      return font.height
+
+    method measure( ch:Character )->XY
+      return font.measure( ch )
+
+    method measure( text:String, i1=0:Int32, count=-1:Int32 )->XY
+      if (count == -1) count = text.count
+      return font.measure( text, i1, count )
+
+    method reload
+      font.reload
+
+    method set_color( new_color:Color )
+      font.color = new_color
+endClass
