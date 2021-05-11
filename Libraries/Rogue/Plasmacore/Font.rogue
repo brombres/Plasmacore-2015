@@ -112,16 +112,14 @@ class Font
 
       return this
 
-    method measure( text:String, i1=null:Int32?, i2=null:Int32?, &visual )->XY
-      # &visual  - include all rendered pixels in measurement
-      # &!visual - cursor-relative measurement
-      return data.measure( this, text, i1, i2, visual )
+    method measure( text:String, i1=null:Int32?, i2=null:Int32? )->XY
+      return data.measure( this, text, i1, i2 )
 
-    method measure( text:StringBuilder, i1=null:Int32?, i2=null:Int32?, &visual )->XY
-      return data.measure( this, text, i1, i2, visual )
+    method measure( text:StringBuilder, i1=null:Int32?, i2=null:Int32? )->XY
+      return data.measure( this, text, i1, i2 )
 
-    method measure( ch:Character, &visual )->XY
-      local result = data.measure( this, ch, visual ) * scale
+    method measure( ch:Character )->XY
+      local result = data.measure( this, ch ) * scale
       return result
 
     method set_height( h:Real64 )
@@ -419,7 +417,7 @@ class FontData
         info.advance = XY( max_w, info.advance.y )
       endForEach
 
-    method measure( font:Font, text:String, i1=null:Int32?, i2=null:Int32?, &visual )->XY
+    method measure( font:Font, text:String, i1=null:Int32?, i2=null:Int32? )->XY
       local line_height = font.height
       if (font.snap) line_height = line_height.floor
 
@@ -447,8 +445,7 @@ class FontData
           local info = this[ ch ]
           if (info)
             prev_advance = info.advance.x
-            if (visual) prev_width = info.size.x
-            else        prev_width = prev_advance
+            prev_width   = info.size.x
             w += prev_advance + font.spacing_adjustment
           endIf
         endIf
@@ -459,7 +456,7 @@ class FontData
 
       return XY( max_w*font.scale.x, h )
 
-    method measure( font:Font, text:StringBuilder, i1=null:Int32?, i2=null:Int32?, &visual )->XY
+    method measure( font:Font, text:StringBuilder, i1=null:Int32?, i2=null:Int32? )->XY
       local line_height = font.height
       if (font.snap) line_height = line_height.floor
 
@@ -487,8 +484,7 @@ class FontData
           local info = this[ ch ]
           if (info)
             prev_advance = info.advance.x
-            if (visual) prev_width = info.size.x
-            else        prev_width = prev_advance
+            prev_width = info.size.x
             w += prev_advance + font.spacing_adjustment
           endIf
         endIf
@@ -498,11 +494,11 @@ class FontData
       h += cur_h
       return XY( max_w*font.scale.x, h )
 
-    method measure( font:Font, ch:Character, &visual )->XY
+    method measure( font:Font, ch:Character )->XY
       if (ch == '\n') return XY(0,height)
       local info = this[ ch ]
       if (not info) return XY(0,0)
-      local result = which{ visual:info.size.xv || info.advance }
+      local result = info.size.xv
       return result + XY(font.spacing_adjustment,height)
 
     method reload->FontData
