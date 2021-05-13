@@ -368,20 +368,31 @@ class PlasmacoreView: NSOpenGLView
   override func scrollWheel( with event:NSEvent )
   {
     configure()
-    let dx = event.deltaX
-    let dy = event.deltaY
+    var dx = event.deltaX
+    var dy = event.deltaY
 
     let scale = Double( NSScreen.main?.backingScaleFactor ?? CGFloat(1.0) )
+    let in_progress = (event.phase != NSEvent.Phase.ended && event.momentumPhase != NSEvent.Phase.ended)
 
-    if (dx >= 0.0001 || dx <= -0.0001 || dy >= 0.0001 || dy <= -0.0001)
+    if (dx >= -0.0001 && dx <= 0.0001){ dx = 0 }
+    if (dy >= -0.0001 && dy <= 0.0001){ dy = 0 }
+
+    if (!in_progress || dx != 0 || dy != 0)
     {
       let m = PlasmacoreMessage( type:"Display.on_scroll_event" )
       m.set( name:"window_id", value:windowID )
       m.set( name:"display_name", value:name )
       m.set( name:"dx", value:Double(dx)*scale )
       m.set( name:"dy", value:Double(dy)*scale )
+      m.set( name:"in_progress", value:event.phase != NSEvent.Phase.ended && event.momentumPhase != NSEvent.Phase.ended )
+      m.set( name:"is_momentum", value:event.momentumPhase != [] )
       m.post()
     }
+  }
+
+  override func mouseExited( with event:NSEvent )
+  {
+    NSLog( "Mouse exited!\n" )
   }
 
   func stopDisplayLink()

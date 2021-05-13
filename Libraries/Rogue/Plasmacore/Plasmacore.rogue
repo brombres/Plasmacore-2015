@@ -110,6 +110,8 @@ class Plasmacore [essential singleton]
     fps_timer     = Timer(1)
     update_ticks  = 0.0
 
+    has_focused_scroll : Logical
+
   METHODS
     method init
       Console.println "Initializing Plasmacore"
@@ -202,6 +204,14 @@ class Plasmacore [essential singleton]
               # at actual (x,y) coordinates. As a kludge we'll ignore pointer events at (0,0)
               local scale = display.scale
               local pos = XY(x,y) * scale - Display.offset
+
+              if (Plasmacore.has_focused_scroll and not Display.bounds.contains(pos))
+                Plasmacore.has_focused_scroll = false
+                local e = ScrollEvent( XY(0,0), &!in_progress )
+                e.timestamp = m.timestamp
+                display.handle( e )
+              endIf
+
               local delta = XY( m.real64("dx"), m.real64("dy") ) * scale
               local e = PointerEvent( m.int32("type"), pos, delta, m.int32("index"), m.logical("cancelled") )
               e.timestamp = m.timestamp
@@ -220,8 +230,12 @@ class Plasmacore [essential singleton]
             local display = Display( m.string("display_name") )
             local scale = display.scale
             local delta = XY( m.real64("dx"), m.real64("dy") ) * scale
+            local in_progress = m.logical( "in_progress" )
+            local is_momentum = m.logical( "is_momentum" )
 
-            local e = ScrollEvent( delta )
+            Plasmacore.has_focused_scroll = in_progress and not is_momentum
+
+            local e = ScrollEvent( delta, &=in_progress, &=is_momentum )
             e.timestamp = m.timestamp
             display.handle( e )
           catch (e:Error)
