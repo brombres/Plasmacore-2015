@@ -384,7 +384,8 @@ class PlasmacoreView: NSOpenGLView
       m.set( name:"display_name", value:name )
       m.set( name:"dx", value:Double(dx)*scale )
       m.set( name:"dy", value:Double(dy)*scale )
-      m.set( name:"in_progress", value:event.phase != NSEvent.Phase.ended && event.momentumPhase != NSEvent.Phase.ended )
+      m.set( name:"is_precise",  value:event.hasPreciseScrollingDeltas )
+      m.set( name:"in_progress", value:in_progress )
       m.set( name:"is_momentum", value:event.momentumPhase != [] )
       m.post()
     }

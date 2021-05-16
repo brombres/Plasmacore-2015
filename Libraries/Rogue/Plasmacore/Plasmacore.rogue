@@ -207,7 +207,7 @@ class Plasmacore [essential singleton]
 
               if (Plasmacore.has_focused_scroll and not Display.bounds.contains(pos))
                 Plasmacore.has_focused_scroll = false
-                local e = ScrollEvent( XY(0,0), &!in_progress )
+                local e = ScrollEvent( XY(0,0), &!in_progress, &density=Display.density )
                 e.timestamp = m.timestamp
                 display.handle( e )
               endIf
@@ -230,12 +230,13 @@ class Plasmacore [essential singleton]
             local display = Display( m.string("display_name") )
             local scale = display.scale
             local delta = XY( m.real64("dx"), m.real64("dy") ) * scale
+            local is_precise  = m.logical( "is_precise" )
             local in_progress = m.logical( "in_progress" )
             local is_momentum = m.logical( "is_momentum" )
 
             Plasmacore.has_focused_scroll = in_progress and not is_momentum
 
-            local e = ScrollEvent( delta, &=in_progress, &=is_momentum )
+            local e = ScrollEvent( delta, &=is_precise, &=in_progress, &=is_momentum, &density=Display.density )
             e.timestamp = m.timestamp
             display.handle( e )
           catch (e:Error)
