@@ -582,7 +582,7 @@ class ImageCommand
       )
 
       local sheet = ImageSheet( max_width, max_height )
-      if (perform_layout(placements, -1, -1, max_width+2, max_height+2, sheet)) return sheet
+      if (perform_layout(placements, 0, 0, max_width, max_height, sheet)) return sheet
       else return null
 
     method perform_layout( placements:Placement[], sx:Int32, sy:Int32, sw:Int32, sh:Int32, image_sheet:ImageSheet )->Logical
