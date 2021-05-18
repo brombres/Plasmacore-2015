@@ -2,7 +2,7 @@ OPT_CFLAGS += -O3
 OPT_CFLAGS += -s ASSERTIONS=0 --closure 0
 
 # asm.js wants a multiple of 16 MB
-RUNTIME_MEMORY = 16MB
+RUNTIME_MEMORY = 64MB
 
 PROJECT_ROOT = ../..
 
@@ -18,8 +18,9 @@ SDLCORE_FOLDER = $(PROJECT_ROOT)/Plasmacore/Libraries/Plasmacore/SDL
 BUILD_FOLDER    := $(PROJECT_ROOT)/Build/$(TARGET)
 
 CFLAGS += --shell-file index.html
-
 CFLAGS += --emrun
+CFLAGS += -s DISABLE_EXCEPTION_CATCHING=0
+
 
 SDLCORE_FILES := \
   Main.cpp \
@@ -55,7 +56,7 @@ $(BUILD_FOLDER)/$(PROJECT_NAME).html: $(BUILD_FOLDER)/Source/RogueProgram.cpp $(
 	       -s USE_SDL=2 \
 	       -s USE_LIBPNG=1 \
 	       -s EXPORTED_FUNCTIONS="['_main', '_malloc', '_launch_plasmacore']" \
-	       -s EXTRA_EXPORTED_RUNTIME_METHODS='["UTF8ToString"]' \
+	       -s EXPORTED_RUNTIME_METHODS='["UTF8ToString"]' \
                -s TOTAL_MEMORY=$(RUNTIME_MEMORY) \
                -s ENVIRONMENT=web \
 	       -D LOCAL_FS='"/IDBFS"' \
