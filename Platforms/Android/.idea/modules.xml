@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Android.iml" filepath="$PROJECT_DIR$/Android.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/plasmacore/plasmacore.iml" filepath="$PROJECT_DIR$/plasmacore/plasmacore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Plasmacore.iml" filepath="$PROJECT_DIR$/.idea/modules/Plasmacore.iml" group="Plasmacore" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="Plasmacore/app" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plasmacore/plasmacore.iml" filepath="$PROJECT_DIR$/.idea/modules/plasmacore/plasmacore.iml" group="Plasmacore/plasmacore" />
     </modules>
   </component>
 </project>

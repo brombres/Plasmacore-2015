@@ -2,8 +2,8 @@
 
 About     | &nbsp;
 ----------|-----------------------
-Version   | 0.15.0
-Date      | 2021-05-08
+Version   | 0.16.0
+Date      | 2021-06-05
 Platforms | macOS, Linux
 Targets   | macOS, iOS, Android, Linux, Web
 
@@ -25,9 +25,9 @@ Linux         |         | &#10003;|         | &#10003;* | &#10003;
 
 To bootstrap a new Plasmacore-based project, install Rogue, open a Terminal in your new project folder, and copy and paste the following command:
 
-    curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/Bootstrap.rogue && rogo --build=Bootstrap
+    curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/BuildCore.rogue && rogo
 
-The command will fetch a bootstrap build file which in turn will install and use Murphy McCauley's [https://github.com/MurphyMc/depz](depz) app to clone the latest Plasmacore repo as a subfolder and copy all relevant project files into the current folder.
+The command will fetch a Rogo build file which in will handle the remainder of the installation.
 
 
 ## Documentation and Resources
@@ -42,8 +42,8 @@ A sample Plasmacore game project is available here: [https://github.com/AbePrall
 ## Starting a New Project
 
 1.  Run the bootstrap command.
-2.  At the command line run e.g. `rogo ios`.  The first build will take a while as intermediate files are compiled.
-3.  Open `Platforms/iOS/iOS-Project.xcodeproj` in Xcode and run on the simulator or a device.  You should see a blue screen.
+2.  At the command line, run e.g. `rogo ios`.  The first build will take a while as intermediate files are compiled.
+3.  Run `rogo ios open` to open the project in Xcode and run on the simulator or a device.  You should see a blue screen that logs input events.
 4.  Edit `Source/Main.rogue` and add more game code.
 5.  Either run `rogo ios` again or just compile and run in Xcode again as a build phase automatically runs `rogo ios`.  If you get an error in Xcode and you can't tell what it is, run `rogo ios` on the command line and you will see the compiler error message.
 6.  Add images to Assets/Images and load them by name - `Image("img.png")`, `Font("SomeFont.png")`, etc.

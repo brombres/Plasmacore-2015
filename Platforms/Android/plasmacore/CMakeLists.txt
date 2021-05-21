@@ -18,7 +18,7 @@ add_custom_command(
       ${CMAKE_SOURCE_DIR}/../../../Build/Android/Source/RogueProgram.h
       ${CMAKE_SOURCE_DIR}/../../../Build/Android/Source/RogueProgram.cpp
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../../..
-    COMMAND rogo android
+    COMMAND rogo android build
 )
 
 # Creates and names a library, sets it as either STATIC

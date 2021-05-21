@@ -37,7 +37,7 @@
 #   -Ipath/to/lib1/include -Lpath/to/lib1/library -I ...   # sample replacement
 
 #$ LIBRARIES(macOS) = brew
-#$ LIBRARIES(macOS) = gradle
+# LIBRARIES(macOS) = gradle  - INACTIVE: brew-installed gradle is currently not working with Android Studio projects.
 
 #$ LIBRARIES(Linux) = gradle
 #$ LIBRARIES(Linux) = ninja-build(package:ninja which:ninja)
@@ -198,12 +198,12 @@ endRoutine
 
 routine rogo_build_debug
   configure_local_properties
-  execute "gradle assembleDebug"
+  execute "sh gradlew assembleDebug"
 endRoutine
 
 routine rogo_build_release
   configure_local_properties
-  execute "gradle assembleRelease"
+  execute "sh gradlew assembleRelease"
 endRoutine
 
 routine rogo_debug
@@ -350,56 +350,22 @@ routine configure_local_properties
     sdk_folder = File.absolute_filepath( sdk_folder )
   endContingent
 
-  # Attempt to locate Android NDK
-  local ndk_folder : String
-  contingent
-    necessary (sdk_folder)
-    ndk_folder = sdk_folder + "/ndk-bundle"
-    sufficient (File.exists(ndk_folder))
-
-    necessary (sdk_folder)
-    ndk_folder = sdk_folder + "/ndk"
-    sufficient (File.exists(ndk_folder))
-
-    ndk_folder = null
-    escapeContingent
-
-  satisfied
-    ndk_folder = File.absolute_filepath( ndk_folder )
-    if (not File.contains(ndk_folder, "README.md"))
-      local versions = File.listing( ndk_folder )
-      if (versions.count)
-        versions.sort( (a,b) => compare_versions(a,b) > 0 )
-        ndk_folder = versions.first
-        if (File.contains(ndk_folder, "README.md"))
-          escapeContingent
-        endIf
-      endIf
-      ndk_folder = null
-    endIf
-  endContingent
-
   local builder = StringBuilder()
   builder.println @|# Do NOT check this file into your version control system as it contains
                    |# information specific to your local configuration.
                    |#
-                   |# Location of the Android SDK and NDK. This is only used by Gradle and Android
-                   |# Studio.
+                   |# Location of the Android SDK. This is only used by Gradle and Android Studio.
   builder.println( "# " + DateTime.now )
   if (sdk_folder) builder.println"sdk.dir=$" (sdk_folder)
   else            builder.println"#sdk.dir=<folder>  # Specify the correct folder and uncomment this line"
-  if (ndk_folder) builder.println"ndk.dir=$" (ndk_folder)
-  else            builder.println"#ndk.dir=<folder>  # Specify the correct folder and uncomment this line"
-  println "Creating local.properties with SDK and NDK locations."
+  println "Creating local.properties with SDK location."
   File.save( local_properties_filepath, builder )
 
-  local mesg = "Cannot locate the Android SDK and/or NDK. Please install them and then edit the corresponding paths in 'local.properties'."
-  mesg += ''\n\nInstalling Android Studio is an easy way to get both libraries - install it to the the Android SDK and then use Configure > SDK Manager > SDK Tools to install "NDK (Side by side)":\nhttps://developer.android.com/studio''
-  if (not sdk_folder or not ndk_folder)
+  local mesg = "Cannot locate the Android SDK. Please install them and then edit the corresponding paths in 'local.properties'."
+  if (not sdk_folder)
     if (System.is_linux and not sdk_folder)
       mesg += "\n\nYou can also download the Android SDK with:\nsudo apt install android-sdk"
     endIf
-    if (not ndk_folder) mesg += "\n\nYou can download the Android NDK directly from here:\nhttps://developer.android.com/ndk/downloads/index.html"
     throw Error( mesg )
   endIf
 endRoutine
@@ -459,7 +425,7 @@ class Build [singleton]
 
     method dispatch_command
       local m = find_command( rogo_command )
-      require m
+      require m || "no such routine rogo_$()" (rogo_command)
 
       local args = @[]
       forEach (arg in rogo_args)
@@ -471,10 +437,10 @@ class Build [singleton]
         endWhich
       endForEach
       if (m.parameter_count == 1 and args.count > 1) args = @[ args ] # Wrap args in a ValueList.
-      m.call( Global, args )
+      m( args )
 
     method find_command( name:String )->MethodInfo
-      return <<Global>>.find_method( rogo_prefix + name )
+      return <<Global>>.find_global_method( rogo_prefix + name )
 
     method on_error
       Console.error.println "=" * 79
@@ -587,7 +553,7 @@ routine rogo_help( command="":String )
 
   println "USAGE"
   local lines = String[]
-  forEach (m in <<Global>>.methods)
+  forEach (m in <<Global>>.global_methods)
     if (m.name.begins_with(Build.rogo_prefix))
       lines.add( "  " + get_syntax(m.name.after_first(Build.rogo_prefix)) )
     endIf
@@ -602,7 +568,7 @@ routine get_syntax( m_name:String )->String
   if (Build.rogo_syntax.contains(m_name))
     return "rogo " + Build.rogo_syntax[ m_name ]
   else
-    local m = <<Global>>.find_method( Build.rogo_prefix + m_name )
+    local m = <<Global>>.find_global_method( Build.rogo_prefix + m_name )
     if (not m) return null
     local line = "rogo $" (m_name.replacing('_',' '))
     line += " <$>" (m.parameter_name(forEach in 0..<m.parameter_count))

@@ -35,11 +35,11 @@
 		30361E7E1D9B4AE100A33B99 /* RogueProgram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RogueProgram.h; path = ../../Build/iOS/Source/RogueProgram.h; sourceTree = "<group>"; };
 		30361E851D9B507000A33B99 /* Assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Assets; path = ../../../Build/iOS/Assets; sourceTree = "<group>"; };
 		30845F761E009E1A00B14D0F /* RogueProgram.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RogueProgram.mm; path = ../../Build/iOS/Source/RogueProgram.mm; sourceTree = "<group>"; };
-		30CFCB901DBA6AE3002641EF /* Plasmacore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Plasmacore.swift; path = ../../Plasmacore/Libraries/Plasmacore/Swift/Plasmacore.swift; sourceTree = "<group>"; };
-		30CFCB911DBA6AE3002641EF /* PlasmacoreMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PlasmacoreMessage.swift; path = ../../Plasmacore/Libraries/Plasmacore/Swift/PlasmacoreMessage.swift; sourceTree = "<group>"; };
-		30CFCB921DBA6AE3002641EF /* PlasmacoreViewController-iOS.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "PlasmacoreViewController-iOS.swift"; path = "../../Plasmacore/Libraries/Plasmacore/Swift/PlasmacoreViewController-iOS.swift"; sourceTree = "<group>"; };
-		30CFCB961DBA6B23002641EF /* RogueInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RogueInterface.h; path = ../../Plasmacore/Libraries/Plasmacore/Swift/RogueInterface.h; sourceTree = "<group>"; };
-		30CFCB971DBA6B23002641EF /* RogueInterface.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RogueInterface.mm; path = ../../Plasmacore/Libraries/Plasmacore/Swift/RogueInterface.mm; sourceTree = "<group>"; };
+		30CFCB901DBA6AE3002641EF /* Plasmacore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Plasmacore.swift; path = ../../Libraries/Plasmacore/Libraries/Framework/Swift/Plasmacore.swift; sourceTree = "<group>"; };
+		30CFCB911DBA6AE3002641EF /* PlasmacoreMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PlasmacoreMessage.swift; path = ../../Libraries/Plasmacore/Libraries/Framework/Swift/PlasmacoreMessage.swift; sourceTree = "<group>"; };
+		30CFCB921DBA6AE3002641EF /* PlasmacoreViewController-iOS.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "PlasmacoreViewController-iOS.swift"; path = "../../Libraries/Plasmacore/Libraries/Framework/Swift/PlasmacoreViewController-iOS.swift"; sourceTree = "<group>"; };
+		30CFCB961DBA6B23002641EF /* RogueInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RogueInterface.h; path = ../../Libraries/Plasmacore/Libraries/Framework/Swift/RogueInterface.h; sourceTree = "<group>"; };
+		30CFCB971DBA6B23002641EF /* RogueInterface.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RogueInterface.mm; path = ../../Libraries/Plasmacore/Libraries/Framework/Swift/RogueInterface.mm; sourceTree = "<group>"; };
 		30D332FC1DC7C96F00FC235A /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -140,7 +140,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0800;
-				LastUpgradeCheck = 1120;
+				LastUpgradeCheck = 1250;
 				ORGANIZATIONNAME = MyOrganization;
 				TargetAttributes = {
 					30361DBF1D9A224D00A33B99 = {
@@ -261,6 +261,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -286,7 +287,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -321,6 +322,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -340,7 +342,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
