@@ -28,6 +28,12 @@ class PlasmacoreUIFont : UIFont
       if (not name.ends_with(".png",&ignore_case)) name += ".png"
       font = Font( name ).[ snap=true, anchor=Anchor.TOP_LEFT ]
 
+    method cloned->PlasmacoreUIFont
+      return PlasmacoreUIFont( font.cloned )
+
+    method color->Color
+      return font.color
+
     method draw( text:String, position:XY )
       font.draw( text, position )
 
