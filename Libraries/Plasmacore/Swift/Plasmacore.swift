@@ -4,6 +4,8 @@ import Cocoa
 import Foundation
 #endif
 
+import AVFoundation
+
 @objc class PlasmacoreInterface : NSObject
 {
   @objc class func dispatch( _ data:UnsafePointer<UInt8>, count:Int )->NSData?
@@ -19,6 +21,11 @@ import Foundation
     {
       return nil
     }
+  }
+
+  @objc class func play_sound( _ player:AVAudioPlayer )
+  {
+    player.play()
   }
 }
 

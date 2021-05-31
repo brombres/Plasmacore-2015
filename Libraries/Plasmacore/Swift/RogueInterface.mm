@@ -152,7 +152,7 @@ void PlasmacoreSound_play( void* sound, bool repeating )
   {
     AVAudioPlayer* player = (__bridge AVAudioPlayer*) sound;
     player.numberOfLoops = repeating ? -1 : 0;
-    [player play];
+    [PlasmacoreInterface play_sound:player];
   }
 }
 
