@@ -53,6 +53,17 @@ routine rogo_install_plasmacore( loc="":String )
   endIf
 endRoutine
 
+routine plasmacore_version->String
+  local version_filepath = File.join(
+    Build.PLASMACORE_FOLDER,
+    "Libraries/Rogue/Plasmacore/PlasmacoreVersion.rogue"
+  )
+
+  require File.exists( version_filepath )
+
+  return File.load_as_string( version_filepath ).extract_string( ''*define PLASMACORE_VERSION "$"*'' )
+endRoutine
+
 routine error_exit( message:String )
   local w = Console.width.clamped_high(80)
   Console.error.println "=" * w
@@ -68,34 +79,80 @@ routine rogo_update
     println "Plasmacore library does not exist at $" (Build.PLASMACORE_FOLDER)
     println "=" * Console.width.clamped_high(80)
     rogo_install_plasmacore
+
+  else
+    require File.exists( Build.PLASMACORE_FOLDER )
+    local folder = File.shell_escaped( Build.PLASMACORE_FOLDER )
+    if (not Process.run("cd $ && git diff-index --quiet HEAD" (folder)).exit_code and
+        not Process.run("cd $ && git rev-list @{u}.." (folder)).exit_code)
+      # Plasmacore folder is clean & up to date with remote. Pull any changes.
+      println "Pulling changes to $" (Build.PLASMACORE_FOLDER)
+      local result = Process.run( "cd $ && git pull"(folder) ).exit_code
+      if (result)
+        error_exit "Unable to pull changes to $" (Build.PLASMACORE_FOLDER)
+      endIf
+    else
+      println "Plasmacore repo has local changes and commits. Skipping git pull."
+    endIf
+
   endIf
 
-  require File.exists( Build.PLASMACORE_FOLDER )
-
   local version_filepath = "Libraries/Rogue/Plasmacore/PlasmacoreVersion.rogue"
-
   if (File.exists(version_filepath))
     error_exit "No change - the Plasmacore repo cannot update itself."
   endIf
 
-  version_filepath = File.join( Build.PLASMACORE_FOLDER, version_filepath )
-
-  local folder = File.shell_escaped( Build.PLASMACORE_FOLDER )
-  if (Process.run("cd $ && git diff-index --quiet HEAD" (folder)).exit_code or
-      Process.run("cd $ && git rev-list @{u}.." (folder)).exit_code)
-    error_exit "Cannot update: $ has local modifications and/or unpushed changes." (Build.PLASMACORE_FOLDER)
+  local repo_v = plasmacore_version
+  local installed_v = ProjectSettings//PLASMACORE_VERSION
+  if (repo_v != installed_v)
+    ProjectSettings//PLASMACORE_VERSION = repo_v
+    if (String.exists(installed_v))
+      println "Updating Plasmacore library v$ -> v$" (installed_v,repo_v)
+    else
+      println "Configuring project with Plasmacore library v$" (repo_v)
+    endIf
+  else
+    println "Plasmacore library is up-to-date at v$" (installed_v)
   endIf
 
-  println "Pulling changes to $" (Build.PLASMACORE_FOLDER)
-  local result = Process.run( "cd $ && git pull"(folder) ).exit_code
-  if (result)
-    error_exit "Unable to pull changes to $" (Build.PLASMACORE_FOLDER)
+  # Copy over base framework files but do not overwrite them if present.
+  local files = Files( Build.PLASMACORE_FOLDER, "**" )
+  files.remove( "Build/**" )
+  files.remove( "Libraries/Rogue/**" )
+  files.remove( "Assets/**" )
+  files.remove( "Local.settings" )
+  files.remove( "**/LocalBuild.rogue" )
+  files.remove( "OldBuild/**" )  # FIXME
+  files.remove( "Test/**" )  # FIXME
+  File.sync_from( files, ".", &keep_unused, &verbose, &only_missing )
+endRoutine
+
+routine sync( pattern:String, exclude=UndefinedValue:Value, &keep_unused, &only_missing )
+  local update_folder = Build.PLASMACORE_FOLDER
+
+  local src_filepath = update_folder + pattern
+  if (File.exists(src_filepath) and not File.is_folder(src_filepath))
+    # Handle a single specific file separately
+    local dest_filepath = pattern
+    if (File.is_different_than(src_filepath,dest_filepath))
+      println "Copying $ -> $" (src_filepath,dest_filepath)
+      #File.copy( src_filepath, dest_filepath )
+    endIf
+    return
   endIf
 
-  local repo_v = File.load_as_string( version_filepath ).extract_string( ''*define PLASMACORE_VERSION "$"*'' )
-  trace repo_v
-
-  #String.exists(ProjectSettings//PLASMACORE_VERSION)
+  local source_folder = update_folder
+  local dest_folder = "."
+  if (pattern != "*")
+    dest_folder = pattern.before_last( '/' )
+    source_folder += dest_folder
+    pattern = pattern.after_last( '/' )
+  endIf
+  local files = Files( source_folder, pattern )
+  if (exclude.count)
+    files.remove( update_folder + (forEach in exclude) )
+  endIf
+  File.sync_from( files, dest_folder, &=keep_unused, &verbose, &=only_missing, &dry_run )
 endRoutine
 
 routine execute( commands:String, &suppress_error )->Logical

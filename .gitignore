@@ -9,9 +9,7 @@ BuildLocal.rogue
 **/src/main/assets
 
 Test
-Update.mk
-Publish.mk
-**/Local.mk
+**/Local.settings
 **/Build/
 .rogo
 
