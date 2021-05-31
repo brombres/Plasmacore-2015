@@ -1,6 +1,18 @@
 # To run this build file, install Rogue from github.com/AbePralle/Rogue then cd
 # to this folder and type "rogo" at the command line.
 
+#$ LIBRARIES(macOS) = brew
+
+$define DEFAULT_PLASMACORE "https://github.com/AbePralle/Plasmacore.git@master"
+
+LocalSettings
+ProjectSettings
+
+augment Build
+  PROPERTIES
+    PLASMACORE_FOLDER = "Libraries/Plasmacore"
+endAugment
+
 # description()s are optional - Rogo uses introspection to determine which
 # commands are available. 'rogo help default' displays the description for
 # "default", etc.
@@ -8,7 +20,82 @@ description( "default", "The default action is performed when no other actions a
 description( "help",    "Displays a list of all actions that can be performed by Rogo." )
 
 routine rogo_default
-  rogo_help
+  if (not File.exists(Build.PLASMACORE_FOLDER))
+    rogo_update
+  else
+    rogo_help
+  endIf
+endRoutine
+
+routine rogo_install_plasmacore( loc="":String )
+  if (not String.exists(loc))
+    println "Enter Git URL or system filepath [default $]:" (DEFAULT_PLASMACORE)
+    loc = Console.input( "> " )
+    if (loc == "")
+      loc = DEFAULT_PLASMACORE
+      println loc
+    endIf
+  endIf
+
+  if (File.exists(loc))
+    # Use existing copy of repo
+    loc = File.absolute_filepath( loc )
+    println ''Local.settings: PLASMACORE_FOLDER = $'' (loc)
+    Build.PLASMACORE_FOLDER = loc
+    LocalSettings//PLASMACORE_FOLDER = loc
+
+  else
+    # Clone repo
+    local url = loc.before_first( '@' )
+    local branch = loc.after_first( '@' )
+    if (not String.exists(branch)) branch = DEFAULT_PLASMACORE.after_first( '@' )
+    execute "git clone $ --branch $ --single-branch $" (url,branch,Build.PLASMACORE_FOLDER)
+  endIf
+endRoutine
+
+routine error_exit( message:String )
+  local w = Console.width.clamped_high(80)
+  Console.error.println "=" * w
+  Console.error.println "ERROR"
+  Console.error.println( message.word_wrapped(w-2).indented(2) )
+  Console.error.println "=" * w
+  System.exit 1
+endRoutine
+
+routine rogo_update
+  if (not File.exists(Build.PLASMACORE_FOLDER))
+    println "=" * Console.width.clamped_high(80)
+    println "Plasmacore library does not exist at $" (Build.PLASMACORE_FOLDER)
+    println "=" * Console.width.clamped_high(80)
+    rogo_install_plasmacore
+  endIf
+
+  require File.exists( Build.PLASMACORE_FOLDER )
+
+  local version_filepath = "Libraries/Rogue/Plasmacore/PlasmacoreVersion.rogue"
+
+  if (File.exists(version_filepath))
+    error_exit "No change - the Plasmacore repo cannot update itself."
+  endIf
+
+  version_filepath = File.join( Build.PLASMACORE_FOLDER, version_filepath )
+
+  local folder = File.shell_escaped( Build.PLASMACORE_FOLDER )
+  if (Process.run("cd $ && git diff-index --quiet HEAD" (folder)).exit_code or
+      Process.run("cd $ && git rev-list @{u}.." (folder)).exit_code)
+    error_exit "Cannot update: $ has local modifications and/or unpushed changes." (Build.PLASMACORE_FOLDER)
+  endIf
+
+  println "Pulling changes to $" (Build.PLASMACORE_FOLDER)
+  local result = Process.run( "cd $ && git pull"(folder) ).exit_code
+  if (result)
+    error_exit "Unable to pull changes to $" (Build.PLASMACORE_FOLDER)
+  endIf
+
+  local repo_v = File.load_as_string( version_filepath ).extract_string( ''*define PLASMACORE_VERSION "$"*'' )
+  trace repo_v
+
+  #String.exists(ProjectSettings//PLASMACORE_VERSION)
 endRoutine
 
 routine execute( commands:String, &suppress_error )->Logical
@@ -21,6 +108,64 @@ routine execute( commands:String, &suppress_error )->Logical
   endForEach
   return true
 endRoutine
+
+class Settings
+  PROPERTIES
+    file   : File
+    values = @{}
+
+  METHODS
+    method init( filepath:String )
+      file = File( filepath )
+      if (file.exists)
+        forEach (line in LineReader(file))
+          line .= trimmed
+          if (line.begins_with('#')) nextIteration
+          local name = line.before_first( '=' )
+          local value = line.after_first( '=' )
+          if (name and value)
+            name  .= trimmed
+            value .= trimmed
+            if (value.begins_with('"') and value.ends_with('"')) value = value.leftmost(-1).rightmost(-1)
+            value .= replacing( "\\\"", "\"" )
+            values[ name ] = value
+          endIf
+        endForEach
+      endIf
+
+    method description->String
+      use builder = StringBuilder.pool
+        forEach (key in values.keys)
+          builder.print "$ = " (key)
+          local value = values[key]->String
+          value .= replacing( "\"", "\\\"" )
+          if (value.contains(' ')) builder.println ''\"$\"'' (value)
+          else                     builder.println value
+        endForEach
+        return builder->String
+      endUse
+
+    method get( name:String )->String
+      return values[ name ]
+
+    method set( name:String, value:String )
+      values[ name ] = value
+
+      # Save new settings with each change
+      file.save( description )
+endClass
+
+class LocalSettings : Settings [singleton]
+  METHODS
+    method init
+      prior.init( "Local.settings" )
+endClass
+
+class ProjectSettings : Settings [singleton]
+  METHODS
+    method init
+      prior.init( "Project.settings" )
+endClass
 
 #-------------------------------------------------------------------------------
 # Introspection-based Launcher Framework
@@ -103,7 +248,7 @@ class Build [singleton]
     rogo_args           = @[]
     rogo_error          : Error
 
-    LOCAL_DEFS_FILE     = "Local.mk"
+    LOCAL_SETTINGS_FILE = "Local.settings"
 
   METHODS
     method launch
@@ -184,10 +329,10 @@ class Build [singleton]
       endBlock
 
     method read_defs
-      read_defs( LOCAL_DEFS_FILE )
+      read_defs( LOCAL_SETTINGS_FILE )
 
     method read_defs( defs_filepath:String )
-      # Attempt to read defs from Local.mk
+      # Attempt to read defs from Local.settings
       local overrides = String[]
       if (File.exists(defs_filepath))
         forEach (line in LineReader(File(defs_filepath)))
