@@ -135,13 +135,13 @@ routine rogo_install_update
   files.remove( "Test/**" )  # FIXME
   File.sync_from( files, ".", &keep_unused, &verbose, &missing_only )
 
-  sync( "Platforms/Android/.gitignore", &missing_only, &keep_unused )
-
   sync( "*", &exclude=@["LICENSE","README.md","Local.settings","BuildLocal.rogue"], &keep_unused )
   sync( "Platforms/Android/plasmacore/src/main/java/org/plasmacore/*" )
   sync( "Platforms/Android/plasmacore/src/main/cpp/*" )
   sync( "Platforms/Android/Build.rogue" )
   sync( "Platforms/Android/.gitignore", &missing_only )
+
+  update_gitignore
 
   println "Done."
 
@@ -246,6 +246,122 @@ class ProjectSettings : Settings [singleton]
     method init
       prior.init( "Project.settings" )
 endClass
+
+
+routine update_gitignore
+  if (not File.exists(".gitignore"))
+    File.save( ".gitignore", default_gitignore )
+    return
+  endIf
+
+  local all_items = Set<<String>>()
+
+  local existing_entries = categorize_gitignore( File.load_as_string(".gitignore") )
+  forEach (list in existing_entries)
+    forEach (item in list)
+      all_items.add( item )
+    endForEach
+  endForEach
+
+  local is_modified = false
+  local plasmacore_entries = categorize_gitignore( default_gitignore )
+  local additions = StringBuilder()
+  forEach (key in plasmacore_entries.keys)
+    local list = plasmacore_entries[ key ]
+    forEach (item in list)
+      if (not all_items.contains(item))
+        all_items.add( item )
+        if (not existing_entries.contains(key)) existing_entries[key] = String[]
+        existing_entries[ key ].add( item )
+        if (key != "") additions.println( key )
+        additions.println item
+        is_modified = true
+      endIf
+    endForEach
+  endForEach
+
+  if (is_modified)
+    local response = Console.input( "Update existing .gitignore with additional Plasmacore entries? (y/n)> " )
+    if (response.to_lowercase.begins_with('y'))
+      println "Additions:"
+      local additional_entries = categorize_gitignore( additions )
+      forEach (key in additional_entries.keys)
+        if (key != "") println key
+        local list = additional_entries[ key ]
+        forEach (item in list)
+          println item
+        endForEach
+        println
+      endForEach
+
+      use builder = StringBuilder.pool
+        forEach (key in existing_entries.keys)
+          if (key != "") builder.println key
+          builder.println (forEach in existing_entries[key])
+          builder.println
+        endForEach
+        println "Saving updated .gitignore"
+        File.save( ".gitignore", builder->String )
+      endUse
+    endIf
+  endIf
+
+endRoutine
+
+routine categorize_gitignore( gitignore:String )->StringTable<<String[]>>
+  local result = StringTable<<String[]>>()
+
+  local cur_category = ""
+  forEach (line in LineReader(gitignore))
+    line .= trimmed
+    if (line.trimmed.begins_with('#'))
+      cur_category = line
+      if (not result.contains(cur_category)) result[ cur_category ] = String[]
+    elseIf (line != "")
+      if (not result.contains(cur_category)) result[ cur_category ] = String[]
+      result[ cur_category ].add( line )
+    endIf
+  endForEach
+
+  return result
+endRoutine
+
+routine default_gitignore->String
+  return @|# Rogo Build
+          |/Build
+          |BuildLocal.rogue
+          |.rogo
+          |Local.settings
+          |
+          |# Vim
+          |*.swp
+          |*.swo
+          |
+          |# Android
+          |**/src/main/assets
+          |
+          |# Mac
+          |.DS_Store
+          |
+          |# Xcode
+          |build/
+          |*.pbxuser
+          |!default.pbxuser
+          |*.mode1v3
+          |!default.mode1v3
+          |*.mode2v3
+          |!default.mode2v3
+          |*.perspectivev3
+          |!default.perspectivev3
+          |xcuserdata
+          |*.xccheckout
+          |*.moved-aside
+          |DerivedData
+          |*.hmap
+          |*.ipa
+          |*.xcuserstate
+endRoutine
+
 
 #-------------------------------------------------------------------------------
 # Introspection-based Launcher Framework
