@@ -3,14 +3,135 @@
 
 #$ LIBRARIES(macOS) = brew
 
+#$ LINK             = true
+
+#$ LIBRARIES(macOS) = sox libpng libjpeg
+#$ LIBRARIES(macOS) = freetype(freetype2)
+#$ LIBRARIES(macOS) = zlib
+#$ LINK(macOS)      = -lbz2
+
+#$ LIBRARIES(Linux) = libsdl2-dev(sdl2) libsdl2-mixer-dev(SDL2_mixer)
+#$ LIBRARIES(Linux) = libfreetype6-dev(freetype2)
+#$ LIBRARIES(Linux) = libpng-dev libjpeg-dev
+#$ LIBRARIES(Linux) = zlib
+#$ LIBRARIES(Linux) = sox
+
 $define DEFAULT_PLASMACORE "https://github.com/AbePralle/Plasmacore.git@master"
+
+$include "AssetCompiler" [optional]
 
 LocalSettings
 ProjectSettings
 
 augment Build
   PROPERTIES
+    DEBUG_MODE        = false
     PLASMACORE_FOLDER = "Libraries/Plasmacore"
+    ROGUE_STD_LIBS    = "Libraries/Rogue"
+    ROGUEC            = "roguec"
+
+    platform       : String
+    output_folder  : String
+
+    dispatch_build_macos   = function Build.platform="macOS"; Build.dispatch_build()
+    dispatch_build         = (this => build) : Function
+    dispatch_launch_asset_compiler = function Build.launch_asset_compiler
+    dispatch_needs_compile = (this => needs_compile) : Function->Logical
+    dispatch_build_targets = (this => build_targets) : Function->String
+
+  METHODS
+    method build
+      println "Build " + platform
+
+      which (platform)
+        case "Web"
+          println @|Ensure you have the latest emscripten installed and configured:
+                   |
+                   |  (Install emsdk && cd emsdk/)
+                   |  git pull   # or "./emsdk update" in some cases
+                   |  ./emsdk install  latest
+                   |  ./emsdk activate latest
+                   |  (Add emsdk paths to ~/.bash_profile)
+                   |
+      endWhich
+
+      output_folder = File.fix_slashes( "Build/$/Source" (platform) )
+      create_folder( output_folder )
+
+      dispatch_launch_asset_compiler()
+      if (not dispatch_needs_compile()) return
+
+      local targets = dispatch_build_targets()
+
+      local libs = File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue")
+      local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=$ --output=$/RogueProgram''...
+        (ROGUEC,targets,libs,output_folder)
+      if (Build.DEBUG_MODE) cmd += " --debug"
+      execute( cmd )
+
+  method build_targets->String
+    local targets = platform + ",Plasmacore,C++"
+    which (platform)
+      case "macOS", "iOS": targets += ",ObjC"
+      case "Linux":        targets += ",SDL"
+      case "Web":          targets += ",SDL,emscripten"
+    endWhich
+
+    which (platform)
+      case "iOS", "Android": targets += ",Mobile"
+      others:                targets += ",Desktop"
+    endWhich
+
+    return targets
+
+  method create_folder( folder:String )
+    if (File.exists(folder)) return
+    println "Creating folder " + folder
+    File.create_folder( folder )
+
+  method launch_asset_compiler
+    local m_launch_asset_compiler = <<Global>>.find_global_method( "launch_asset_compiler" )
+    if (m_launch_asset_compiler)
+      # This won't be available until depz has downloaded the Plasmacore repo.
+      # Which is always has by this point, but using introspection to get things
+      # to compile in the first place.
+      m_launch_asset_compiler( @[platform] )
+    else
+      throw Error( "Please re-run 'rogo $' for the Plasmacore library installation to take effect." (platform.to_lowercase) )
+    endIf
+
+  method needs_compile->Logical
+    if (""+DEBUG_MODE != LocalSettings//LAST_BUILT_IN_DEBUG_MODE)
+      LocalSettings//LAST_BUILT_IN_DEBUG_MODE = ""+DEBUG_MODE
+      return true
+    endIf
+
+    local extension = "cpp"
+    if (platform == "macOS" or platform == "iOS") extension = "mm"
+
+    local output_h   = "$/RogueProgram.h" (output_folder)
+    local output_cpp = "$/RogueProgram.$" (output_folder,extension)
+
+    if (not File.exists(output_h))   return true
+    if (not File.exists(output_cpp)) return true
+
+    local dependencies = String[]
+    dependencies.add( File.listing(ROGUE_STD_LIBS,"**",&absolute) )
+    if (ROGUE_STD_LIBS != "Libraries/Rogue")
+      dependencies.add( File.listing("Libraries/Rogue","**",&absolute) )
+    endIf
+    dependencies.add( File.listing("Plasmacore/Libraries/Rogue","**",&absolute) )
+    dependencies.add( File.listing("Source", "**", &absolute) )
+    dependencies.add( "Build.rogue" )
+    dependencies.add( "BuildCore.rogue" )
+    dependencies.add( "BuildLocal.rogue" )
+
+    local timestamp = File.timestamp(output_h).or_smaller( File.timestamp(output_cpp) )
+    forEach (dependency in dependencies)
+      if (File.timestamp(dependency) > timestamp) return true
+    endForEach
+
+    return false
 endAugment
 
 # description()s are optional - Rogo uses introspection to determine which
@@ -23,8 +144,59 @@ routine rogo_default
   if (not File.exists(Build.PLASMACORE_FOLDER))
     rogo_update
   else
+    configure_build
     rogo_help
   endIf
+endRoutine
+
+routine rogo_macos( debug:Logical )
+  if (debug) Build.DEBUG_MODE = true
+  Build.dispatch_build_macos()
+endRoutine
+
+routine rogo_macos_open
+  local listing = File.listing( "Platforms/macOS", "*.xcworkspace" )
+  if (listing.is_empty) listing = File.listing( "Platforms/macOS", "*.xcodeproj" )
+  if (listing.count)
+    execute ''open "$"'' (forEach in listing)
+  else
+    throw Error( "No .xcodeproj or .xcworkspace folders found." )
+  endIf
+endRoutine
+
+routine configure_build
+  local file = File( "BuildLocal.rogue" )
+
+  local deps = "#$ DEPENDENCIES = $" ('$',File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue/AssetCompiler/*.rogue"))
+  local libs = "#$ ROGUEC_ARGS  = --libraries=$" ('$',File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue"))
+
+  local og_content = which{ file.exists:file.load_as_string || "" }
+  local content = og_content
+  content = configure_build( content, "DEPENDENCIES", File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue/AssetCompiler/*.rogue") )
+  content = configure_build( content, "ROGUEC_ARGS",  "--libraries="+File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue") )
+  if (content != og_content)
+    println "Writing updated Plasmacore library location to BuildLocal.rogue."
+    file.save( content )
+  endIf
+endRoutine
+
+routine configure_build( content:String, directive:String, def:String )->String
+  local pattern = "#$*" + directive
+  if (content.contains_pattern(pattern) and content.contains(def)) return content
+
+  local new_line = "$ = $" (("#$ " + directive).left_justified(16), def)
+
+  local lines = content.split('\n')
+  forEach (line at index in lines)
+    if (line.contains_pattern(pattern))
+      lines[index] = new_line
+      return lines.join( '\n' )
+    endIf
+  endForEach
+
+  lines.insert( new_line )
+  return lines.join( '\n' )
+
 endRoutine
 
 routine rogo_install_plasmacore( loc="":String )
@@ -120,6 +292,7 @@ routine rogo_update
 
   # Copy over any new BuildCore.rogue and then relaunch to complete the update
   sync( "BuildCore.rogue" )
+  configure_build
   execute "rogo install update"
 endRoutine
 
@@ -144,8 +317,6 @@ routine rogo_install_update
   update_gitignore
 
   println "Done."
-
-  # TODO: default .gitignore
 endRoutine
 
 routine sync( pattern:String, exclude=UndefinedValue:Value, &keep_unused, &missing_only )
@@ -457,6 +628,8 @@ class Build [singleton]
     method dispatch_command
       local m = find_command( rogo_command )
       require m || "no such routine rogo_$()" (rogo_command)
+
+      if (rogo_command != "default") configure_build
 
       local args = @[]
       forEach (arg in rogo_args)
