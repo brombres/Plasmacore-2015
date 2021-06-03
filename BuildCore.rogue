@@ -216,8 +216,11 @@ routine rogo_update
         not Process.run("cd Libraries/Plasmacore && git rev-list @{u}..").exit_code)
       # Plasmacore folder is clean & up to date with remote. Pull any changes.
       println "Pulling changes to Libraries/Plasmacore"
-      local result = Process.run( "cd Libraries/Plasmacore && git pull" ).exit_code
-      if (result)
+      local cmd = "cd Libraries/Plasmacore && git pull"
+      println "> " + cmd
+      local result = Process.run( cmd )
+      println result->String
+      if (result.exit_code)
         error_exit "Unable to pull changes to Libraries/Plasmacore"
       endIf
     else
