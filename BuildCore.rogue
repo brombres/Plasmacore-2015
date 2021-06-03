@@ -35,6 +35,7 @@ augment Build
     platform       : String
     output_folder  : String
 
+    dispatch_build_ios     = function Build.platform="iOS"; Build.dispatch_build()
     dispatch_build_macos   = function Build.platform="macOS"; Build.dispatch_build()
     dispatch_build         = (this => build) : Function
     dispatch_launch_asset_compiler = function Build.launch_asset_compiler
@@ -156,8 +157,21 @@ routine rogo_macos( debug:Logical )
 endRoutine
 
 routine rogo_macos_open
-  local listing = File.listing( "Platforms/macOS", "*.xcworkspace" )
-  if (listing.is_empty) listing = File.listing( "Platforms/macOS", "*.xcodeproj" )
+  open_xcode( "Platforms/macOS" )
+endRoutine
+
+routine rogo_ios( debug:Logical )
+  if (debug) Build.DEBUG_MODE = true
+  Build.dispatch_build_ios()
+endRoutine
+
+routine rogo_ios_open
+  open_xcode( "Platforms/iOS" )
+endRoutine
+
+routine open_xcode( folder:String )
+  local listing = File.listing( folder, "*.xcworkspace" )
+  if (listing.is_empty) listing = File.listing( folder, "*.xcodeproj" )
   if (listing.count)
     execute ''open "$"'' (forEach in listing)
   else
