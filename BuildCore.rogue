@@ -1,6 +1,9 @@
 # To run this build file, install Rogue from github.com/AbePralle/Rogue then cd
 # to this folder and type "rogo" at the command line.
 
+#$ DEPENDENCIES     = Libraries/Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue
+#$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
+
 #$ LIBRARIES(macOS) = brew
 
 #$ LINK             = true
@@ -26,7 +29,6 @@ ProjectSettings
 augment Build
   PROPERTIES
     DEBUG_MODE        = false
-    PLASMACORE_FOLDER = "Libraries/Plasmacore"
     ROGUE_STD_LIBS    = "Libraries/Rogue"
     ROGUEC            = "roguec"
 
@@ -63,7 +65,7 @@ augment Build
 
       local targets = dispatch_build_targets()
 
-      local libs = File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue")
+      local libs = "Libraries/Plasmacore/Libraries/Rogue"
       local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=$ --output=$/RogueProgram''...
         (ROGUEC,targets,libs,output_folder)
       if (Build.DEBUG_MODE) cmd += " --debug"
@@ -141,10 +143,9 @@ description( "default", "The default action is performed when no other actions a
 description( "help",    "Displays a list of all actions that can be performed by Rogo." )
 
 routine rogo_default
-  if (not File.exists(Build.PLASMACORE_FOLDER))
+  if (not File.exists("Libraries/Plasmacore"))
     rogo_update
   else
-    configure_build
     rogo_help
   endIf
 endRoutine
@@ -164,73 +165,29 @@ routine rogo_macos_open
   endIf
 endRoutine
 
-routine configure_build
-  local file = File( "BuildLocal.rogue" )
-
-  local deps = "#$ DEPENDENCIES = $" ('$',File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue/AssetCompiler/*.rogue"))
-  local libs = "#$ ROGUEC_ARGS  = --libraries=$" ('$',File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue"))
-
-  local og_content = which{ file.exists:file.load_as_string || "" }
-  local content = og_content
-  content = configure_build( content, "DEPENDENCIES", File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue/AssetCompiler/*.rogue") )
-  content = configure_build( content, "ROGUEC_ARGS",  "--libraries="+File.join(Build.PLASMACORE_FOLDER,"/Libraries/Rogue") )
-  if (content != og_content)
-    println "Writing updated Plasmacore library location to BuildLocal.rogue."
-    file.save( content )
-  endIf
-endRoutine
-
-routine configure_build( content:String, directive:String, def:String )->String
-  local pattern = "#$*" + directive
-  if (content.contains_pattern(pattern) and content.contains(def)) return content
-
-  local new_line = "$ = $" (("#$ " + directive).left_justified(16), def)
-
-  local lines = content.split('\n')
-  forEach (line at index in lines)
-    if (line.contains_pattern(pattern))
-      lines[index] = new_line
-      return lines.join( '\n' )
-    endIf
-  endForEach
-
-  lines.insert( new_line )
-  return lines.join( '\n' )
-
-endRoutine
-
 routine rogo_install_plasmacore( loc="":String )
   if (not String.exists(loc))
-    println "Enter Git URL or system filepath [default $]:" (DEFAULT_PLASMACORE)
+    println "Enter Git URL@branch - can specify URL only or @branch only."
+    println "[default $]: " (DEFAULT_PLASMACORE)
     loc = Console.input( "> " )
     if (loc == "")
       loc = DEFAULT_PLASMACORE
       println loc
+    elseIf (not loc.contains('@'))
+      loc += DEFAULT_PLASMACORE.from_first('@')
+    elseIf (loc.begins_with('@'))
+      loc = DEFAULT_PLASMACORE.before_first('@') + loc
     endIf
   endIf
 
-  if (File.exists(loc))
-    # Use existing copy of repo
-    loc = File.absolute_filepath( loc )
-    println ''Local.settings: PLASMACORE_FOLDER = $'' (loc)
-    Build.PLASMACORE_FOLDER = loc
-    LocalSettings//PLASMACORE_FOLDER = loc
-
-  else
-    # Clone repo
-    local url = loc.before_first( '@' )
-    local branch = loc.after_first( '@' )
-    if (not String.exists(branch)) branch = DEFAULT_PLASMACORE.after_first( '@' )
-    execute "git clone $ --branch $ --single-branch $" (url,branch,Build.PLASMACORE_FOLDER)
-  endIf
+  # Clone repo
+  local url = loc.before_first( '@' )
+  local branch = loc.after_first( '@' )
+  execute "git clone $ --branch $ --single-branch $" (url,branch,"Libraries/Plasmacore")
 endRoutine
 
 routine plasmacore_version->String
-  local version_filepath = File.join(
-    Build.PLASMACORE_FOLDER,
-    "Libraries/Rogue/Plasmacore/PlasmacoreVersion.rogue"
-  )
-
+  local version_filepath = "Libraries/Plasmacore/Libraries/Rogue/Plasmacore/PlasmacoreVersion.rogue"
   require File.exists( version_filepath )
 
   return File.load_as_string( version_filepath ).extract_string( ''*define PLASMACORE_VERSION "$"*'' )
@@ -246,25 +203,22 @@ routine error_exit( message:String )
 endRoutine
 
 routine rogo_update
-  if (not File.exists(Build.PLASMACORE_FOLDER))
+  if (not File.exists("Libraries/Plasmacore"))
     println "=" * Console.width.clamped_high(80)
-    println "Plasmacore library does not exist at $" (Build.PLASMACORE_FOLDER)
+    println "Plasmacore library does not exist at Libraries/Plasmacore"
     println "=" * Console.width.clamped_high(80)
     rogo_install_plasmacore
-    println "Plasmacore repo: $" (Build.PLASMACORE_FOLDER)
 
   else
-    require File.exists( Build.PLASMACORE_FOLDER )
-    println "Plasmacore repo: $" (Build.PLASMACORE_FOLDER)
+    require File.exists( "Libraries/Plasmacore" )
 
-    local folder = File.shell_escaped( Build.PLASMACORE_FOLDER )
-    if (not Process.run("cd $ && git diff-index --quiet HEAD" (folder)).exit_code and
-        not Process.run("cd $ && git rev-list @{u}.." (folder)).exit_code)
+    if (not Process.run("cd Libraries/Plasmacore && git diff-index --quiet HEAD").exit_code and
+        not Process.run("cd Libraries/Plasmacore && git rev-list @{u}..").exit_code)
       # Plasmacore folder is clean & up to date with remote. Pull any changes.
-      println "Pulling changes to $" (Build.PLASMACORE_FOLDER)
-      local result = Process.run( "cd $ && git pull"(folder) ).exit_code
+      println "Pulling changes to Libraries/Plasmacore"
+      local result = Process.run( "cd Libraries/Plasmacore && git pull" ).exit_code
       if (result)
-        error_exit "Unable to pull changes to $" (Build.PLASMACORE_FOLDER)
+        error_exit "Unable to pull changes to Libraries/Plasmacore"
       endIf
     else
       println "Plasmacore repo has local changes and/or commits. Skipping git pull."
@@ -292,13 +246,12 @@ routine rogo_update
 
   # Copy over any new BuildCore.rogue and then relaunch to complete the update
   sync( "BuildCore.rogue" )
-  configure_build
   execute "rogo install update"
 endRoutine
 
 routine rogo_install_update
   # Copy over base framework files but do not overwrite them if present.
-  local files = Files( Build.PLASMACORE_FOLDER, "**" )
+  local files = Files( "Libraries/Plasmacore/**" )
   files.remove( "Build/**" )
   files.remove( "Libraries/Rogue/**" )
   files.remove( "Assets/**" )
@@ -320,7 +273,7 @@ routine rogo_install_update
 endRoutine
 
 routine sync( pattern:String, exclude=UndefinedValue:Value, &keep_unused, &missing_only )
-  local update_folder = Build.PLASMACORE_FOLDER
+  local update_folder = "Libraries/Plasmacore"
 
   local src_filepath = File.join( update_folder, pattern )
   if (File.exists(src_filepath) and not File.is_folder(src_filepath))
@@ -628,8 +581,6 @@ class Build [singleton]
     method dispatch_command
       local m = find_command( rogo_command )
       require m || "no such routine rogo_$()" (rogo_command)
-
-      if (rogo_command != "default") configure_build
 
       local args = @[]
       forEach (arg in rogo_args)
