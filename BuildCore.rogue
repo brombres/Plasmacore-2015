@@ -35,13 +35,6 @@ augment Build
     platform       : String
     output_folder  : String
 
-    dispatch_build_ios     = function Build.platform="iOS"; Build.dispatch_build()
-    dispatch_build_macos   = function Build.platform="macOS"; Build.dispatch_build()
-    dispatch_build         = (this => build) : Function
-    dispatch_launch_asset_compiler = function Build.launch_asset_compiler
-    dispatch_needs_compile = (this => needs_compile) : Function->Logical
-    dispatch_build_targets = (this => build_targets) : Function->String
-
   METHODS
     method build
       println "Build " + platform
@@ -61,10 +54,10 @@ augment Build
       output_folder = File.fix_slashes( "Build/$/Source" (platform) )
       create_folder( output_folder )
 
-      dispatch_launch_asset_compiler()
-      if (not dispatch_needs_compile()) return
+      launch_asset_compiler
+      if (not needs_compile) return
 
-      local targets = dispatch_build_targets()
+      local targets = build_targets
 
       local libs = "Libraries/Plasmacore/Libraries/Rogue"
       local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=$ --output=$/RogueProgram''...
@@ -151,18 +144,69 @@ routine rogo_default
   endIf
 endRoutine
 
-routine rogo_macos( debug:Logical )
-  if (debug) Build.DEBUG_MODE = true
-  Build.dispatch_build_macos()
+routine rogo_android
+  rogo_android_build
+  execute "cd Platforms/Android && rogo debug"
+endRoutine
+
+routine rogo_android_debug
+  Build.DEBUG_MODE = true
+  rogo_android
+endRoutine
+
+routine rogo_android_release
+  rogo_android_build
+  execute "cd Platforms/Android && rogo release"
+endRoutine
+
+routine rogo_android_build
+  Build.platform = "Android"
+  Build.build
+endRoutine
+
+routine rogo_android_build_debug
+  Build.DEBUG_MODE = true
+  rogo_android_build
+  execute "cd Platforms/Android && rogo build debug"
+endRoutine
+
+routine rogo_android_build_release
+  rogo_android_build
+  execute "cd Platforms/Android && rogo build release"
+endRoutine
+
+description( "android_icon", "Changes the icon used for by Android." )
+routine rogo_android_icon( new_icon_png:String )
+  execute ''cd Platforms/Android && rogo icon $'' (File.shell_escaped(new_icon_png))
+endRoutine
+
+description( "android_keystore", "Creates an Android release keystore." )
+routine rogo_android_keystore
+  execute "cd Platforms/Android && rogo keystore"
+endRoutine
+
+routine rogo_macos
+  Build.platform = "macOS"
+  Build.build
+endRoutine
+
+routine rogo_macos_debug
+  Build.DEBUG_MODE = true
+  rogo_macos
 endRoutine
 
 routine rogo_macos_open
   open_xcode( "Platforms/macOS" )
 endRoutine
 
-routine rogo_ios( debug:Logical )
-  if (debug) Build.DEBUG_MODE = true
-  Build.dispatch_build_ios()
+routine rogo_ios
+  Build.platform = "iOS"
+  Build.build
+endRoutine
+
+routine rogo_ios_debug
+  Build.DEBUG_MODE = true
+  rogo_ios
 endRoutine
 
 routine rogo_ios_open
@@ -177,6 +221,44 @@ routine open_xcode( folder:String )
   else
     throw Error( "No .xcodeproj or .xcworkspace folders found." )
   endIf
+endRoutine
+
+routine rogo_web( args=UndefinedValue:Value )
+  if (not args) args = @[]
+  if (not args.is_list) args = @[ args ]
+
+  local browser = "chrome"
+  forEach (arg in args)
+    if (arg == "debug") Build.DEBUG_MODE = true
+    else                browser = arg
+  endForEach
+
+  rogo_web_build
+  rogo_web_run( browser )
+endRoutine
+
+routine rogo_web_debug
+  Build.DEBUG_MODE = true
+  rogo_web
+endRoutine
+
+routine rogo_web_build
+  Build.platform = "Web"
+  Build.build
+  execute @|make -C Platforms/Web
+endRoutine
+
+routine rogo_web_build_debug
+  Build.DEBUG_MODE = true
+  rogo_web_build
+endRoutine
+
+routine rogo_web_run( browser:String )
+  if (browser == "")
+    browser = "chrome"
+    println @|Defaulting to 'chrome'. 'emrun --list_browsers' to see which browsers are available.
+  endIf
+  execute( "cd Build/Web && emrun --browser $ index.html" (browser) )
 endRoutine
 
 routine rogo_install_plasmacore( loc="":String )

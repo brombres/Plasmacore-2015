@@ -1,1 +1,3 @@
-include ':app', ':plasmacore'
+include ':plasmacore'
+include ':app'
+rootProject.name = "Plasmacore"
