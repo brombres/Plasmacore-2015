@@ -149,6 +149,27 @@ routine rogo_android
   execute "cd Platforms/Android && rogo debug"
 endRoutine
 
+routine rogo_android_open
+  if (System.is_macos)
+    execute "open -a '/Applications/Android Studio.app' Platforms/Android"
+    return
+
+  elseIf (System.is_linux)
+    # Dunno how well this works. TODO: investigate further
+    local filepath = "/opt/android-studio/bin/studio.sh"
+    if (not File.exists(filepath))
+      filepath = "/usr/local/android-studio/bin/studio.sh"
+    endIf
+    if (File.exists(filepath))
+      execute "$ Platforms/Android" (filepath)
+      return
+    endIf
+
+  endIf
+
+  throw Error( "Unable to find Android Studio install. Launch manually and open 'Platforms/Android'." )
+endRoutine
+
 routine rogo_android_debug
   Build.DEBUG_MODE = true
   rogo_android
