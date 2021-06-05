@@ -2,7 +2,7 @@
 # to this folder and type "rogo" at the command line.
 
 #$ DEPENDENCIES     = Libraries/Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue
-#$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
+#$ ROGUEC_ARGS      = --libraries=Libraries/Plasmacore/Libraries/Rogue
 
 #$ LIBRARIES(macOS) = brew
 
