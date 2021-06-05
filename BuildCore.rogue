@@ -573,6 +573,9 @@ routine default_gitignore->String
           |.rogo
           |Local.settings
           |
+          |# Plasmacore
+          |/Libraries/Plasmacore
+          |
           |# Vim
           |*.swp
           |*.swo
