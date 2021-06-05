@@ -375,10 +375,6 @@ routine rogo_install_update
   files.remove( "Build/**" )
   files.remove( "Libraries/Rogue/**" )
   files.remove( "Assets/**" )
-  files.remove( "Local.settings" )
-  files.remove( "**/LocalBuild.rogue" )
-  files.remove( "OldBuild/**" )  # FIXME
-  files.remove( "Test/**" )  # FIXME
   File.sync_from( files, ".", &keep_unused, &verbose, &missing_only )
 
   sync( "*", &exclude=@["LICENSE","README.md","Local.settings","BuildLocal.rogue"], &keep_unused )
