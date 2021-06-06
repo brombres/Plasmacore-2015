@@ -116,7 +116,7 @@ augment Build
     if (ROGUE_STD_LIBS != "Libraries/Rogue")
       dependencies.add( File.listing("Libraries/Rogue","**",&absolute) )
     endIf
-    dependencies.add( File.listing("Plasmacore/Libraries/Rogue","**",&absolute) )
+    dependencies.add( File.listing("Libraries/Plasmacore/Libraries/Rogue","**",&absolute) )
     dependencies.add( File.listing("Source", "**", &absolute) )
     dependencies.add( "Build.rogue" )
     dependencies.add( "BuildCore.rogue" )
