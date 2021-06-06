@@ -36,5 +36,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   {
     return true
   }
+    
+  func application(_ sender: NSApplication, openFile filename: String) -> Bool {
+    Plasmacore.start();
+    
+    if let result = PlasmacoreMessage( type:"Application.on_open_file" ).set( name:"filepath", value:filename ).send()
+    {
+      return result.getLogical( name:"success" )
+    }
+    else
+    {
+      return false;
+    }
+  }
 }
 
