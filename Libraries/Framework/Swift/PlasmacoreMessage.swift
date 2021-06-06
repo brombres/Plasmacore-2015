@@ -368,10 +368,13 @@ class PlasmacoreMessage
   {
     let count = readInt32()
     var buffer = [UInt8]()
-    buffer.reserveCapacity( count )
-    for _ in 1...count
+    if (count > 0)
     {
-      buffer.append( UInt8(readByte()) )
+      buffer.reserveCapacity( count )
+      for _ in 1...count
+      {
+        buffer.append( UInt8(readByte()) )
+      }
     }
     return buffer
   }

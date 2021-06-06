@@ -128,12 +128,12 @@ class MessageManager [essential singleton]
       incoming_message_queue.clear
       dispatch_incoming_message( forEach in incoming_message_active_list )
 
-    method dispatch_incoming_message( m:Message )
+    method dispatch_incoming_message( m:Message, &hold_response )
       local listener = one_time_listeners[ m.type ]
       if (listener)
         one_time_listeners.remove( m.type )
         listener( m )
-        if (m.@reply)
+        if (m.@reply and not hold_response)
           m.@reply.blocks_transmission = false
           m.reply.post  # adds to message pool
           m.@reply = null
@@ -143,14 +143,14 @@ class MessageManager [essential singleton]
       listener = listeners[ m.type ]
       if (listener)
         listener( m )
-        if (m.@reply)
+        if (m.@reply and not hold_response)
           m.@reply.blocks_transmission = false
           m.reply.post  # adds to message pool
           m.@reply = null
         endIf
       endIf
 
-      m.recycle
+      if (not hold_response) m.recycle
 
     method post( m:Message )
       message_builder.write_int32( m.data.count )
@@ -164,8 +164,10 @@ class MessageManager [essential singleton]
     method receive_message->Logical [essential]
       local m = create_message
       m.init( direct_message_buffer )
+
       dispatch_incoming_messages  # dispatch queued posts
-      dispatch_incoming_message( m )
+      dispatch_incoming_message( m, &hold_response )
+
       if (m.@reply)
         m.@reply.blocks_transmission = false
         direct_message_buffer.clear.add( m.@reply.data )
@@ -175,6 +177,8 @@ class MessageManager [essential singleton]
       else
         return false
       endIf
+
+      m.recycle
 
     method update->Byte[] [essential]
       # 'io_reader' has already been set up to decode 'io_buffer', which
