@@ -377,7 +377,7 @@ routine rogo_install_update
   files.remove( "Assets/**" )
   File.sync_from( files, ".", &keep_unused, &verbose, &missing_only )
 
-  sync( "*", &exclude=@["LICENSE","README.md","Local.settings","BuildLocal.rogue"], &keep_unused )
+  sync( "*", &exclude=@["LICENSE","README.md","Local.settings","Build.rogue","BuildLocal.rogue"], &keep_unused )
   sync( "Platforms/Android/plasmacore/src/main/java/org/plasmacore/*" )
   sync( "Platforms/Android/plasmacore/src/main/cpp/*" )
   sync( "Platforms/Android/Build.rogue" )
