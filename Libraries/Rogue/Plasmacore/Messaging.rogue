@@ -173,12 +173,12 @@ class MessageManager [essential singleton]
         direct_message_buffer.clear.add( m.@reply.data )
         m.@reply.recycle
         m.@reply = null
+        m.recycle
         return true
       else
+        m.recycle
         return false
       endIf
-
-      m.recycle
 
     method update->Byte[] [essential]
       # 'io_reader' has already been set up to decode 'io_buffer', which
