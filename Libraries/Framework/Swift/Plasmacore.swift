@@ -25,7 +25,10 @@ import AVFoundation
 
   @objc class func play_sound( _ player:AVAudioPlayer )
   {
-    player.play()
+    DispatchQueue.global().async
+    {
+        player.play()
+    }
   }
 }
 
