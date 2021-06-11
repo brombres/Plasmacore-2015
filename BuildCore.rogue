@@ -370,9 +370,10 @@ routine rogo_update
 endRoutine
 
 routine rogo_install_update
-  # Copy over base framework files but do not overwrite them if present.
+  # Copy over base project files but do not overwrite them if present.
   local files = Files( "Libraries/Plasmacore/**" )
   files.remove( "Build/**" )
+  files.remove( "Libraries/Framework/**" )
   files.remove( "Libraries/Rogue/**" )
   files.remove( "Assets/**" )
   File.sync_from( files, ".", &keep_unused, &verbose, &missing_only )
