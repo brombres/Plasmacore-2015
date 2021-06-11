@@ -285,7 +285,7 @@ endRoutine
 routine rogo_install_plasmacore( loc="":String )
   if (not String.exists(loc))
     println "Enter Git URL@branch - can specify URL only or @branch only."
-    println "[default $]: " (DEFAULT_PLASMACORE)
+    println "[default: $] " (DEFAULT_PLASMACORE)
     loc = Console.input( "> " )
     if (loc == "")
       loc = DEFAULT_PLASMACORE
@@ -521,19 +521,20 @@ routine update_gitignore
   endForEach
 
   if (is_modified)
-    local response = Console.input( "Update existing .gitignore with additional Plasmacore entries? (y/n)> " )
-    if (response.to_lowercase.begins_with('y'))
-      println "Additions:"
-      local additional_entries = categorize_gitignore( additions )
-      forEach (key in additional_entries.keys)
-        if (key != "") println key
-        local list = additional_entries[ key ]
-        forEach (item in list)
-          println item
-        endForEach
-        println
+    println "The following entries can be added to this project's .gitignore:\n"
+    local additional_entries = categorize_gitignore( additions )
+    forEach (key in additional_entries.keys)
+      if (key != "") println key
+      local list = additional_entries[ key ]
+      forEach (item in list)
+        println item
       endForEach
+      println
+    endForEach
 
+    local response = Console.input( "Update existing .gitignore with the additional entries shown above (y/n)? " )
+    response .= to_lowercase
+    if (response == "y" or response == "yes")
       use builder = StringBuilder.pool
         forEach (key in existing_entries.keys)
           if (key != "") builder.println key

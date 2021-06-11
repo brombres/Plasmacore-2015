@@ -27,7 +27,7 @@ To bootstrap a new Plasmacore-based project, install Rogue, open a Terminal in y
 
     curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/BuildCore.rogue && rogo
 
-The command will fetch a Rogo build file which in will handle the remainder of the installation.
+The command will fetch and run a Rogo build file that will handle the remainder of the installation.
 
 
 ## Documentation and Resources
