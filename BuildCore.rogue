@@ -341,7 +341,13 @@ routine rogo_update
         error_exit "Unable to pull changes to Libraries/Plasmacore"
       endIf
     else
-      println "Plasmacore repo has local changes and/or commits. Skipping git pull."
+      println "=" * Console.width.or_smaller(80)
+      println "WARNING"
+      local mesg = "Plasmacore repo has local changes. Aborting update."
+      mesg = mesg.word_wrapped((Console.width-2).or_smaller(78)).indented(2)
+      println mesg
+      println "=" * Console.width.or_smaller(80)
+      System.exit 1
     endIf
 
   endIf
