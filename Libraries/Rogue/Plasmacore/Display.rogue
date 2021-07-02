@@ -493,7 +493,6 @@ class Display [singleton]
 
       if (is_linked) flush
 
-
     method fill_textured_quad( texture:Texture,
         quad:Quad<<XYZW>>,
         colors:Colors,

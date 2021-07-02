@@ -9,14 +9,17 @@ class ImageShader
     method TEXTURE->Shader
       return Display.texture_image_shader
 
-    method TEXTURE_WITH_COLOR_MULTIPLY->Shader
-      return Display.texture_with_color_multiply_image_shader
-
     method TEXTURE_WITH_COLOR_ADD->Shader
       return Display.texture_with_color_add_image_shader
 
     method TEXTURE_WITH_COLOR_FILL->Shader
       return Display.texture_with_color_fill_image_shader
+
+    method TEXTURE_WITH_COLOR_MULTIPLY->Shader
+      return Display.texture_with_color_multiply_image_shader
+
+    method TEXTURE_WITH_COLOR_SCREEN->Shader
+      return Display.texture_with_color_screen_image_shader
 
 endClass
 
@@ -785,4 +788,43 @@ augment Display
       return @texture_with_color_fill_image_shader
 
 endAugment
+
+#------------------------------------------------------------------------------
+# ImageShader.TEXTURE_WITH_COLOR_SCREEN
+#------------------------------------------------------------------------------
+augment Display
+  PROPERTIES
+    texture_with_color_screen_image_shader : Shader
+
+  METHODS
+    method texture_with_color_screen_image_shader->Shader
+      if (@texture_with_color_screen_image_shader) return @texture_with_color_screen_image_shader
+
+      local vertex_shader =
+          @|attribute vec4 position;
+           |attribute      vec2 uv;
+           |varying        vec2 vertex_uv;
+           |attribute $LOWP vec4 color;
+           |varying   $LOWP vec4 vertex_color;
+           |void main()
+           |{
+           |  gl_Position = position;
+           |  vertex_uv = uv;
+           |  vertex_color = color / 255.0;
+           |}
+
+      local pixel_shader =
+          @|uniform              sampler2D texture_0;
+           |varying              vec2      vertex_uv;
+           |varying $LOWP vec4 vertex_color;
+           |void main()
+           |{
+           |  gl_FragColor = 1.0 - (1.0 - texture2D(texture_0,vertex_uv)) * (1.0 - vertex_color);
+           |}
+
+           @texture_with_color_screen_image_shader = Shader( vertex_shader, pixel_shader )
+           return @texture_with_color_screen_image_shader
+
+endAugment
+
 

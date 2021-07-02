@@ -7,7 +7,6 @@ class MeshBuilder
     uvs       : XY[]
     colors    : Color[]
 
-
     is_clockwise = true
     is_linked    : Logical
 
