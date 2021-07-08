@@ -1,0 +1,21 @@
+module Plasmacore
+
+enum TriangleCullingMode
+  NONE
+  FRONT
+  BACK
+
+  METHODS
+    method apply
+      which (this)
+        case NONE
+          native @|glDisable( GL_CULL_FACE );
+        case FRONT
+          native @|glEnable( GL_CULL_FACE );
+                  |glCullFace( GL_FRONT );
+        case BACK
+          native @|glEnable( GL_CULL_FACE );
+                  |glCullFace( GL_BACK );
+      endWhich
+endEnum
+
