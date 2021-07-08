@@ -37,9 +37,6 @@ class Font
       result.shader = shader
       return result
 
-    method collect_texture_names( texture_names:StringTable<<Logical>> )
-      data.collect_texture_names( texture_names )
-
     method load->this
       data.load
       return this
@@ -247,7 +244,7 @@ class FontData
         require (image_info.type == ImageInfo.TYPE_FONT)
         if (image_info.snap) snap = true
         forEach (character_info in image_info.images)
-          local ch = FontCharacter( character_info.unicode, Image(character_info) )
+          local ch = FontCharacter( character_info.unicode, TextureImage(character_info) )
           height = height.or_larger( ch.image.size.y )
           require (ch.unicode >= 0)
           if (ch.unicode < 128)
@@ -300,11 +297,6 @@ class FontData
         endIf
         exists = true
       endIf
-
-    method collect_texture_names( texture_names:StringTable<<Logical>> )
-      forEach (ch in characters)
-        if (ch and ch.image) ch.image.collect_texture_names( texture_names )
-      endForEach
 
     method draw( font:Font, text:String, position:XY  )
       load

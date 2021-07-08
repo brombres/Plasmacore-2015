@@ -1,0 +1,147 @@
+module Plasmacore
+
+class TextureImage : Image
+  PROPERTIES
+    image_info : ImageInfo
+    texture    : Texture
+    uv1        : XY
+    uv2        : XY
+
+  METHODS
+    method init( name:String )
+      local image_info = Plasmacore.find_image_info( name )
+      if (image_info)
+        init( image_info )
+      else
+        println "No such image: " + name
+      endIf
+
+    method init( image_info )
+      contingent
+        necessary (image_info)
+        sufficient (image_info.type == ImageInfo.TYPE_TEXTURE_IMAGE)
+
+        which (image_info.type)
+          case ImageInfo.TYPE_IMAGE_LIST
+            println "ERROR: Cannot load Image[] list $ as an Image." (image_info.name)
+            necessary (false)
+          case ImageInfo.TYPE_FONT
+            println "ERROR: Cannot load Font $ as an Image." (image_info.name)
+            necessary (false)
+        endWhich
+
+      satisfied
+        @size = image_info.display_size
+        original_size = @size
+
+      unsatisfied
+        image_info = null
+
+      endContingent
+
+    method init( other:Image, subset:Box )
+      init( other )
+      size          = subset.@size
+      original_size = other.original_size * (@size / other.size)
+
+      block other = other as TextureImage
+        if (other)
+          local other_texture = other.texture
+          if (other_texture)
+            uv = subset + other.uv1 * other_texture.texture_size
+          elseIf (image_info)
+            image_info .= cloned
+            image_info.texture_bounds = subset + image_info.texture_bounds.position
+          endIf
+        endIf
+      endBlock
+
+    method init( @texture )
+      @size = @texture.image_size
+      original_size = @size
+      uv1 = XY.zero
+      uv2 = @texture.uv_size
+
+    method init( bitmap:Bitmap )
+      init( Texture(bitmap) )
+
+    #method cloned->ImageData
+    #  local result = TextureImageData( @texture, is_opaque )
+    #  result.uv1 = uv1
+    #  result.uv2 = uv2
+    #  return result
+
+    #method is_loaded->Logical
+      #return @texture and @texture.is_loaded
+
+    method draw
+      if (not prepare) return
+
+      local size = @size * scale
+      local handle = XYZ( (anchor.position * size), 0 )
+      localize z
+
+      local pos = position
+      local has_rotation = not rotation.is_zero
+      if (has_rotation)
+        Display.push_object_transform( Quaternion(rotation)->Matrix( handle, XYZ(pos,z)) )
+      else
+        Display.push_object_transform( Matrix.translate(XYZ(pos,z)-handle) )
+      endIf
+
+      local transform = Display.transform
+
+      z += Display.z
+
+      local w = size.x
+      local h = size.y
+      local quad = Quad<<XYZW>>(
+        transform * XYZ( 0, 0, z ),
+        transform * XYZ( w, 0, z ),
+        transform * XYZ( w, h, z ),
+        transform * XYZ( 0, h, z ) )
+
+      local _uv = Quad( uv1, XY(uv2.x,uv1.y), uv2, XY(uv1.x,uv2.y) )
+      if (hflip) _uv = Quad( _uv.b, _uv.a, _uv.d, _uv.c )
+      if (vflip) _uv = Quad( _uv.d, _uv.c, _uv.b, _uv.a )
+
+      Display.fill_textured_quad( @texture, quad, colors.with_opacity(opacity),
+        _uv, selected_render_mode, selected_shader )
+
+      Display.pop_object_transform
+
+    method load->Logical
+      if (@texture)
+        @texture.load
+        return true
+      endIf
+
+      if (not image_info) return false
+
+      texture = Texture( image_info.texture_filename )
+      uv = image_info.texture_bounds
+      @texture.load
+      return true
+
+    method set( bitmap:Bitmap )
+      if (@texture)
+        @texture.set( bitmap )
+      else
+        @texture = Texture( bitmap )
+        original_size = @texture.image_size
+      endIf
+
+    method set_uv( pixel_coordinates:Box )
+      if (@texture)
+        uv1 = pixel_coordinates.top_left / @texture.texture_size
+        uv2 = pixel_coordinates.bottom_right / @texture.texture_size
+      endIf
+
+    method texture->Texture
+      load
+      return @texture
+
+    method unload
+      if (@texture) @texture.unload
+
+endClass

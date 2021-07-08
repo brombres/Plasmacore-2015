@@ -111,12 +111,6 @@ class ScreenState
 
       after_update
 
-    method load_another_asset->Real64
-      return screen.load_another_asset
-
-    method load_assets
-      screen.load_assets
-
     method on( e:KeyEvent )
       noAction
 

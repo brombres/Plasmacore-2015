@@ -119,7 +119,6 @@ class Display [singleton]
         if (not screen.is_active)
           screen.is_active = true
           screen.on_start
-          screen.load_images
           nextIteration
         endIf
 
@@ -385,7 +384,7 @@ class Display [singleton]
       if (not shader) shader = which{ override_shader || ImageShader.TEXTURE }
       local texture = image.texture
       if (texture)
-        fill( triangle, texture_data.texture, uv, colors, render_mode, shader )
+        fill( triangle, texture, uv, colors, render_mode, shader )
       else
         fill( triangle, colors )
       endIf
@@ -691,7 +690,7 @@ class Display [singleton]
       if (canvas)
         flush
         @render_target = canvas.render_target
-        render_target.configure( canvas.canvas_texture.image_size )
+        render_target.configure( canvas.texture.image_size )
         clip = clip  # Reset clipping region
         active_front_face = COUNTER_CLOCKWISE
       else

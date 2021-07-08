@@ -24,7 +24,6 @@ $if not target("Console")
 $if (target("Web")) nativeHeader #include <emscripten.h>
 
 $include "Plasmacore/Angles.rogue"
-$include "Plasmacore/Assets.rogue"
 $include "Plasmacore/Bezier.rogue"
 $include "Plasmacore/Bitmap.rogue"
 $include "Plasmacore/Box.rogue"
@@ -75,6 +74,7 @@ $include "Plasmacore/System.rogue"
 $include "Plasmacore/SystemFont.rogue"
 $include "Plasmacore/TargetValue.rogue"
 $include "Plasmacore/Texture.rogue"
+$include "Plasmacore/TextureImage.rogue"
 $include "Plasmacore/TileMapLayout.rogue"
 $include "Plasmacore/Triangle.rogue"
 $include "Plasmacore/TriangleCullingMode.rogue"

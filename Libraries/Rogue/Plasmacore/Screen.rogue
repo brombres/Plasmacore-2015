@@ -67,48 +67,8 @@ class Screen
       #  if (layer.is_visible) layer.on_finish
       #endForEach
       this.is_active = false
-      display.screen.mark_images_unused
       display.screen = new_screen
       return new_screen
-
-    method collect_texture_names( texture_names=null:StringTable<<Logical>> )->String[]
-      ensure texture_names
-      collect_texture_names( this, texture_names )
-      #collect_texture_names( (forEach in layers), texture_names )
-      return texture_names.keys
-
-    method collect_texture_names( obj:Object, texture_names:StringTable<<Logical>> )->String[]
-      local type_Image = <<Plasmacore::Image>>
-      local type_ImageList = <<Plasmacore::Image[]>>
-      local type_Font = <<Plasmacore::Font>>
-
-      local introspector = obj.introspector
-
-      forEach (p in obj.type_info.properties)
-        if (p.type.instance_of(type_Image))
-          local image = introspector[ p.name ].to<<Image>>
-          if (image) image.collect_texture_names( texture_names )
-
-        elseIf (p.type.instance_of(type_ImageList))
-          local images = introspector[ p.name ].to<<Image[]>>
-          if (images) images.collect_texture_names( texture_names )
-
-        elseIf (p.type.instance_of(type_Font))
-          local font = introspector[ p.name ].to<<Font>>
-          if (font) font.collect_texture_names( texture_names )
-        endIf
-
-      endForEach
-
-      return texture_names.keys
-
-    method collect_textures->Texture[]
-      local textures = Texture[]
-      forEach (name in collect_texture_names)
-        local texture = Display.textures_by_name[ name ]
-        if (texture and not textures.contains(texture)) textures.add( texture )
-      endForEach
-      return textures
 
     method exit_state
       local new_state : ScreenState
@@ -233,69 +193,6 @@ class Screen
     method lighting->Lighting
       return (ensure @lighting)
 
-    method load_another_asset->Real64
-      if (loaded_asset_count and loaded_asset_count == total_asset_count) return 1.0
-
-      local introspector = this.introspector
-
-      loaded_asset_count = 0
-      total_asset_count = 0
-      forEach (p in type_info.properties)
-        if (p.type.is_reference)
-          local assets = introspector[ p.name ].to<<Assets>>
-          if (assets)
-            if (not assets.finished_loading) assets.load_another
-            loaded_asset_count += assets.loaded_asset_count
-            total_asset_count += assets.total_asset_count
-          endIf
-        endIf
-      endForEach
-
-      if (total_asset_count == 0) return 1.0
-
-      return loaded_asset_count / Real64(total_asset_count)
-
-    method load_assets
-      local progress = 0.0
-      while (progress < 1.0)
-        progress = load_another_asset
-        Log.println "Loading assets $/$ ($%)" (loaded_asset_count,total_asset_count,(progress*100).format(0))
-      endWhile
-
-    method load_images
-
-      # Image textures that were loaded in the old screen have already been marked should_unload.
-      # Unmark the ones we'll be using for this screen
-      local texture_names = collect_texture_names
-      forEach (name in texture_names)
-        local texture = Display.textures_by_name[ name ]
-        if (texture) texture.should_unload = false
-      endForEach
-
-      # Unload the old textures that are still marked as should_unload
-      forEach (texture in Display.texture_list.cloned())
-        if (texture.should_unload) texture.unload
-      endForEach
-
-      forEach (name in texture_names) Texture( name )
-
-    method mark_images_unused
-      (forEach in collect_textures).should_unload = true
-      mark_fonts_unloaded( this )
-      #mark_fonts_unloaded( forEach in layers )
-
-    method mark_fonts_unloaded( obj:Object )
-      local type_Font = <<Plasmacore::Font>>
-      local introspector = obj.introspector
-      forEach (p in obj.type_info.properties)
-
-        if (p.type.instance_of(type_Font))
-          local font = introspector[ p.name ].to<<Font>>
-          if (font and font.data) font.data.is_loaded = false
-
-        endIf
-      endForEach
-
     method on( e:KeyEvent )
 
     method on( e:PointerEvent )
@@ -333,62 +230,6 @@ class Screen
 
     method queue_state( new_state:ScreenState, &insert )
       state.queue_state( new_state, &=insert )
-
-    method reload_images( &keep_unused_textures )
-      # Collect texture names before reloading
-      local texture_name_set = StringTable<<Logical>>()
-      local texture_names = collect_texture_names( texture_name_set )
-      texture_name_set[ forEach in texture_names ] = false
-
-      reload_images( this )
-      #reload_images( (forEach in layers) )
-
-      # Update used textures
-      texture_names = collect_texture_names( texture_name_set )
-
-      # Unload unused textures
-      if (not keep_unused_textures)
-        forEach (name in texture_names)
-          local entry = texture_name_set.find( name )
-          if (entry and not entry.value)
-            local texture = Display.textures_by_name[ entry.key ]
-            if (texture)
-              texture.unload
-            endIf
-          endIf
-        endForEach
-      endIf
-
-      # Load new textures
-      forEach (name in texture_names)
-        local entry = texture_name_set.find( name )
-        if (entry and entry.value) Texture( entry.key ).load
-      endForEach
-
-    method reload_images( obj:Object )
-      # Reload each image
-      local type_Image = <<Plasmacore::Image>>
-      local type_ImageList = <<Plasmacore::Image[]>>
-      local type_Font = <<Plasmacore::Font>>
-
-      local introspector = obj.introspector
-
-      forEach (p in obj.type_info.properties)
-
-        if (p.type.instance_of(type_Image))
-          local image = introspector[ p.name ].to<<Image>>
-          if (image) image.reload
-
-        elseIf (p.type.instance_of(type_ImageList))
-          local images = introspector[ p.name ].to<<Image[]>>
-          if (images) images.reload
-
-        elseIf (p.type.instance_of(type_Font))
-          local font = introspector[ p.name ].to<<Font>>
-          if (font) font.reload
-
-        endIf
-      endForEach
 
     method set_state( new_state:ScreenState )->this
       change_state( new_state )

@@ -5,7 +5,7 @@ class Texture
   PROPERTIES
     filepath         : String
     id               : Int32    # id in loading display context
-    image_size       : XY       # In pixels
+    image_size       : XY       # In pixels; <= texture_size
     texture_size     : XY       # In pixels
     uv_size          : XY       # (1,1) in most cases
     is_opaque        : Logical
