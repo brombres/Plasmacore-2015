@@ -60,11 +60,14 @@ class Display [singleton]
 
     z                      = default_z : Real64
 
-    custom_shader          : Shader
+    active_shader          : Shader
     active_render_mode     : RenderMode
     active_textures        = Texture[]
     active_primitive_type  = 3
     active_front_face      = CLOCKWISE : Int32
+    triangle_culling_mode  = TriangleCullingMode.BACK
+
+    override_shader        : Shader
 
     vertex_count           : Int32
     vertex_positions       = Real32[]
@@ -378,7 +381,8 @@ class Display [singleton]
       fill_solid_triangle( transform(triangle), colors, render_mode, null )
 
     method fill( triangle:Triangle, image:Image, uv:Triangle, colors=Colors(Color.WHITE):Colors,
-        render_mode=null:RenderMode, shader=ImageShader.TEXTURE:Shader )
+        render_mode=null:RenderMode, shader=null:Shader )
+      if (not shader) shader = which{ override_shader || ImageShader.TEXTURE }
       local texture_data = image.data as TextureImageData
       if (texture_data)
         fill( triangle, texture_data.texture, uv, colors, render_mode, shader )
@@ -387,7 +391,8 @@ class Display [singleton]
       endIf
 
     method fill( triangle:Triangle, texture:Texture, uv:Triangle, colors=Colors(Color.WHITE):Colors,
-        render_mode=null:RenderMode, shader=ImageShader.TEXTURE:Shader )
+        render_mode=null:RenderMode, shader=null:Shader )
+      if (not shader) shader = which{ override_shader || ImageShader.TEXTURE }
 
       if (not render_mode)
         if (texture.is_opaque) render_mode = RenderMode.OPAQUE_IMAGE
@@ -753,16 +758,15 @@ class Display [singleton]
 
       local render_mode = active_render_mode
 
-      local shader = custom_shader
-      if (not shader) shader = ImageShader.COLOR
+      local shader = which{ active_shader || override_shader || ImageShader.COLOR }
 
       local vp_size = viewport_size
 
       native @|glUseProgram( $shader->program_id );
               |
               |glViewport( 0, 0, (int)$vp_size.x, (int)$vp_size.y );
-              |glEnable( GL_CULL_FACE );
-              |glCullFace( GL_BACK );
+
+      triangle_culling_mode.apply
 
       native @|glFrontFace( $active_front_face ? GL_CW : GL_CCW );
 
@@ -902,10 +906,10 @@ class Display [singleton]
       return this
 
     method set_render_mode( render_mode:RenderMode, shader=null:Shader )->this
-      if (render_mode is active_render_mode and custom_shader is shader) return this
+      if (render_mode is active_render_mode and active_shader is shader) return this
       flush
       active_render_mode = render_mode
-      custom_shader = shader
+      active_shader = shader
       return this
 
     method set_texture( index:Int32, texture:Texture )->this
