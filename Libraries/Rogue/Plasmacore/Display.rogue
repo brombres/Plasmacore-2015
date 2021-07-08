@@ -383,8 +383,8 @@ class Display [singleton]
     method fill( triangle:Triangle, image:Image, uv:Triangle, colors=Colors(Color.WHITE):Colors,
         render_mode=null:RenderMode, shader=null:Shader )
       if (not shader) shader = which{ override_shader || ImageShader.TEXTURE }
-      local texture_data = image.data as TextureImageData
-      if (texture_data)
+      local texture = image.texture
+      if (texture)
         fill( triangle, texture_data.texture, uv, colors, render_mode, shader )
       else
         fill( triangle, colors )

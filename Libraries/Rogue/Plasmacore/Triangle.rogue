@@ -18,9 +18,9 @@ augment Triangle<<>>
 
     method fill( image:Image, uv:Triangle, colors=Colors(Color.WHITE):Colors,
         render_mode=RenderMode.ALPHA_IMAGE:RenderMode, shader=ImageShader.TEXTURE:Shader )->this
-      local texture_data = image.data as TextureImageData
-      if (texture_data)
-        return fill( texture_data.texture, uv, colors, render_mode, shader )
+      local texture = image.texture
+      if (texture)
+        return fill( texture, uv, colors, render_mode, shader )
       else
         return fill( Color.WHITE )
       endIf
