@@ -504,6 +504,14 @@ class Display [singleton]
         render_mode:RenderMode,
         shader:Shader )
 
+      if (not render_mode)
+        if (texture.is_opaque) render_mode = RenderMode.OPAQUE_IMAGE
+        else                   render_mode = RenderMode.ALPHA_IMAGE
+      endIf
+      if (not shader)
+        shader = texture_image_shader
+      endIf
+
       set_texture( 0, texture )
       set_primitive_type( TRIANGLES )
       set_render_mode( render_mode, shader )

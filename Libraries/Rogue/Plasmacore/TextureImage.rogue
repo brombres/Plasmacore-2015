@@ -31,8 +31,8 @@ class TextureImage : Image
         endWhich
 
       satisfied
-        @size = image_info.display_size
-        original_size = @size
+        size = image_info.display_size
+        original_size = size
 
       unsatisfied
         image_info = null
@@ -41,14 +41,14 @@ class TextureImage : Image
 
     method init( other:Image, subset:Box )
       init( other )
-      size          = subset.@size
-      original_size = other.original_size * (@size / other.size)
+      size          = subset.size
+      original_size = other.original_size * (size / other.size)
 
       block other = other as TextureImage
         if (other)
-          local other_texture = other.texture
-          if (other_texture)
-            uv = subset + other.uv1 * other_texture.texture_size
+          texture = other.texture
+          if (texture)
+            uv = subset + other.uv1 * texture.texture_size
           elseIf (image_info)
             image_info .= cloned
             image_info.texture_bounds = subset + image_info.texture_bounds.position
@@ -57,8 +57,8 @@ class TextureImage : Image
       endBlock
 
     method init( @texture )
-      @size = @texture.image_size
-      original_size = @size
+      size = @texture.image_size
+      original_size = size
       uv1 = XY.zero
       uv2 = @texture.uv_size
 
@@ -77,7 +77,6 @@ class TextureImage : Image
     method draw
       if (not prepare) return
 
-      local size = @size * scale
       local handle = XYZ( (anchor.position * size), 0 )
       localize z
 
@@ -106,7 +105,7 @@ class TextureImage : Image
       if (vflip) _uv = Quad( _uv.d, _uv.c, _uv.b, _uv.a )
 
       Display.fill_textured_quad( @texture, quad, colors.with_opacity(opacity),
-        _uv, selected_render_mode, selected_shader )
+        _uv, render_mode, shader )
 
       Display.pop_object_transform
 
@@ -131,17 +130,28 @@ class TextureImage : Image
         original_size = @texture.image_size
       endIf
 
-    method set_uv( pixel_coordinates:Box )
-      if (@texture)
-        uv1 = pixel_coordinates.top_left / @texture.texture_size
-        uv2 = pixel_coordinates.bottom_right / @texture.texture_size
-      endIf
+    method set_uv( texel_coordinates:Box ) [override]
+      load
+      local sz = @texture.texture_size
+      set_uv(
+        texel_coordinates.top_left / sz,
+        texel_coordinates.bottom_right / sz
+      )
 
-    method texture->Texture
+    method set_uv( uv1, uv2 ) [override]
+      noAction
+
+    method texture->Texture [override]
       load
       return @texture
 
-    method unload
+    method unload [override]
       if (@texture) @texture.unload
 
+    method uv->Box [override]
+      # Returns texel coordinates
+      load
+      local sz = @texture.texture_size
+      return Box( uv1*sz, (uv2-uv1)*sz )
 endClass
+

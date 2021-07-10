@@ -1,9 +1,16 @@
 module Plasmacore
 
 class Image
+  DEFINITIONS
+    FLAG_HFLIP = 1
+    FLAG_VFLIP = 2
+
   GLOBAL METHODS
     method create( name:String )->TextureImage
       return TextureImage( name )
+
+    method create( texture:Texture )->TextureImage
+      return TextureImage( texture )
 
     method create( other:Image, subset:Box )->TextureImage
       return TextureImage( other, subset )
@@ -13,19 +20,13 @@ class Image
     z             = 0.0  # Offset from Display.z; set to -0.5*Display.z to be closer to camera, Display.z to be 2x as far, etc.
     size          : XY
     original_size : XY
-    scale         = XY(1,1)
     rotation      : Angles
     shader        : Shader
     anchor        = Anchor.CENTER : Anchor
     render_mode   : RenderMode  # no need to set explicitly in most cases
     colors        = Colors(Color.WHITE) : Colors
     opacity       = 1.0  # Master opacity; multiplies each color's alpha component
-    hflip         : Logical
-    vflip         : Logical
-
-    selected_render_mode : RenderMode
-    selected_shader      : Shader
-    # Automatically set to either the non-null 'shader' or a default shader.  Should not be set manually.
+    flags         : Int32
 
   METHODS
     method init( other:Image )
@@ -33,7 +34,6 @@ class Image
       z               = other.z
       size            = other.@size
       original_size   = other.@original_size
-      scale           = other.scale
       rotation        = other.rotation
       shader          = other.shader
       anchor          = other.anchor
@@ -65,17 +65,17 @@ class Image
     method draw
       noAction
 
-    #method draw( position )
-    #  if (not prepare)
-    #    return
-    #  endIf
-    #  data.draw( this )
+    method draw( position )
+      draw
 
-    #method draw( x:Real64, y:Real64 )
-    #  draw( XY(x,y) )
+    method draw( x:Real64, y:Real64 )
+      draw( XY(x,y) )
 
-    #method height->Real64 [macro]
-    #  return (this.size.y)
+    method hflip->Logical [macro]
+      return (flags & FLAG_HFLIP)?
+
+    method height->Real64 [macro]
+      return (this.size.y)
 
     #method is_loaded->Logical
     #  return (data and data.is_loaded)
@@ -89,7 +89,7 @@ class Image
       return true
 
     method prepare->Logical
-      if (opacity <= 0.0) return false
+      if (opacity <= 0.0 or not load) return false
 
       #selected_render_mode = render_mode
       #if (not render_mode)
@@ -117,15 +117,18 @@ class Image
 
       return true
 
-    #method scale_to_fill( other_bounds:Box )
-    #  scale = (other_bounds.size / @size).max
-    #  position = other_bounds.center
-    #  anchor = Anchor.CENTER
+    method scale->XY
+      return size / original_size
 
-    #method scale_to_fit( other_bounds:Box )
-    #  scale = (other_bounds.size / @size).min
-    #  position = other_bounds.center
-    #  anchor = Anchor.CENTER
+    method scale_to_fill( other_bounds:Box )
+      scale = (other_bounds.size / size).max
+      position = other_bounds.center.floor
+      anchor = Anchor.CENTER
+
+    method scale_to_fit( other_bounds:Box )
+      scale = (other_bounds.size / size).min
+      position = other_bounds.center.floor
+      anchor = Anchor.CENTER
 
     #method set( bitmap:Bitmap )
     #  if (data) data = data.set( bitmap )
@@ -143,6 +146,14 @@ class Image
 
     method set_color( color:Int32 )
       colors = Colors( color )
+
+    method set_hflip( setting:Logical )
+      if (setting) flags |=  FLAG_HFLIP
+      else         flags &= !FLAG_HFLIP
+
+    method set_vflip( setting:Logical )
+      if (setting) flags |=  FLAG_VFLIP
+      else         flags &= !FLAG_VFLIP
 
     #method set_position( @position )->this
     #  return this
@@ -175,19 +186,11 @@ class Image
     #  @rotation = Angles.z( angle )
     #  return this
 
-    #method set_scale( @scale )->this
-    #  return this
+    method set_scale( scale:XY )
+      size = scale * original_size
 
-    #method set_scale( s:Real64 )->this
-    #  @scale = XY(s,s)
-    #  return this
-
-    #method set_shader( @shader )->this
-    #  # Pass 'null' for default.
-    #  return this
-
-    #method set_size( @size )->this
-    #  return this
+    method set_scale( s:Real64 )
+      size = s * original_size
 
     #method set_tint( t:Real64 )->this
     #  # t=0.0: shader set to TEXTURE
@@ -209,14 +212,12 @@ class Image
     #method set_tint( t:Real64, colors )->this
     #  return set_tint( t )
 
-    #method set_uv( subset:Box )
-    #  if (data) data.uv = subset
+    method set_uv( texel_coordinates:Box )
+      noAction
 
-    #method set_z( @z )->this
-    #  return this
-
-    #method size->XY
-    #  return @size * @scale
+    method set_uv( top_left_uv:XY, bottom_right_uv:XY )
+      # Uses unit coordinates (nominally XY(0,0)..XY(1,1))
+      noAction
 
     method texture->Texture
       return null
@@ -224,8 +225,14 @@ class Image
     method unload
       noAction
 
-    #method width->Real64 [macro]
-    #  return (this.size.x)
+    method uv->Box
+      return Box(0,0,0,0)
+
+    method vflip->Logical [macro]
+      return (flags & FLAG_VFLIP)?
+
+    method width->Real64 [macro]
+      return (this.size.x)
 
 endClass
 
