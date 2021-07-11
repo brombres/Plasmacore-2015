@@ -1,32 +1,29 @@
 uses Plasmacore
 
 augment Triangle<<>>
+  GLOBAL METHODS
+    method create->Triangle
+      local result : Triangle
+      return result
+
   METHODS
-    method draw( color:Color )->this
-      Line( a, b ).draw( color )
-      Line( b, c ).draw( color )
-      Line( c, a ).draw( color )
-      return this
+    method draw( color:Color )
+      drawable( color ).draw
 
-    method fill( color:Color )->this
-      Display.fill( this, color )
-      return this
+    method draw( color:Color, fn:Function(DrawableTriangle) )
+      fn( drawable(color) )
 
-    method fill( colors:Colors )->this
-      Display.fill( this, colors )
-      return this
+    method drawable( color:Color )->DrawableTriangle
+      block a=Display.transform(a), b=Display.transform(b), c=Display.transform(c)
+        return DrawableTriangle( Triangle<<XYZW>>(a,b,c), color )
+      endBlock
 
-    method fill( image:Image, uv:Triangle, colors=Colors(Color.WHITE):Colors,
-        render_mode=RenderMode.ALPHA_IMAGE:RenderMode, shader=ImageShader.TEXTURE:Shader )->this
-      local texture = image.texture
-      if (texture)
-        return fill( texture, uv, colors, render_mode, shader )
-      else
-        return fill( Color.WHITE )
-      endIf
+    method fill( color:Color )
+      drawable( color ).fill
 
-    method fill( texture:Texture, uv:Triangle, colors=Colors(Color.WHITE):Colors,
-        render_mode=RenderMode.ALPHA_IMAGE:RenderMode, shader=ImageShader.TEXTURE:Shader )->this
-        Display.fill( this, texture, uv, colors, render_mode, shader )
-      return this
+    method fill( texture:Texture, uv:Triangle, color=Color.WHITE:Color )
+      localize drawable( color )
+      drawable.texture = texture
+      drawable.uv = uv
+      drawable.fill
 endAugment

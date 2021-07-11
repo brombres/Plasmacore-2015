@@ -1053,6 +1053,9 @@ class Display [singleton]
       local _z = z
       return Triangle<<XYZW>>( t*XYZ(triangle.a,_z), t*XYZ(triangle.b,_z), t*XYZ(triangle.c,_z) )
 
+    method transform( point:XY )->XYZW
+      return transform*XYZ( point, z )
+
     method true_height->Int32 [macro]
       return this.true_size.y->Int32
 
