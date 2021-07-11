@@ -65,17 +65,18 @@ class TextureImage : Image
     method init( bitmap:Bitmap )
       init( Texture(bitmap) )
 
-    #method cloned->ImageData
-    #  local result = TextureImageData( @texture, is_opaque )
-    #  result.uv1 = uv1
-    #  result.uv2 = uv2
-    #  return result
+    method init( other:TextureImage )
+      init( other as Image )
+      image_info = other.image_info
+      texture    = other.texture
+      uv1        = other.uv1
+      uv2        = other.uv2
+
+    method cloned->TextureImage
+      return TextureImage( this )
 
     method is_loaded->Logical
       return @texture and @texture.is_loaded
-
-    method draw
-      draw( (quad) => quad.fill )
 
     method draw( fn:Function(DrawableQuad) ) [override]
       if (not prepare) return

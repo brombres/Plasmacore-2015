@@ -26,11 +26,6 @@ augment Image[]
       forEach (image in this) image.load
       return this
 
-    method reload
-      forEach (image in this)
-        if (image) image.reload
-      endForEach
-
     method unload->this
       forEach (image in this) image.unload
       is_loaded = false
