@@ -300,7 +300,7 @@ routine rogo_install_plasmacore( loc="":String )
   # Clone repo
   local url = loc.before_first( '@' )
   local branch = loc.after_first( '@' )
-  execute "git clone $ --branch $ --single-branch $" (url,branch,"Libraries/Plasmacore")
+  execute "git clone $ --branch $ $" (url,branch,"Libraries/Plasmacore")
 endRoutine
 
 routine plasmacore_version->String
