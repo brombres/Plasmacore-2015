@@ -329,13 +329,13 @@ routine rogo_update
   else
     require File.exists( "Libraries/Plasmacore" )
 
-    if (not Process.run("cd Libraries/Plasmacore && git diff-index --quiet HEAD").exit_code and
-        not Process.run("cd Libraries/Plasmacore && git rev-list @{u}..").exit_code)
+    if (not Process.run("cd Libraries/Plasmacore && git diff-index --quiet HEAD",&env).exit_code and
+        not Process.run("cd Libraries/Plasmacore && git rev-list @{u}..",&env).exit_code)
       # Plasmacore folder is clean & up to date with remote. Pull any changes.
       println "Pulling changes to Libraries/Plasmacore"
       local cmd = "cd Libraries/Plasmacore && git pull"
       println "> " + cmd
-      local result = Process.run( cmd )
+      local result = Process.run( cmd, &env )
       println result->String
       if (result.exit_code)
         error_exit "Unable to pull changes to Libraries/Plasmacore"
