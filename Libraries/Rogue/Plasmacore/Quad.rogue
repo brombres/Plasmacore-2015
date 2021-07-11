@@ -20,6 +20,12 @@ augment Quad<<>>
 
     method fill( color:Color )
       drawable( color ).fill
+
+    method fill( texture:Texture, uv:Quad, color=Color.WHITE:Color )
+      localize drawable( color )
+      drawable.texture = texture
+      drawable.uv = uv
+      drawable.fill
 endAugment
 
 augment Quad<<XYZW>>
