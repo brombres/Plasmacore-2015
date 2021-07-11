@@ -23,3 +23,11 @@ augment Quad<<>>
       return this
 endAugment
 
+augment Quad<<XYZW>>
+  METHODS
+    method to->Quad
+      return Quad( a->XY, b->XY, c->XY, d->XY )
+
+    method with_xy( quad:Quad )->Quad<<XYZW>>
+      return Quad<<XYZW>>( XYZW(quad.a,a.z,a.w), XYZW(quad.b,b.z,b.w), XYZW(quad.c,c.z,c.w), XYZW(quad.d,d.z,d.w) )
+endAugment

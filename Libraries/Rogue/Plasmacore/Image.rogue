@@ -24,7 +24,7 @@ class Image
     shader        : Shader
     anchor        = Anchor.CENTER : Anchor
     render_mode   : RenderMode  # no need to set explicitly in most cases
-    colors        = Colors(Color.WHITE) : Colors
+    color         = Color.WHITE : Color
     opacity       = 1.0  # Master opacity; multiplies each color's alpha component
     flags         : Int32
 
@@ -38,31 +38,23 @@ class Image
       shader          = other.shader
       anchor          = other.anchor
       render_mode     = other.render_mode
-      colors          = other.colors
+      color           = other.color
       opacity         = other.opacity
 
-    #method init( data )
+    method bounds->Box
+      return bounds_at( position )
 
-    #method init( bitmap:Bitmap )
-    #  init( Texture(bitmap) )
+    method bounds_at( at_position:XY )->Box
+      local handle = (anchor.position * size)
+      return Box( at_position - handle, size )
 
-    #method init( texture:Texture )
-    #  init( TextureImageData(texture) )
-    #  size = texture.image_size
-    #  original_size = size
-
-    #method bounds->Box
-    #  return bounds_at( position )
-
-    #method bounds_at( at_position:XY )->Box
-    #  local s = @size * scale
-    #  local handle = (anchor.position * s)
-    #  return Box( at_position - handle, s )
-
-    #method cloned->Image
-    #  return Image( this )
+    method cloned->Image
+      throw UnsupportedOperationError()
 
     method draw
+      noAction
+
+    method draw( fn:Function(DrawableQuad) )
       noAction
 
     method draw( position )
@@ -77,44 +69,17 @@ class Image
     method height->Real64 [macro]
       return (this.size.y)
 
-    #method is_loaded->Logical
-    #  return (data and data.is_loaded)
+    method is_loaded->Logical
+      return true
 
-    #method is_opaque->Logical
-    #  local texture_data = data as TextureImageData
-    #  if (texture_data) return texture_data.is_opaque
-    #  else              return false
+    method is_opaque->Logical
+      return true
 
     method load->Logical
       return true
 
     method prepare->Logical
       if (opacity <= 0.0 or not load) return false
-
-      #selected_render_mode = render_mode
-      #if (not render_mode)
-      #  if (opacity < 1.0 or not colors.is_opaque_white)
-      #    selected_render_mode = RenderMode.ALPHA_IMAGE
-      #  else
-      #    local texture_data = data as TextureImageData
-      #    if (texture_data)
-      #      if (texture_data.is_opaque) selected_render_mode = RenderMode.OPAQUE_IMAGE
-      #      else                        selected_render_mode = RenderMode.ALPHA_IMAGE
-      #    endIf
-      #  endIf
-      #endIf
-
-      #if (shader)
-      #  selected_shader = shader
-      #else
-      #  # Use default shader
-      #  if (opacity < 1.0 or not colors.is_opaque_white)
-      #    selected_shader = ImageShader.TEXTURE_WITH_COLOR_MULTIPLY
-      #  else
-      #    selected_shader = ImageShader.TEXTURE
-      #  endIf
-      #endIf
-
       return true
 
     method scale->XY
@@ -130,22 +95,8 @@ class Image
       position = other_bounds.center.floor
       anchor = Anchor.CENTER
 
-    #method set( bitmap:Bitmap )
-    #  if (data) data = data.set( bitmap )
-    #  size = bitmap.size
-    #  original_size = size
-
-    #method set_opacity( @opacity )->this
-    #  return this
-
-    #method set_anchor( @anchor )->this
-    #  return this
-
-    method set_color( color:Color )
-      colors = Colors( color )
-
-    method set_color( color:Int32 )
-      colors = Colors( color )
+    method set( bitmap:Bitmap )
+      noAction
 
     method set_hflip( setting:Logical )
       if (setting) flags |=  FLAG_HFLIP
@@ -155,36 +106,24 @@ class Image
       if (setting) flags |=  FLAG_VFLIP
       else         flags &= !FLAG_VFLIP
 
-    #method set_position( @position )->this
-    #  return this
+    method set_position( x:Real64, y:Real64 )
+      @position = XY(x,y)
 
-    #method set_position( x:Real64, y:Real64 )->this
-    #  @position = XY(x,y)
-    #  return this
+    method set_position( @position )
 
-    #method set_position( xyz:XYZ )->this
-    #  @position = xyz->XY
-    #  @z = xyz.z
-    #  return this
+    method set_position( xyz:XYZ )
+      @position = xyz->XY
+      @z = xyz.z
 
-    #method set_position( x:Real64, y:Real64, _z:Real64 )->this
-    #  @position = XY(x,y)
-    #  @z = _z
-    #  return this
+    method set_position( x:Real64, y:Real64, _z:Real64 )
+      @position = XY(x,y)
+      @z = _z
 
-    #method set_render_mode( @render_mode )->this
-    #  return this
+    method set_rotation( angle:Degrees )
+      @rotation = Angles.z( angle )
 
-    #method set_rotation( @rotation )->this
-    #  return this
-
-    #method set_rotation( angle:Degrees )->this
-    #  @rotation = Angles.z( angle )
-    #  return this
-
-    #method set_rotation( angle:Radians )->this
-    #  @rotation = Angles.z( angle )
-    #  return this
+    method set_rotation( angle:Radians )
+      @rotation = Angles.z( angle )
 
     method set_scale( scale:XY )
       size = scale * original_size
@@ -192,25 +131,20 @@ class Image
     method set_scale( s:Real64 )
       size = s * original_size
 
-    #method set_tint( t:Real64 )->this
-    #  # t=0.0: shader set to TEXTURE
-    #  # t>0.0: shader set to TEXTURE_WITH_COLOR_FILL, color alpha set to t*255
-    #  if (t == 0)
-    #    shader = null  # use default
-    #  else
-    #    local a32 = (t * 255)->Int32.clamped( 0, 255 ) :<<: 24
-    #    colors = (colors & 0xFFFFFF) | a32
-    #    shader = ImageShader.TEXTURE_WITH_COLOR_FILL
-    #  endIf
+    method set_tint( t:Real64 )
+      # t=0.0:      shader set to null (will default to TEXTURE)
+      # t>0.0..1.0: shader set to TEXTURE_WITH_COLOR_FILL, color alpha set to t*255
+      if (t == 0)
+        shader = null  # use default
+      else
+        local a32 = (t * 255)->Int32.clamped( 0, 255 ) :<<: 24
+        color  = (color & 0xFFFFFF) | a32
+        shader = ImageShader.TEXTURE_WITH_COLOR_FILL
+      endIf
 
-    #  return this
-
-    #method set_tint( t:Real64, tint_color:Color )->this
-    #  color = tint_color
-    #  return set_tint( t )
-
-    #method set_tint( t:Real64, colors )->this
-    #  return set_tint( t )
+    method set_tint( t:Real64, tint_color:Color )
+      color = tint_color
+      set_tint( t )
 
     method set_uv( texel_coordinates:Box )
       noAction
