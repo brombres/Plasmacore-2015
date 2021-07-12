@@ -40,19 +40,19 @@ class TextureImage : Image
       endContingent
 
     method init( other:Image, subset:Box )
-      init( other )
-      size          = subset.size
-      original_size = other.original_size * (size / other.size)
-
       block other = other as TextureImage
-        if (other)
+        require other
+        init( other )
+        size          = subset.size
+        original_size = other.original_size * (size / other.size)
+
+        if (other.texture)
           texture = other.texture
-          if (texture)
-            uv = subset + other.uv1 * texture.texture_size
-          elseIf (image_info)
-            image_info .= cloned
-            image_info.texture_bounds = subset + image_info.texture_bounds.position
-          endIf
+          uv = subset + other.uv1 * texture.texture_size
+        endIf
+
+        if (image_info)
+          image_info.texture_bounds = subset + image_info.texture_bounds.position
         endIf
       endBlock
 
@@ -67,7 +67,7 @@ class TextureImage : Image
 
     method init( other:TextureImage )
       init( other as Image )
-      image_info = other.image_info
+      if (other.image_info) image_info = other.image_info.cloned
       texture    = other.texture
       uv1        = other.uv1
       uv2        = other.uv2

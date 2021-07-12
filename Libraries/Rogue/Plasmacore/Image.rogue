@@ -18,6 +18,9 @@ class Image
     method create( size:XY )->CompositeImage
       return CompositeImage( size )
 
+    method create( image_info:ImageInfo )->TextureImage
+      return TextureImage( image_info )
+
   PROPERTIES
     position      : XY
     z             = 0.0  # Offset from Display.z; set to -0.5*Display.z to be closer to camera, Display.z to be 2x as far, etc.
