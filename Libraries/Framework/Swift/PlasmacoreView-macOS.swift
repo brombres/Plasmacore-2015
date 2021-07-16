@@ -19,10 +19,13 @@ class PlasmacoreView: NSOpenGLView
   @objc var name = "unnamed"
   var windowID     = 0
   var displayLink  : CVDisplayLink?
+  var refreshTimer  : Timer?
   var keyModifierFlags:UInt = 0
   var renderer_id:Int32 = 0
 
   var view_bounds  = NSRect(x:0,y:0,width:1,height:1)
+
+  var refreshInterval  = -1.0  // -1: uses DisplayLink; 0: no auto refresh; >0.0: every that many seconds
 
   required init?(coder: NSCoder)
   {
@@ -47,7 +50,7 @@ class PlasmacoreView: NSOpenGLView
 
   deinit
   {
-    stopDisplayLink()
+    stopUpdateCycle()
   }
 
   override func becomeFirstResponder() -> Bool
@@ -79,6 +82,13 @@ class PlasmacoreView: NSOpenGLView
       window.makeFirstResponder( self )
     }
 
+    Plasmacore.setMessageListener( type:"Display.set_refresh_interval", listener:
+      { (m:PlasmacoreMessage) in
+        self.setRefreshInterval( newRefreshInterval:m.getReal64(name:"refresh_interval") )
+      }
+    )
+
+
     NSLog( "PlasmacoreView \(name) created in Window \(windowID)\n" )
   }
 
@@ -94,7 +104,7 @@ class PlasmacoreView: NSOpenGLView
     }
     else
     {
-      stopDisplayLink()
+      stopUpdateCycle()
     }
   }
 
@@ -117,12 +127,13 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"display_name", value:name )
     m.set( name:"display_width",  value:display_width )
     m.set( name:"display_height", value:display_height )
+    m.set( name:"refresh_rate", value:60 )
     m.send()
 
     CGLFlushDrawable( context.cglContextObj! )
     CGLUnlockContext( context.cglContextObj! )
 
-    startDisplayLink()
+    startUpdateCycle()
   }
 
   override func flagsChanged( with event:NSEvent )
@@ -283,15 +294,50 @@ class PlasmacoreView: NSOpenGLView
     commonDraw()
   }
 
+    @objc func onRefreshTimerTick()
+  {
+    self.needsDisplay = true
+  }
+
   override func prepareOpenGL()
   {
     self.wantsBestResolutionOpenGLSurface = true
     self.openGLContext?.setValues( [1], for:NSOpenGLContext.Parameter.swapInterval )
   }
 
-  func startDisplayLink()
+  func setRefreshInterval( newRefreshInterval:Double )
   {
-    if (displayLink !== nil) { return }
+    if (newRefreshInterval == refreshInterval)
+    {
+      if (newRefreshInterval == 0)
+      {
+        onRefreshTimerTick()
+      }
+    }
+    else
+    {
+      stopUpdateCycle()
+      refreshInterval = newRefreshInterval
+      startUpdateCycle()
+    }
+  }
+
+  func startUpdateCycle()
+  {
+    if (displayLink !== nil || refreshTimer !== nil) { return }
+
+    let refreshInterval = refreshInterval
+    if (refreshInterval >= 0)
+    {
+      if (refreshInterval > 0)
+      {
+        NSLog( "start refresh timer" )
+        refreshTimer = Timer.scheduledTimer( timeInterval:refreshInterval, target:self,
+                       selector:#selector(onRefreshTimerTick), userInfo: nil, repeats: true )
+      }
+      return
+    }
+
     NSLog( "start display link" )
 
     // Locally defined callback
@@ -396,8 +442,16 @@ class PlasmacoreView: NSOpenGLView
     NSLog( "Mouse exited!\n" )
   }
 
-  func stopDisplayLink()
+  func stopUpdateCycle()
   {
+    if (refreshTimer !== nil)
+    {
+        NSLog( "stop refresh timer" )
+        refreshTimer!.invalidate()
+        refreshTimer = nil
+        return
+    }
+
     if (displayLink === nil) { return }
 
     CVDisplayLinkStop( displayLink! )
