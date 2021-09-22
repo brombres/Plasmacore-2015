@@ -47,12 +47,12 @@ $essential Byte[].reserve(Int32)
 class MessageManager [essential singleton]
   PROPERTIES
     io_buffer = Byte[]  # native layer accesses this directly
-    io_reader = BufferedDataReader( io_buffer )
-    io_writer = BufferedDataWriter( io_buffer )
+    io_reader = DataReader( io_buffer )
+    io_writer = DataWriter( io_buffer )
 
     direct_message_buffer = Byte[]
 
-    message_builder = BufferedDataWriter()
+    message_builder = DataWriter()
 
     next_id   = 1
     string_buffer = StringBuilder()
@@ -107,7 +107,7 @@ class MessageManager [essential singleton]
       if (message_pool.is_empty) message_pool.add( Message() )
       return message_pool.remove_last
 
-    method create_message( reader:BufferedDataReader )->Message
+    method create_message( reader:DataReader )->Message
       local m = create_message
       m.init( reader )
       return m
@@ -197,7 +197,7 @@ class MessageManager [essential singleton]
       io_writer.clear
 
       # Write out all the buffered data
-      io_writer.write( message_builder.buffer )
+      io_writer.write( message_builder.output_bytes )
       message_builder.clear
 
       TaskManager.update
@@ -222,8 +222,8 @@ class Message
     timestamp  : Real64
 
     data       = Byte[]
-    reader     = BufferedDataReader( data )
-    writer     = BufferedDataWriter( data )
+    reader     = DataReader( data )
+    writer     = DataWriter( data )
 
     # Using arrays instead of tables to reduce dynamic allocation overhead
     keys       = String[]
