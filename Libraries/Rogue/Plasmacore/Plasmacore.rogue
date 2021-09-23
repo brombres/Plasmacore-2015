@@ -2,9 +2,7 @@
 # Plasmacore.rogue
 #==============================================================================
 
-$if compareVersions(rogueVersion,"1.6.10") < 0
-  $error "RogueC version 1.6.10 or better is required to compile Plasmacore. CD to your Rogue folder and 'git pull && make'."
-$endIf
+$requireRogue "1.8.8"
 
 $include "Plasmacore/PlasmacoreVersion.rogue"
 

@@ -585,7 +585,7 @@ class Display [singleton]
       endForEach
 
       forEach (uv in mesh.uvs)
-        vertex_uvs.add( uv.x ).add( uv.y )
+        vertex_uvs.[ add(uv.x), add(uv.y) ]
       endForEach
 
       forEach (color in mesh.colors)
@@ -1026,7 +1026,8 @@ class Display [singleton]
     method set_texture( index:Int32, texture:Texture )
       if (index < active_textures.count and active_textures[index] is texture) return
       flush
-      active_textures.expand_to_include( index )[ index ] = texture
+      active_textures.expand_to_include( index )
+      active_textures[ index ] = texture
 
     method set_state( new_state:ScreenState )
       # Sets the state of this Display's current screen.
