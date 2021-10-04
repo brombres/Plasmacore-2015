@@ -195,7 +195,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd ../..\nenv -i PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin HOME=$HOME IDE=true rogo ios\n";
+			shellScript = "cd ../..\nenv -i PATH=/opt/morlock/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin HOME=$HOME IDE=true rogo ios\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
