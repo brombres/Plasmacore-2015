@@ -822,7 +822,6 @@ class Display [singleton]
       Display = this  # set the singleton reference to be this display
       render_target.configure( _true_size, _viewport_size )
       activate_screen_and_state
-
       update_timer.update
 
       while (update_timer.tick)

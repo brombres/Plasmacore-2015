@@ -127,7 +127,14 @@ class PlasmacoreView: NSOpenGLView
     m.set( name:"display_name", value:name )
     m.set( name:"display_width",  value:display_width )
     m.set( name:"display_height", value:display_height )
-    m.set( name:"refresh_rate", value:60 )
+
+    var rate = 60.0
+    if let mode = CGDisplayCopyDisplayMode(CGMainDisplayID())
+    {
+      let display_rate = mode.refreshRate
+      if (display_rate > 0) { rate = display_rate; }
+    }
+    m.set( name:"refresh_rate", value:rate )
     m.send()
 
     CGLFlushDrawable( context.cglContextObj! )
