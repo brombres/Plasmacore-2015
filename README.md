@@ -2,8 +2,8 @@
 
 About     | &nbsp;
 ----------|-----------------------
-Version   | 0.16.10
-Date      | 2021-06-11
+Version   | 0.17.0
+Date      | October 6, 2021
 Platforms | macOS, Linux
 Targets   | macOS, iOS, Android, Linux, Web
 
@@ -17,7 +17,7 @@ Targets   | macOS, iOS, Android, Linux, Web
 Host Platform | macOS   | Linux   |  iOS    | Android   | Web
 --------------|---------|---------|---------|-----------|---------
 macOS         | &#10003;|         | &#10003;| &#10003;  | &#10003;
-Linux         |         | &#10003;|         | &#10003;* | &#10003;
+Linux         |         | &#10003;|         | &#10003;&#42; | &#10003;
 
 &#42; Linux Android support is not well-tested.
 
