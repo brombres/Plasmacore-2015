@@ -543,14 +543,14 @@ class ImageCommand
         if (last_sheet.height >= last_sheet.width) scale_1 = scale_1.yx
         local scale_2 = scale_1.yx
 
-        placements.clear.add( last_sheet.placements )
+        placements.[clear].add( last_sheet.placements )
         local better_fit = perform_layout( placements, last_sheet.width*scale_1.x, last_sheet.height*scale_1.y )
         if (better_fit and placements.count == 0)
           last_sheet = better_fit
           nextIteration
         endIf
 
-        placements.clear.add( last_sheet.placements )
+        placements.[clear].add( last_sheet.placements )
         better_fit = perform_layout( placements, last_sheet.width*scale_2.x, last_sheet.height*scale_2.y )
         if (better_fit and placements.count == 0)
           last_sheet = better_fit
@@ -562,7 +562,7 @@ class ImageCommand
 
       # Redo the last sheet layout one final time with the best dimensions - any failed
       # attempts above have left the images positioned badly.
-      placements.clear.add( last_sheet.placements )
+      placements.[clear].add( last_sheet.placements )
       last_sheet = perform_layout( placements, last_sheet.width, last_sheet.height )
 
       sheets.add( last_sheet )

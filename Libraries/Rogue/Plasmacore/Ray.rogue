@@ -3,12 +3,10 @@ module Plasmacore
 
 augment Ray
   METHODS
-    method draw( color:Color )->this
-      this->Line.draw( color )
-      return this
+    method draw( color:Color )
+      drawable( color ).draw
 
-    method draw( colors:Colors )->this
-      this->Line.draw( colors )
-      return this
+    method drawable( color:Color )->DrawableLine
+      return this->Line.drawable( color )
 endAugment
 

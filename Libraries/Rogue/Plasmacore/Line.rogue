@@ -2,22 +2,18 @@ uses Plasmacore
 
 augment Line<<>>
   METHODS
-    method draw( color:Color, thickness=1:Real64 )->this
+    method draw( color:Color, thickness=1:Real64 )
       if (thickness == 1)
-        Display.draw( this, Colors(color) )
+        drawable( color ).draw
       else
-        local delta = b - a
-        (Box( 0, -thickness/2, delta.magnitude, thickness ).rotated( delta.radians ) + a).fill( color )
+        drawable( color, thickness ).fill
       endIf
-      return this
 
-    method draw( colors:Colors, thickness=1:Real64 )->this
-      if (thickness == 1)
-        Display.draw( this, colors )
-      else
-        local delta = b - a
-        (Box( 0, -thickness/2, delta.magnitude, thickness ).rotated( delta.radians ) + a).fill( colors )
-      endIf
-      return this
+    method drawable( color:Color )->DrawableLine
+      return DrawableLine( Display.transform(this), color )
+
+    method drawable( color:Color, thickness:Real64 )->DrawableQuad
+      local delta = b - a
+      return (Box( 0, -thickness/2, delta.magnitude, thickness ).rotated( delta.radians ) + a).drawable( color )
 endAugment
 

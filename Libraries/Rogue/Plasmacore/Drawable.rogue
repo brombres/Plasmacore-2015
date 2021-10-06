@@ -1,0 +1,40 @@
+module Plasmacore
+
+class DrawableQuad(
+    quad:Quad<<XYZW>>,
+    colors=Colors(Color.WHITE):Colors,
+    texture=null:Texture,
+    uv=Quad():Quad,
+    render_mode=null:RenderMode,
+    shader=null:Shader ) [compound]
+
+  METHODS
+    method draw
+      Display.draw( this )
+
+    method fill
+      Display.fill( this )
+endClass
+
+class DrawableTriangle(
+    triangle:Triangle<<XYZW>>,
+    colors=Colors(Color.WHITE):Colors,
+    texture=null:Texture,
+    uv=Triangle():Triangle,
+    render_mode=null:RenderMode,
+    shader=null:Shader ) [compound]
+
+  METHODS
+    method draw
+      Display.draw( this )
+
+    method fill
+      Display.fill( this )
+endClass
+
+class DrawableLine( line:Line<<XYZW>>, colors=Colors(Color.WHITE):Colors, render_mode=null:RenderMode, shader=null:Shader ) [compound]
+  METHODS
+    method draw
+      Display.draw( this )
+endClass
+

@@ -50,6 +50,18 @@ class Angles( x:Degrees, y:Degrees, z:Degrees ) [compound]
     method operator==( other:Angles )->Logical
       return (x == other.x and y == other.y and z == other.z)
 
+    method operator+( other:Degrees )->Angles
+      return this.rotated_z( other )
+
+    method operator+( other:Radians )->Angles
+      return this.rotated_z( other )
+
+    method operator-( other:Degrees )->Angles
+      return this.rotated_z( -other )
+
+    method operator-( other:Radians )->Angles
+      return this.rotated_z( -other )
+
     method rotated_x( degrees:Degrees )->Angles
       return (Quaternion(this) * Quaternion(Angles.x(degrees)))->Angles
 

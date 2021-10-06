@@ -2,9 +2,7 @@
 # Plasmacore.rogue
 #==============================================================================
 
-$if compareVersions(rogueVersion,"1.6.10") < 0
-  $error "RogueC version 1.6.10 or better is required to compile Plasmacore. CD to your Rogue folder and 'git pull && make'."
-$endIf
+$requireRogue "1.8.8"
 
 $include "Plasmacore/PlasmacoreVersion.rogue"
 
@@ -24,20 +22,22 @@ $if not target("Console")
 $if (target("Web")) nativeHeader #include <emscripten.h>
 
 $include "Plasmacore/Angles.rogue"
-$include "Plasmacore/Assets.rogue"
 $include "Plasmacore/Bezier.rogue"
 $include "Plasmacore/Bitmap.rogue"
 $include "Plasmacore/Box.rogue"
 $include "Plasmacore/Box2D.rogue"
 $include "Plasmacore/Canvas.rogue"
 $include "Plasmacore/Circle.rogue"
+$include "Plasmacore/CompositeImage.rogue"
 $include "Plasmacore/DefaultFont.rogue"
 $include "Plasmacore/Display.rogue"
 $include "Plasmacore/DisplayEffect.rogue"
+$include "Plasmacore/Drawable.rogue"
 $include "Plasmacore/Font.rogue"
 $include "Plasmacore/GameGUI"
 $include "Plasmacore/Image.rogue"
 $include "Plasmacore/ImageList.rogue"
+$include "Plasmacore/ImageShader.rogue"
 $include "Plasmacore/ImageSheetBuilder.rogue"
 $include "Plasmacore/iOS.rogue"
 $include "Plasmacore/Lighting.rogue"
@@ -74,6 +74,7 @@ $include "Plasmacore/System.rogue"
 $include "Plasmacore/SystemFont.rogue"
 $include "Plasmacore/TargetValue.rogue"
 $include "Plasmacore/Texture.rogue"
+$include "Plasmacore/TextureImage.rogue"
 $include "Plasmacore/TileMapLayout.rogue"
 $include "Plasmacore/Triangle.rogue"
 $include "Plasmacore/TriangleCullingMode.rogue"

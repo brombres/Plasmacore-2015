@@ -1,0 +1,165 @@
+module Plasmacore
+
+class TextureImage : Image
+  PROPERTIES
+    image_info : ImageInfo
+    texture    : Texture
+    uv1        : XY
+    uv2        : XY
+
+  METHODS
+    method init( name:String )
+      local image_info = Plasmacore.find_image_info( name )
+      if (image_info)
+        init( image_info )
+      else
+        println "No such image: " + name
+      endIf
+
+    method init( image_info )
+      contingent
+        necessary (image_info)
+        sufficient (image_info.type == ImageInfo.TYPE_TEXTURE_IMAGE)
+
+        which (image_info.type)
+          case ImageInfo.TYPE_IMAGE_LIST
+            println "ERROR: Cannot load Image[] list $ as an Image." (image_info.name)
+            necessary (false)
+          case ImageInfo.TYPE_FONT
+            println "ERROR: Cannot load Font $ as an Image." (image_info.name)
+            necessary (false)
+        endWhich
+
+      satisfied
+        size = image_info.display_size
+        original_size = size
+
+      unsatisfied
+        image_info = null
+
+      endContingent
+
+    method init( other:Image, subset:Box )
+      block other = other as TextureImage
+        require other
+        init( other )
+        size          = subset.size
+        original_size = other.original_size * (size / other.size)
+
+        if (other.texture)
+          texture = other.texture
+          uv = subset + other.uv1 * texture.texture_size
+        endIf
+
+        if (image_info)
+          image_info.texture_bounds = subset + image_info.texture_bounds.position
+        endIf
+      endBlock
+
+    method init( @texture )
+      size = @texture.image_size
+      original_size = size
+      uv1 = XY.zero
+      uv2 = @texture.uv_size
+
+    method init( bitmap:Bitmap )
+      init( Texture(bitmap) )
+
+    method init( other:TextureImage )
+      init( other as Image )
+      if (other.image_info) image_info = other.image_info.cloned
+      texture    = other.texture
+      uv1        = other.uv1
+      uv2        = other.uv2
+
+    method cloned->TextureImage
+      return TextureImage( this )
+
+    method is_loaded->Logical
+      return @texture and @texture.is_loaded
+
+    method draw( fn:Function(DrawableQuad) ) [override]
+      if (not prepare) return
+
+      local handle = XYZ( (anchor.position * size), 0 )
+      localize z
+
+      local pos = position
+      local has_rotation = not rotation.is_zero
+      if (has_rotation)
+        Display.push_object_transform( Quaternion(rotation)->Matrix( handle, XYZ(pos,z)) )
+      else
+        Display.push_object_transform( Matrix.translate(XYZ(pos,z)-handle) )
+      endIf
+
+      local transform = Display.transform
+
+      z += Display.z
+
+      local w = size.x
+      local h = size.y
+      local quad = Quad<<XYZW>>(
+        transform * XYZ( 0, 0, z ),
+        transform * XYZ( w, 0, z ),
+        transform * XYZ( w, h, z ),
+        transform * XYZ( 0, h, z ) )
+
+      local _uv = Quad( uv1, XY(uv2.x,uv1.y), uv2, XY(uv1.x,uv2.y) )
+      if (hflip) _uv = Quad( _uv.b, _uv.a, _uv.d, _uv.c )
+      if (vflip) _uv = Quad( _uv.d, _uv.c, _uv.b, _uv.a )
+
+      fn( DrawableQuad(quad,color.with_opacity(opacity),@texture,_uv,render_mode,shader) )
+
+      Display.pop_object_transform
+
+    method is_opaque->Logical
+      load
+      if (not texture) return true
+      return texture.is_opaque
+
+    method load->Logical
+      if (@texture)
+        @texture.load
+        return true
+      endIf
+
+      if (not image_info) return false
+
+      texture = Texture( image_info.texture_filename )
+      uv = image_info.texture_bounds
+      @texture.load
+      return true
+
+    method set( bitmap:Bitmap ) [override]
+      if (@texture)
+        @texture.set( bitmap )
+      else
+        @texture = Texture( bitmap )
+        original_size = @texture.image_size
+      endIf
+
+    method set_uv( texel_coordinates:Box ) [override]
+      load
+      local sz = @texture.texture_size
+      set_uv(
+        texel_coordinates.top_left / sz,
+        texel_coordinates.bottom_right / sz
+      )
+
+    method set_uv( uv1, uv2 ) [override]
+      noAction
+
+    method texture->Texture [override]
+      load
+      return @texture
+
+    method unload [override]
+      if (@texture) @texture.unload
+
+    method uv->Box [override]
+      # Returns texel coordinates
+      load
+      local sz = @texture.texture_size
+      return Box( uv1*sz, (uv2-uv1)*sz )
+endClass
+

@@ -50,8 +50,13 @@ class Display [singleton]
     pointer_position   : XY
     pointer_exists     : Logical
 
-    refresh_rate        = 60
-    # Disclosed by the native layer - usually 60
+    refresh_rate       = 60
+
+    refresh_interval   = -1.0
+    # Can set to following values on macOS (ignored on other platforms)
+    #   -1:    use DisplayLink
+    #    0:    No automatic updates; only on window resize or reveal etc.
+    #    1.0+: Use specified refresh interval, e.g. 1.0/30.0
 
     updates_per_second  = 60
     # Arbitrary - usually left at 60.  Determines how often Screen/ScreenState on_update() is called.
@@ -119,7 +124,6 @@ class Display [singleton]
         if (not screen.is_active)
           screen.is_active = true
           screen.on_start
-          screen.load_images
           nextIteration
         endIf
 
@@ -185,7 +189,7 @@ class Display [singleton]
     method center->XY [macro]
       return bounds.center
 
-    method clear->this
+    method clear
       flush
       native "int gl_flags = GL_COLOR_BUFFER_BIT;"
       native @|int c = $background_color.argb;
@@ -194,10 +198,8 @@ class Display [singleton]
 
       native "glClear( gl_flags );"
 
-      return this
-
-    method clear( background_color )->this
-      return clear
+    method clear( background_color )
+      clear
 
     method clear_scale
       render_target.clear_scale
@@ -333,17 +335,45 @@ class Display [singleton]
         fill( Box(box.top_left+XY(thickness,box.height-thickness),box.width-thickness*2,thickness), color )
       endIf
 
+    method draw( drawable:DrawableQuad )
+      local colors = drawable.colors
+      if (colors.count < 4)
+        local color = colors.a
+        colors = Colors( color, color, color, color )
+      endIf
+
+      local q = drawable.quad
+      draw( DrawableLine(Line<<XYZW>>(q.a,q.b), Colors(colors.a,colors.b), drawable.render_mode, drawable.shader) )
+      draw( DrawableLine(Line<<XYZW>>(q.b,q.c), Colors(colors.b,colors.c), drawable.render_mode, drawable.shader) )
+      draw( DrawableLine(Line<<XYZW>>(q.c,q.d), Colors(colors.c,colors.d), drawable.render_mode, drawable.shader) )
+      draw( DrawableLine(Line<<XYZW>>(q.d,q.a), Colors(colors.d,colors.a), drawable.render_mode, drawable.shader) )
+
+    method draw( drawable:DrawableTriangle )
+      local colors = drawable.colors
+      if (colors.count < 3)
+        local color = colors.a
+        colors = Colors( color, color, color )
+      endIf
+
+      local t = drawable.triangle
+      draw( DrawableLine(Line<<XYZW>>(t.a,t.b), Colors(colors.a,colors.b), drawable.render_mode, drawable.shader) )
+      draw( DrawableLine(Line<<XYZW>>(t.b,t.c), Colors(colors.b,colors.c), drawable.render_mode, drawable.shader) )
+      draw( DrawableLine(Line<<XYZW>>(t.c,t.a), Colors(colors.c,colors.a), drawable.render_mode, drawable.shader) )
+
     method draw( line:Line, colors:Colors )
       local render_mode : RenderMode
       if (colors.is_opaque) render_mode = RenderMode.OPAQUE_SHAPE
       else                  render_mode = RenderMode.ALPHA_SHAPE
       draw( transform(line), colors, render_mode, null )
 
+    method draw( drawable:DrawableLine )
+      draw( drawable.line, drawable.colors, drawable.render_mode, drawable.shader )
+
     method draw( line:Line<<XYZW>>, colors:Colors, render_mode:RenderMode, shader:Shader )
       if (colors.count == 1) colors = Colors( colors.a, colors.a )
 
       set_primitive_type( LINES )
-      set_render_mode( render_mode, shader )
+      set_render_mode( colors, null, render_mode, shader )
 
       reserve_vertices( 2 )
 
@@ -371,6 +401,44 @@ class Display [singleton]
       else                  render_mode = RenderMode.ALPHA_SHAPE
       fill_solid_quad( transform(Quad(box)), colors, render_mode, null )
 
+    method fill( drawable:DrawableQuad )
+      if (drawable.texture)
+        fill_textured_quad(
+          drawable.quad,
+          drawable.colors,
+          drawable.texture,
+          drawable.uv,
+          drawable.render_mode,
+          drawable.shader
+        )
+      else
+        fill_solid_quad(
+          drawable.quad,
+          drawable.colors,
+          drawable.render_mode,
+          drawable.shader
+        )
+      endIf
+
+    method fill( drawable:DrawableTriangle )
+      if (drawable.texture)
+        fill_textured_triangle(
+          drawable.triangle,
+          drawable.colors,
+          drawable.texture,
+          drawable.uv,
+          drawable.render_mode,
+          drawable.shader
+        )
+      else
+        fill_solid_triangle(
+          drawable.triangle,
+          drawable.colors,
+          drawable.render_mode,
+          drawable.shader
+        )
+      endIf
+
     method fill( triangle:Triangle, color:Color )
       fill( triangle, Colors(color) )
 
@@ -383,27 +451,21 @@ class Display [singleton]
     method fill( triangle:Triangle, image:Image, uv:Triangle, colors=Colors(Color.WHITE):Colors,
         render_mode=null:RenderMode, shader=null:Shader )
       if (not shader) shader = which{ override_shader || ImageShader.TEXTURE }
-      local texture_data = image.data as TextureImageData
-      if (texture_data)
-        fill( triangle, texture_data.texture, uv, colors, render_mode, shader )
+      local texture = image.texture
+      if (texture)
+        fill( triangle, texture, uv, colors, render_mode, shader )
       else
         fill( triangle, colors )
       endIf
 
     method fill( triangle:Triangle, texture:Texture, uv:Triangle, colors=Colors(Color.WHITE):Colors,
         render_mode=null:RenderMode, shader=null:Shader )
-      if (not shader) shader = which{ override_shader || ImageShader.TEXTURE }
 
-      if (not render_mode)
-        if (texture.is_opaque) render_mode = RenderMode.OPAQUE_IMAGE
-        else                   render_mode = RenderMode.ALPHA_IMAGE
-      endIf
-
-      fill_textured_triangle( texture, transform(triangle), colors, uv, render_mode, shader )
+      fill_textured_triangle( transform(triangle), colors, texture, uv, render_mode, shader )
 
     method fill_solid_quad( quad:Quad<<XYZW>>, colors:Colors, render_mode:RenderMode, shader:Shader )
       set_primitive_type( TRIANGLES )
-      set_render_mode( render_mode, shader )
+      set_render_mode( colors, null, render_mode, shader )
 
       reserve_vertices( 6 )
 
@@ -442,7 +504,7 @@ class Display [singleton]
 
     method fill_solid_triangle( triangle:Triangle<<XYZW>>, colors:Colors, render_mode:RenderMode, shader:Shader )
       set_primitive_type( TRIANGLES )
-      set_render_mode( render_mode, shader )
+      set_render_mode( colors, null, render_mode, shader )
 
       reserve_vertices( 3 )
 
@@ -473,6 +535,40 @@ class Display [singleton]
 
       if (texture) set_texture( 0, texture )
       set_primitive_type( ?:{is_linked:MESH || TRIANGLES}, ?:{mesh.is_clockwise:CLOCKWISE || COUNTER_CLOCKWISE} )
+
+      local colors_are_opaque = true
+      local colors_are_opaque_white = true
+      forEach (color in mesh.colors)
+        if (color.argb != 0xFFFF_FFFF)
+          colors_are_opaque_white = false
+          if ((color.argb & 0xFF00_0000) != 0xFF00_0000)
+            colors_are_opaque = false
+            escapeForEach
+          endIf
+        endIf
+      endForEach
+
+      if (not render_mode)
+        if (texture)
+          if (texture.is_opaque and colors_are_opaque)
+            render_mode = RenderMode.OPAQUE_IMAGE
+          else
+            render_mode = RenderMode.ALPHA_IMAGE
+          endIf
+        else
+          if (colors_are_opaque) render_mode = RenderMode.OPAQUE_SHAPE
+          else                   render_mode = RenderMode.ALPHA_SHAPE
+        endIf
+      endIf
+
+      if (not shader)
+        if (texture)
+          if (colors_are_opaque_white) shader = ImageShader.TEXTURE
+          else                         shader = ImageShader.TEXTURE_WITH_COLOR_MULTIPLY
+        else
+          shader = ImageShader.COLOR
+        endIf
+      endIf
       set_render_mode( render_mode, shader )
 
       reserve_vertices( mesh.positions.count )
@@ -489,7 +585,7 @@ class Display [singleton]
       endForEach
 
       forEach (uv in mesh.uvs)
-        vertex_uvs.add( uv.x ).add( uv.y )
+        vertex_uvs.[ add(uv.x), add(uv.y) ]
       endForEach
 
       forEach (color in mesh.colors)
@@ -498,16 +594,18 @@ class Display [singleton]
 
       if (is_linked) flush
 
-    method fill_textured_quad( texture:Texture,
+    method fill_textured_quad(
         quad:Quad<<XYZW>>,
         colors:Colors,
+        texture:Texture,
         uv:Quad,
         render_mode:RenderMode,
         shader:Shader )
 
+
       set_texture( 0, texture )
       set_primitive_type( TRIANGLES )
-      set_render_mode( render_mode, shader )
+      set_render_mode( colors, texture, render_mode, shader )
 
       reserve_vertices( 6 )
 
@@ -557,16 +655,17 @@ class Display [singleton]
       vertex_colors.add( colors.c.argb )
       vertex_colors.add( colors.d.argb )
 
-    method fill_textured_triangle( texture:Texture,
+    method fill_textured_triangle(
         triangle:Triangle<<XYZW>>,
         colors:Colors,
+        texture:Texture,
         uv:Triangle,
         render_mode:RenderMode,
         shader:Shader )
 
       set_texture( 0, texture )
       set_primitive_type( TRIANGLES )
-      set_render_mode( render_mode, shader )
+      set_render_mode( colors, texture, render_mode, shader )
 
       reserve_vertices( 3 )
 
@@ -594,9 +693,8 @@ class Display [singleton]
       vertex_colors.add( colors.b.argb )
       vertex_colors.add( colors.c.argb )
 
-    method flush->this
+    method flush
       render_2dx
-      return this
 
     method handle( e:KeyEvent )
       activate_screen_and_state
@@ -668,30 +766,32 @@ class Display [singleton]
     method perspective_center->XY
       return render_target.perspective_center
 
-    method pop_clip->this
+    method pop_clip
       render_target.pop_clip
-      return this
 
-    method pop_clipping_region->this [deprecated]
+    method pop_clipping_region [deprecated]
       render_target.pop_clip
-      return this
 
-    method pop_object_transform( n=1:Int32 )->this
+    method pop_object_transform( n=1:Int32 )
       render_target.pop_object_transform( n )
-      return this
 
-    method pop_view_transform( n=1:Int32 )->this
+    method pop_view_transform( n=1:Int32 )
       render_target.pop_view_transform( n )
-      return this
 
     method scale->Real64
       return render_target.display_scale
+
+    method request_refresh
+      set_refresh_interval( refresh_interval )
+
+    method set_refresh_interval( @refresh_interval )
+      Message("Display.set_refresh_interval").set("refresh_interval",refresh_interval).send
 
     method set_render_target( canvas:Canvas )
       if (canvas)
         flush
         @render_target = canvas.render_target
-        render_target.configure( canvas.canvas_texture.image_size )
+        render_target.configure( canvas.texture.image_size )
         clip = clip  # Reset clipping region
         active_front_face = COUNTER_CLOCKWISE
       else
@@ -706,27 +806,22 @@ class Display [singleton]
       clip = clip  # Reset clipping region
       active_front_face = CLOCKWISE
 
-    method push_clip( box:Box?, &replace )->this
+    method push_clip( box:Box?, &replace )
       render_target.push_clip( box, replace )
-      return this
 
-    method push_clipping_region( box:Box?, &replace )->this [deprecated]
+    method push_clipping_region( box:Box?, &replace ) [deprecated]
       render_target.push_clip( box, replace )
-      return this
 
-    method push_object_transform( m:Matrix )->this
+    method push_object_transform( m:Matrix )
       render_target.push_object_transform( m )
-      return this
 
-    method push_view_transform( m:Matrix )->this
+    method push_view_transform( m:Matrix )
       render_target.push_view_transform( m )
-      return this
 
-    method render( _true_size:XY, _viewport_size:XY, refresh_rate )
+    method render( _true_size:XY, _viewport_size:XY, @refresh_rate )
       Display = this  # set the singleton reference to be this display
       render_target.configure( _true_size, _viewport_size )
       activate_screen_and_state
-
       update_timer.update
 
       while (update_timer.tick)
@@ -858,74 +953,87 @@ class Display [singleton]
       endIf
       return bounds
 
-    method scale_to_fill( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
-      return scale_to_fill( XY(w,h), anchor )
+    method scale_to_fill( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )
+      scale_to_fill( XY(w,h), anchor )
 
-    method scale_to_fill( target_display_size:XY, anchor=Anchor.TOP_LEFT:Anchor )->this
+    method scale_to_fill( target_display_size:XY, anchor=Anchor.TOP_LEFT:Anchor )
       render_target.scale_to_fill( target_display_size, anchor )
-      return this
 
-    method scale_to_fit( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )->this
-      return scale_to_fit( XY(w,h), anchor )
+    method scale_to_fit( w:Int32, h:Int32, anchor=Anchor.TOP_LEFT:Anchor )
+      scale_to_fit( XY(w,h), anchor )
 
-    method scale_to_fit( target_display_size:XY, anchor=Anchor.TOP_LEFT:Anchor )->this
+    method scale_to_fit( target_display_size:XY, anchor=Anchor.TOP_LEFT:Anchor )
       render_target.scale_to_fit( target_display_size, anchor )
-      return this
 
-    method set_clip( new_clip:Box? )->this
+    method set_clip( new_clip:Box? )
       render_target.set_clip( new_clip )
-      return this
 
-    method set_clipping_region( new_clip:Box? )->this [deprecated]
+    method set_clipping_region( new_clip:Box? ) [deprecated]
       render_target.set_clip( new_clip )
-      return this
 
-    method set_primitive_type( primitive_type:Int32, front_face=Display.active_front_face:Int32 )->this
-      if (primitive_type == active_primitive_type and front_face == active_front_face) return this
+    method set_primitive_type( primitive_type:Int32, front_face=Display.active_front_face:Int32 )
+      if (primitive_type == active_primitive_type and front_face == active_front_face) return
       flush
       active_primitive_type = primitive_type
       active_front_face = front_face
-      return this
 
-    method set_offset( new_offset:XY )->this
+    method set_offset( new_offset:XY )
       render_target.set_offset( new_offset )
-      return this
 
-    method set_perspective_center( new_center:XY )->this
+    method set_perspective_center( new_center:XY )
       render_target.set_perspective_center( new_center )
-      return this
 
-    method set_projection_mode( _projection_mode:ProjectionMode )->this
+    method set_projection_mode( _projection_mode:ProjectionMode )
       render_target.projection_mode = _projection_mode
       render_target.projection_mode.update
-      return this
 
-    method set_projection_transform( _projection_transform:Matrix )->this
+    method set_projection_transform( _projection_transform:Matrix )
       render_target.projection_transform = _projection_transform
       render_target.transform_modified = true
-      return this
 
-    method set_render_mode( render_mode:RenderMode, shader=null:Shader )->this
-      if (render_mode is active_render_mode and active_shader is shader) return this
+    method set_render_mode( colors:Colors, texture:Texture, render_mode:RenderMode, shader=null:Shader )
+      if (not render_mode)
+        if (texture)
+          if (texture.is_opaque and colors.is_opaque)
+            render_mode = RenderMode.OPAQUE_IMAGE
+          else
+            render_mode = RenderMode.ALPHA_IMAGE
+          endIf
+        else
+          if (colors.is_opaque) render_mode = RenderMode.OPAQUE_SHAPE
+          else                  render_mode = RenderMode.ALPHA_SHAPE
+        endIf
+      endIf
+
+      if (not shader)
+        if (texture)
+          if (colors.is_opaque_white) shader = ImageShader.TEXTURE
+          else                        shader = ImageShader.TEXTURE_WITH_COLOR_MULTIPLY
+        else
+          shader = ImageShader.COLOR
+        endIf
+      endIf
+
+      set_render_mode( render_mode, shader )
+
+    method set_render_mode( render_mode:RenderMode, shader=null:Shader )
+      if (render_mode is active_render_mode and active_shader is shader) return
       flush
       active_render_mode = render_mode
       active_shader = shader
-      return this
 
-    method set_texture( index:Int32, texture:Texture )->this
-      if (index < active_textures.count and active_textures[index] is texture) return this
+    method set_texture( index:Int32, texture:Texture )
+      if (index < active_textures.count and active_textures[index] is texture) return
       flush
-      active_textures.expand_to_include( index )[ index ] = texture
-      return this
+      active_textures.expand_to_include( index )
+      active_textures[ index ] = texture
 
-    method set_state( new_state:ScreenState )->this
+    method set_state( new_state:ScreenState )
       # Sets the state of this Display's current screen.
       screen.@state = new_state
-      return this
 
-    method set_screen( @screen )->this
+    method set_screen( @screen )
       screen.display = this
-      return this
 
     method size->XY
       return render_target.size
@@ -955,6 +1063,9 @@ class Display [singleton]
       local t = transform
       local _z = z
       return Triangle<<XYZW>>( t*XYZ(triangle.a,_z), t*XYZ(triangle.b,_z), t*XYZ(triangle.c,_z) )
+
+    method transform( point:XY )->XYZW
+      return transform*XYZ( point, z )
 
     method true_height->Int32 [macro]
       return this.true_size.y->Int32

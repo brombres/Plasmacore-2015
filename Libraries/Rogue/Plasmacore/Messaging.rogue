@@ -124,7 +124,7 @@ class MessageManager [essential singleton]
       return outgoing_message
 
     method dispatch_incoming_messages
-      incoming_message_active_list.clear.add( incoming_message_queue )
+      incoming_message_active_list.[clear].add( incoming_message_queue )
       incoming_message_queue.clear
       dispatch_incoming_message( forEach in incoming_message_active_list )
 
@@ -170,7 +170,7 @@ class MessageManager [essential singleton]
 
       if (m.@reply)
         m.@reply.blocks_transmission = false
-        direct_message_buffer.clear.add( m.@reply.data )
+        direct_message_buffer.[clear].add( m.@reply.data )
         m.@reply.recycle
         m.@reply = null
         m.recycle
@@ -193,7 +193,7 @@ class MessageManager [essential singleton]
 
       Plasmacore.global_update
 
-      # Finalize the outgoing message data.
+      # Clear input bytes to make way for output bytes
       io_writer.clear
 
       # Write out all the buffered data
@@ -251,11 +251,11 @@ class Message
 
     method init( source:DataReader )
       local size = source.read_int32
-      source.read( data.clear, size )
+      source.read( data.[clear], size )
       init_from_data
 
     method init( bytes:Byte[] )
-      data.clear.add( bytes )
+      data.[clear].add( bytes )
       init_from_data
 
     method init_from_data

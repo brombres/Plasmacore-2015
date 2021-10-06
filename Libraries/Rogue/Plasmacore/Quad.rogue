@@ -1,25 +1,38 @@
 uses Plasmacore
 
 augment Quad<<>>
+  GLOBAL METHODS
+    method create->Quad
+      local result : Quad
+      return result
+
   METHODS
-    method draw( color:Color )->this
-      Line( a, b ).draw( color )
-      Line( b, c ).draw( color )
-      Line( c, d ).draw( color )
-      Line( d, a ).draw( color )
-      return this
+    method draw( color:Color )
+      drawable( color ).draw
 
-    method fill( color:Color )->this
-      return fill( Colors(color) )
+    method draw( color:Color, fn:Function(DrawableQuad) )
+      fn( drawable(color) )
 
-    method fill( colors:Colors )->this
-      if (colors.count == 1)
-        Triangle( a, b, c ).fill( colors.a )
-        Triangle( a, c, d ).fill( colors.a )
-      else
-        Triangle( a, b, c ).fill( Colors(colors.a,colors.b,colors.c) )
-        Triangle( a, c, d ).fill( Colors(colors.a,colors.c,colors.d) )
-      endIf
-      return this
+    method drawable( color:Color )->DrawableQuad
+      block a=Display.transform(a), b=Display.transform(b), c=Display.transform(c), d=Display.transform(d)
+        return DrawableQuad( Quad<<XYZW>>(a,b,c,d), color )
+      endBlock
+
+    method fill( color:Color )
+      drawable( color ).fill
+
+    method fill( texture:Texture, uv:Quad, color=Color.WHITE:Color )
+      localize drawable( color )
+      drawable.texture = texture
+      drawable.uv = uv
+      drawable.fill
 endAugment
 
+augment Quad<<XYZW>>
+  METHODS
+    method to->Quad
+      return Quad( a->XY, b->XY, c->XY, d->XY )
+
+    method with_xy( quad:Quad )->Quad<<XYZW>>
+      return Quad<<XYZW>>( XYZW(quad.a,a.z,a.w), XYZW(quad.b,b.z,b.w), XYZW(quad.c,c.z,c.w), XYZW(quad.d,d.z,d.w) )
+endAugment

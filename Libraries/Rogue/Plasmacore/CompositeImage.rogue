@@ -1,0 +1,61 @@
+module Plasmacore
+
+class CompositeImage : Image
+  PROPERTIES
+    images = Image[]
+
+  METHODS
+    method init( name:String )
+      init( Image(name) )
+
+    method init( image:Image )
+      init( image.size )
+      add( image )
+
+    method init( size )
+      original_size = size
+
+    method init( w:Int32, h:Int32 )
+      init( XY(w,h) )
+
+    method init( other:CompositeImage )
+      init( other as Image )
+      images = images.cloned
+      size = other.size
+      original_size = other.original_size
+
+    method cloned->CompositeImage
+      return CompositeImage( this )
+
+    method add( child:Image ) [override]
+      images.add( child )
+
+    method add( child:Image, position:XY ) [override]
+      child.position = position
+      images.add( child )
+
+    method draw( fn:Function(DrawableQuad) ) [override]
+      local handle = XYZ( (anchor.position * size), 0 )
+
+      local has_rotation = not rotation.is_zero
+      if (has_rotation)
+        Display.push_view_transform( Quaternion(rotation)->Matrix( handle, XYZ(position,0)) )
+      else
+        Display.push_view_transform( Matrix.translate(XYZ(position,0)-handle) )
+      endIf
+
+      Display.push_view_transform( Matrix.scale(XYZ(scale,1)) )
+
+      if (images)
+        forEach (image in images) image.draw
+      endIf
+
+      on_draw
+
+      Display.pop_view_transform
+      Display.pop_view_transform
+
+    method on_draw
+      noAction
+
+endClass
