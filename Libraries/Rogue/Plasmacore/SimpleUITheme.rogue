@@ -9,7 +9,11 @@ class SimpleUITheme : UITheme [singleton]
       return @default_font
 
     method on_draw( component:UIText )
-      component.font.draw( component.text, component.display_position )
+      local font = component.font as PlasmacoreUIFont
+      if (font)
+        font.color = component.color
+        font.draw( component.text, component )
+      endIf
 endClass
 
 
@@ -19,8 +23,7 @@ class SimpleUIDefaultFont : PlasmacoreUIFont [singleton]
 
   METHODS
     method init
-      prior.init( "SimpleUIDefaultFont" )
-      font = DefaultFont
+      prior.init( DefaultFont, &link=true )
       font.anchor = Anchor.TOP_LEFT
       font.height = 24 * Display.density
 

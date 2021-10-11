@@ -10,6 +10,9 @@ class PlasmacoreUI : UI
     method init( theme:UITheme )
       prior.init( theme )
 
+    method default_theme->UITheme
+      return SimpleUITheme
+
     method update
       prior.update
       request_redraw
@@ -18,7 +21,17 @@ class PlasmacoreUI : UI
       Display.clip = clip
 endClass
 
+augment Font
+  PROPERTIES
+    ui_font : Object
+endAugment
+
 class PlasmacoreUIFont : UIFont
+  GLOBAL METHODS
+    method create( font:Font )->PlasmacoreUIFont
+      if (not font.ui_font) PlasmacoreUIFont( font, &link=true )
+      return font.ui_font as PlasmacoreUIFont
+
   PROPERTIES
     font : Font
 
@@ -26,7 +39,10 @@ class PlasmacoreUIFont : UIFont
     method init( name:String )
       prior.init( name.before_last(".png",&ignore_case) )
       if (not name.ends_with(".png",&ignore_case)) name += ".png"
-      font = Font( name ).[ snap=true, anchor=Anchor.TOP_LEFT ]
+      init( Font(name).[ snap=true, anchor=Anchor.TOP_LEFT ], &link=true )
+
+    method init( @font, link:Logical )
+      font.ui_font = this
 
     method cloned->PlasmacoreUIFont
       return PlasmacoreUIFont( font.cloned )
@@ -35,7 +51,9 @@ class PlasmacoreUIFont : UIFont
       return font.color
 
     method draw( text:String, position:XY )
-      font.draw( text, position )
+      temporarily font.anchor = Anchor.TOP_LEFT
+        font.draw( text, position )
+      endTemporarily
 
     method height->Real64
       return font.height
@@ -52,4 +70,54 @@ class PlasmacoreUIFont : UIFont
 
     method set_color( new_color:Color )
       font.color = new_color
+endClass
+
+augment UIComponent
+  METHODS
+    method color->Color
+      return UIAttributes.color( this )
+
+    method set_color( value:Color )
+      attributes += UIColorAttribute(value)
+
+    method set_font( new_font:Font )
+      set_font( PlasmacoreUIFont(new_font) )
+endAugment
+
+augment UIContent
+  METHODS
+    method set_color( new_color:Color )
+      flush
+      if (new_color != cur_group.color) begin_new_group
+      cur_group.color = new_color
+endAugment
+
+augment UIText
+  METHODS
+    method init( text:String, font:Font )
+      init( text ).[ font=PlasmacoreUIFont(font) ]
+endAugment
+
+augment UIAttributes
+  METHODS
+    method color( component:UIComponent )->Color
+      if (component.attributes)
+        local color = component.attributes.color
+        if (color) return color.value
+      endIf
+      if (component.parent) return component.parent.color
+      return Color.WHITE
+endAugment
+
+augment UIAttribute
+  METHODS
+    method color->Color?
+      if (next) return next.color
+      return null
+endAugment
+
+class UIColorAttribute( value:Color ) : UIAttribute
+  METHODS
+    method color->Color?
+      return value
 endClass
