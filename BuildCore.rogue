@@ -19,7 +19,7 @@
 #$ LIBRARIES(Linux) = zlib
 #$ LIBRARIES(Linux) = sox
 
-$define DEFAULT_PLASMACORE "https://github.com/AbePralle/Plasmacore.git@master"
+$define DEFAULT_PLASMACORE "https://github.com/AbePralle/Plasmacore.git#master"
 
 $include "AssetCompiler" [optional]
 
@@ -284,16 +284,16 @@ endRoutine
 
 routine rogo_install_plasmacore( loc="":String )
   if (not String.exists(loc))
-    println "Enter Git URL@branch - can specify URL only or @branch only."
+    println "Enter Git URL#branch - can specify URL only or #branch only."
     println "[default: $] " (DEFAULT_PLASMACORE)
     loc = Console.input( "> " )
     if (loc == "")
       loc = DEFAULT_PLASMACORE
       println loc
-    elseIf (not loc.contains('@'))
-      loc += DEFAULT_PLASMACORE.from_first('@')
-    elseIf (loc.begins_with('@'))
-      loc = DEFAULT_PLASMACORE.before_first('@') + loc
+    elseIf (not loc.contains('#'))
+      loc += DEFAULT_PLASMACORE.from_first('#')
+    elseIf (loc.begins_with('#'))
+      loc = DEFAULT_PLASMACORE.before_first('#') + loc
     endIf
   endIf
 
