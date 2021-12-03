@@ -137,7 +137,7 @@ description( "default", "The default action is performed when no other actions a
 description( "help",    "Displays a list of all actions that can be performed by Rogo." )
 
 routine rogo_default
-  if (not File.exists("Libraries/Plasmacore"))
+  if (not File.exists("Libraries/Plasmacore") or not File.exists("Platforms"))
     rogo_update
   else
     rogo_help
