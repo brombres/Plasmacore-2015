@@ -1,17 +1,17 @@
 module Plasmacore
   uses UI
-  uses SimpleUITheme [export]
+  uses PlasmacoreUITheme [export]
 
 class PlasmacoreUI : UI
   METHODS
     method init
-      prior.init( SimpleUITheme )
+      prior.init( PlasmacoreUITheme )
 
     method init( theme:UITheme )
       prior.init( theme )
 
     method default_theme->UITheme
-      return SimpleUITheme
+      return PlasmacoreUITheme
 
     method update
       prior.update

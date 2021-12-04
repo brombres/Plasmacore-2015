@@ -1,11 +1,11 @@
-module SimpleUITheme
+module PlasmacoreUITheme
   uses UI
   uses Plasmacore
 
-class SimpleUITheme : UITheme [singleton]
+class PlasmacoreUITheme : UITheme [singleton]
   METHODS
     method default_font->UIFont [override]
-      if (not @default_font) @default_font = SimpleUIDefaultFont
+      if (not @default_font) @default_font = PlasmacoreUIDefaultFont
       return @default_font
 
     method on_draw( component:UIText )
@@ -17,7 +17,7 @@ class SimpleUITheme : UITheme [singleton]
 endClass
 
 
-class SimpleUIDefaultFont : PlasmacoreUIFont [singleton]
+class PlasmacoreUIDefaultFont : PlasmacoreUIFont [singleton]
   PROPERTIES
     font : Font
 
