@@ -130,17 +130,18 @@ augment Build
     return false
 endAugment
 
-# description()s are optional - Rogo uses introspection to determine which
-# commands are available. 'rogo help default' displays the description for
-# "default", etc.
-description( "default", "The default action is performed when no other actions are specified. Use 'rogo default' to explicitly perform the default option." )
-description( "help",    "Displays a list of all actions that can be performed by Rogo." )
-
 routine rogo_default
   if (not File.exists("Libraries/Plasmacore") or not File.exists("Platforms"))
     rogo_update
   else
     rogo_help
+  endIf
+endRoutine
+
+routine rogo_clean
+  if (File.exists("Build"))
+    println "Deleting Build/"
+    File.delete("Build")
   endIf
 endRoutine
 
