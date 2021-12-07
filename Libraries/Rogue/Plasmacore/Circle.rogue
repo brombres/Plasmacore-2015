@@ -3,7 +3,7 @@ module Plasmacore
 
 augment Circle
   METHODS
-    method draw( color:Color, segments=(1.0/4.0):Real64 )
+    method draw( color:Color, thickness=1:Real64, segments=(1.0/4.0):Real64 )
       # Draws an outline of the given circle in the given color.
       #
       # Parameters
@@ -26,11 +26,11 @@ augment Circle
       local pt1 = first
       forEach (angle in angle_step..2*pi step angle_step)
         local pt2 = at(Radians(angle))
-        Line(pt1,pt2).draw( color )
+        Line(pt1,pt2).draw( color, thickness )
         pt1 = pt2
       endForEach
 
-      Line(pt1,first).draw( color )
+      Line(pt1,first).draw( color, thickness )
 
     method fill( color:Color, segments=(1.0/4.0):Real64 )
       # Fills the given circle with the given color.
