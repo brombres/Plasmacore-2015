@@ -1352,16 +1352,17 @@ class Convert
     method pack_varfont_characters( cmd:ImageCommand, characters:Bitmap[] )->Bitmap
       require characters.count
       local total_w = 0
-      total_w += (forEach in characters).width
+      total_w += (forEach in characters).width.clamped_low(1)
       local bitmap = Bitmap( total_w, characters.first.height + 1 )
       local color = Color.RED
       local x = 0
       forEach (ch in characters)
-        bitmap.fill( Box(x,0,ch.width,1), color )
+        local w = ch.width.clamped_low(1)
+        bitmap.fill( Box(x,0,w,1), color )
         ch.blit( bitmap, XY(x,1) )
         if (color == Color.RED) color = 0xFF00FF00
         else                    color = Color.RED
-        x += ch.width
+        x += w
       endForEach
       return bitmap
 
