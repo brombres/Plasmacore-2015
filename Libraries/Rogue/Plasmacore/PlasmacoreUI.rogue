@@ -78,7 +78,7 @@ augment UIComponent
       return UIAttributes.color( this )
 
     method set_color( value:Color )
-      attributes += UIColorAttribute(value)
+      UIAttributes.set_color( this, value )
 
     method set_font( new_font:Font )
       set_font( PlasmacoreUIFont(new_font) )
@@ -107,6 +107,10 @@ augment UIAttributes
       endIf
       if (component.parent) return component.parent.color
       return Color.WHITE
+
+    method set_color( component:UIComponent, value:Color )
+      if (component.attributes) component.attributes.set_color( value )
+      else                      component.attributes = UIColorAttribute( value )
 endAugment
 
 augment UIAttribute
@@ -114,10 +118,16 @@ augment UIAttribute
     method color->Color?
       if (next) return next.color
       return null
+
+    method set_color( value:Color )
+      if (next) next.set_color( value )
+      else      next = UIColorAttribute( value )
 endAugment
 
 class UIColorAttribute( value:Color ) : UIAttribute
   METHODS
     method color->Color?
       return value
+
+    method set_color( value )
 endClass
