@@ -16,7 +16,8 @@ class Font
 
     color          = Color.WHITE : Color
     opacity        = 1.0
-    shader         : Shader  # leave null to use default
+    shader         : Shader      # leave null to use default
+    render_mode    : RenderMode  # leave null to use default
 
   METHODS
     method init( name, options=@{} )
@@ -35,6 +36,7 @@ class Font
       result.color = color
       result.opacity = opacity
       result.shader = shader
+      result.render_mode = render_mode
       return result
 
     method load->this
@@ -354,6 +356,7 @@ class FontData
           image.size = font_ch.size * font.scale
           image.color = font.color.with_opacity( font.opacity )
           image.shader = font.shader  # if null, default is used
+          image.render_mode = font.render_mode  # if null, default is used
           image.position = cursor + font_ch.offset
           image.opacity = font.opacity
           image.draw
@@ -371,6 +374,7 @@ class FontData
           image.size = font_ch.size * font.scale
           image.color = font.color.with_opacity( font.opacity )
           image.shader = font.shader  # if null, default is used
+          image.render_mode = font.render_mode  # if null, default is used
           image.position = cursor + font_ch.offset
           image.opacity = font.opacity
           image.draw
