@@ -8,11 +8,18 @@ class PlasmacoreUITheme : UITheme [singleton]
       if (not @default_font) @default_font = PlasmacoreUIDefaultFont
       return @default_font
 
+    method on_draw( component:UILabel )
+      local font = component.font
+      if (font)
+        font.color = component.color
+        font.draw( component.text, component )
+      endIf
+
     method on_draw( component:UIText )
       local font = component.font as PlasmacoreUIFont
       if (font)
         font.color = component.color
-        font.draw( component.text, component )
+        font.draw( component.text_content, component )
       endIf
 endClass
 

@@ -26,6 +26,15 @@ augment Font
     ui_font : Object
 endAugment
 
+augment UIFont
+  METHODS
+    method color->Color
+      throw UnsupportedOperationError()
+
+    method set_color( new_color:Color )
+      throw UnsupportedOperationError()
+endAugment
+
 class PlasmacoreUIFont : UIFont
   GLOBAL METHODS
     method create( font:Font )->PlasmacoreUIFont
