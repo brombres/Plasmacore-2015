@@ -15,6 +15,9 @@ augment Box
       Display.draw( this, color, thickness )
       return this
 
+    method drawable( color:Color )->DrawableQuad
+      return this->Quad.drawable( color )
+
     method transform( m:Matrix )->Quad
       return Quad(
         m * top_left,
