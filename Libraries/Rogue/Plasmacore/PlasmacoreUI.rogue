@@ -101,10 +101,22 @@ augment UIContent
       cur_group.color = new_color
 endAugment
 
+augment UILabel
+  METHODS
+    method init( text:String, font:Font )
+      init( text, PlasmacoreUIFont(font) )
+endAugment
+
 augment UIText
   METHODS
     method init( text:String, font:Font )
-      init( text ).[ font=PlasmacoreUIFont(font) ]
+      init( text, PlasmacoreUIFont(font) )
+endAugment
+
+augment UIWidget
+  METHODS
+    method init( text:String, font:Font )
+      init( text, PlasmacoreUIFont(font) )
 endAugment
 
 augment UIAttributes
