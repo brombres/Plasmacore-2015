@@ -21,6 +21,7 @@ $if not target("Console")
 
 $if (target("Web")) nativeHeader #include <emscripten.h>
 
+$include "Plasmacore/AcceleratedValue.rogue"
 $include "Plasmacore/Angles.rogue"
 $include "Plasmacore/Bezier.rogue"
 $include "Plasmacore/Bitmap.rogue"
@@ -72,7 +73,6 @@ $include "Plasmacore/Sound.rogue"
 $include "Plasmacore/Sprite.rogue"
 $include "Plasmacore/System.rogue"
 $include "Plasmacore/SystemFont.rogue"
-$include "Plasmacore/TargetValue.rogue"
 $include "Plasmacore/Texture.rogue"
 $include "Plasmacore/TextureImage.rogue"
 $include "Plasmacore/TileMapLayout.rogue"
@@ -85,11 +85,12 @@ $include "Plasmacore/XYZ.rogue"
 $include "Plasmacore/XYZW.rogue"
 
 module Plasmacore
-  uses Geometry           [export]
-  uses Bitmap             [export]
-  uses UI                 [export]
-  uses Utility/Action     [export]
-  uses Utility/ProgressFn [export]
+  uses Geometry            [export]
+  uses Bitmap              [export]
+  uses UI                  [export]
+  uses Utility/Action      [export]
+  uses Utility/ProgressFn  [export]
+  uses Utility/TargetValue [export]
 
 class Plasmacore [essential singleton]
   PROPERTIES

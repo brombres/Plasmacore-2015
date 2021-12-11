@@ -1,0 +1,46 @@
+module Plasmacore
+
+uses Utility/EasedValue
+# also includes base class TargetValue
+
+class AcceleratedValue<<$DataType>> : TargetValue<<$DataType>>
+  PROPERTIES
+    value        : $DataType
+    velocity     = 0.0
+    acceleration = 0.05
+    threshold    = 0.001
+    timer        = UpdateTimer()
+
+  METHODS
+    method init( @target_value, acceleration=0.05, threshold=0.001 )
+
+    method set_value( @value )->this
+      velocity = 0
+      return this
+
+    method value->$DataType
+      if (@value == @target_value) return @value
+
+      timer.update
+      while (timer.tick)
+        local delta = @target_value - @value
+        if (delta.abs < threshold)
+          @value = @target_value
+          velocity = 0
+          return @value
+        else
+          delta *= acceleration
+          if (not velocity) velocity = delta.sign * threshold
+          velocity /= acceleration
+          if (delta.abs > velocity.abs)
+            @value += velocity
+          else
+            @value += delta
+            velocity = delta
+          endIf
+        endIf
+      endWhile
+
+      return @value
+endClass
+
