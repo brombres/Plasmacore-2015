@@ -14,6 +14,8 @@ augment Line<<>>
 
     method drawable( color:Color, thickness:Real64 )->DrawableQuad
       local delta = b - a
-      return (Box( 0, -thickness/2, delta.magnitude, thickness ).rotated( delta.radians ) + a).drawable( color )
+      local th      = thickness
+      local half_th = th/2
+      return (Box( -half_th, -half_th, delta.magnitude+th, th ).rotated( delta.radians ) + a).drawable( color )
 endAugment
 
