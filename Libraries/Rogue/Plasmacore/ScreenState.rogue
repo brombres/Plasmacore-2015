@@ -18,12 +18,17 @@ class ScreenState
     next_state            : ScreenState
     prior_state           : ScreenState
 
-    ui              : UI
-    actions         : Action
-    transition_info : TransitionInfo?
+    ui_list               : UI[]
+    actions               : Action
+
+    transition_info       : TransitionInfo?
 
   METHODS
     method init( screen=null )
+
+    method add( ui:UI )
+      ensure ui_list
+      ui_list.add( ui )
 
     method after( e:KeyEvent )
 
@@ -45,6 +50,11 @@ class ScreenState
     method change_screen( new_screen:Screen )->Screen
       return screen.change_screen( new_screen )
 
+    method dispatch_message<<$MessageType>>( message:$MessageType )
+      on_message( message )
+      if (ui_list) (forEach in ui_list).dispatch_message( message )
+      screen.dispatch_message( message )
+
     method exit_state
       screen.@state = this
       # This should already be the case but the error is hard to track down if it's not!
@@ -58,7 +68,12 @@ class ScreenState
       screen.handle( e )
       if (e.is_consumed) return
 
-      if (ui) ui.handle( e )
+      if (ui_list)
+        forEach (ui in ui_list step -1)
+          ui.handle( e )
+          if (e.is_consumed) return
+        endForEach
+      endIf
       after( e )
 
     method handle( e:PointerEvent )
@@ -68,7 +83,12 @@ class ScreenState
       screen.handle( e )
       if (e.is_consumed) return
 
-      if (ui) ui.handle( e )
+      if (ui_list)
+        forEach (ui in ui_list step -1)
+          ui.handle( e )
+          if (e.is_consumed) return
+        endForEach
+      endIf
       after( e )
 
     method handle( e:ScrollEvent )
@@ -78,7 +98,12 @@ class ScreenState
       screen.handle( e )
       if (e.is_consumed) return
 
-      if (ui) ui.handle( e )
+      if (ui_list)
+        forEach (ui in ui_list step -1)
+          ui.handle( e )
+          if (e.is_consumed) return
+        endForEach
+      endIf
       after( e )
 
     method handle( e:TextEvent )
@@ -88,18 +113,26 @@ class ScreenState
       screen.handle( e )
       if (e.is_consumed) return
 
-      if (ui) ui.handle( e )
+      if (ui_list)
+        forEach (ui in ui_list step -1)
+          ui.handle( e )
+          if (e.is_consumed) return
+        endForEach
+      endIf
       after( e )
 
     method handle_draw
       on_draw
       screen.handle_draw
-      if (ui) ui.draw
+
+      if (ui_list) (forEach in ui_list).draw
+
       after_draw
 
     method handle_resize
-      if (ui) ui.request_layout
       on_resize
+
+      if (ui_list) (forEach in ui_list).request_layout
 
       local cur_screen = screen
       if (not cur_screen.previous_display_size.exists or cur_screen.previous_display_size.value != Display.size)
@@ -116,8 +149,16 @@ class ScreenState
       screen.needs_first_update = false
       screen.handle_update
 
-      if (ui) ui.update( Display.bounds )
+      if (ui_list)
+        local display_bounds = Display.bounds
+        (forEach in ui_list).update( display_bounds )
+      endIf
+
       after_update
+
+    method insert( ui:UI )
+      ensure ui_list
+      ui_list.insert( ui )
 
     method on( e:KeyEvent )
       noAction
@@ -135,6 +176,12 @@ class ScreenState
       noAction
 
     method on_finish
+      noAction
+
+    method on_message<<$MessageType>>( message:$MessageType )
+      noAction
+
+    method on_message( message:String )
       noAction
 
     method on_prepare
@@ -180,8 +227,19 @@ class ScreenState
         cur.next_state = new_state
       endIf
 
-    method set_screen( @screen )->this
-      return this
+    method remove( ui:UI )
+      if (ui_list) ui_list.remove( ui )
+
+    method set_screen( @screen )
+
+    method set_ui( ui:UI )
+      ensure ui_list
+      ui_list.clear
+      ui_list.add( ui )
+
+    method ui->UI
+      if (not ui_list or ui_list.is_empty) return null
+      return ui_list.first
 
 endClass
 
