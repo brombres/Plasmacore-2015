@@ -56,7 +56,7 @@ class ScreenState
       screen.dispatch_message( message )
 
     method exit_state
-      screen.@state = this
+      screen.@screen_state = this
       # This should already be the case but the error is hard to track down if it's not!
 
       screen.exit_state
@@ -206,7 +206,7 @@ class ScreenState
       screen.on_transition_before_draw
 
     method on_transition_finished
-      # This state has finished being transitioned to
+      # This screen state has finished being transitioned to
       screen.on_transition_finished
 
     method on_update
@@ -247,7 +247,7 @@ class ScreenState<<$ScreenType>> : ScreenState
   METHODS
     method screen->$ScreenType
       if (@screen is null)
-        throw Error( "$.screen is being accessed before the state is fully configured.\n" ...
+        throw Error( "$.screen is being accessed before the screen_state is fully configured.\n" ...
                      "If this is being accessed from init(), move the access to on_start() instead." (type_name) )
       endIf
       return @screen as $ScreenType

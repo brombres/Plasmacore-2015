@@ -115,10 +115,10 @@ class Display [singleton]
     method activate_screen_and_state
       if (not screen) screen = default_screen_type.create_object<<Screen>>
       screen.display = this
-      screen.state.screen = screen
+      screen.screen_state.screen = screen
 
       # On any new screens and states: call on_start, ensure on_update has been called once
-      # before any later drawing, and repeat the process if the screen or state changes during
+      # before any later drawing, and repeat the process if the screen or screen state changes during
       # the process.
       loop
         if (not screen.is_active)
@@ -127,13 +127,13 @@ class Display [singleton]
           nextIteration
         endIf
 
-        if (not screen.state.is_active)
-          screen.state.is_active = true
-          screen.state.on_start
+        if (not screen.screen_state.is_active)
+          screen.screen_state.is_active = true
+          screen.screen_state.on_start
           nextIteration
         endIf
 
-        local cur_state = screen.state
+        local cur_state = screen.screen_state
         if (not cur_state.previous_display_size.exists or cur_state.previous_display_size.value != Display.size)
           # Will also call handle_resize on the screen
           effect.handle_resize
@@ -141,24 +141,24 @@ class Display [singleton]
           nextIteration
         endIf
 
-        # Corner case: if the state didn't need a resize but the screen still does
+        # Corner case: if the screen state didn't need a resize but the screen still does
         if (not screen.previous_display_size.exists or screen.previous_display_size.value != Display.size)
           screen.handle_resize
           screen.previous_display_size = Display.size
           nextIteration
         endIf
 
-        if (screen.state.needs_first_update)
+        if (screen.screen_state.needs_first_update)
           # Will also update the screen
           effect = effect.update
           effect.handle_update
-          screen.state.needs_first_update = false
+          screen.screen_state.needs_first_update = false
           # set first_update=false AFTER .handle_update() to avoid an infinite loop if a new
-          # screen's on_update() does a change_state() to a new state.
+          # screen's on_update() does a change_state() to a new screen state.
           nextIteration
         endIf
 
-        # Corner case: if the state didn't need a first update but the screen does
+        # Corner case: if the screen state didn't need a first update but the screen does
         if (screen.needs_first_update)
           screen.needs_first_update = false
           screen.handle_update
@@ -1029,8 +1029,8 @@ class Display [singleton]
       active_textures[ index ] = texture
 
     method set_state( new_state:ScreenState )
-      # Sets the state of this Display's current screen.
-      screen.@state = new_state
+      # Sets the screen state of this Display's current screen.
+      screen.@screen_state = new_state
 
     method set_screen( @screen )
       screen.display = this
@@ -1038,9 +1038,9 @@ class Display [singleton]
     method size->XY
       return render_target.size
 
-    method state->ScreenState [macro]
-      # Obtains the state of this Display's current screen.
-      return this.screen.state
+    method screen_state->ScreenState [macro]
+      # Obtains the screen state of this Display's current screen.
+      return this.screen.screen_state
 
     method transform->Matrix [macro]
       return this.render_target.transform

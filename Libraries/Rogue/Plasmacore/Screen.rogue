@@ -3,7 +3,7 @@ module Plasmacore
 
 class Screen
   PROPERTIES
-    state                 = ScreenState(this)
+    screen_state                 = ScreenState(this)
 
     display               : Display
     is_active             : Logical
@@ -43,18 +43,18 @@ class Screen
     method change_state( new_state:ScreenState )->ScreenState
       local cur = new_state
       while (cur.next_state) cur = cur.next_state
-      cur.next_state = state.next_state
-      state.next_state = null
-      new_state.prior_state = state.prior_state
+      cur.next_state = screen_state.next_state
+      screen_state.next_state = null
+      new_state.prior_state = screen_state.prior_state
 
       new_state.on_prepare
-      state.on_finish
-      state.is_active = false
-      @state = new_state
-      state.screen = this
-      state.is_active = true
-      state.on_start
-      return state
+      screen_state.on_finish
+      screen_state.is_active = false
+      @screen_state = new_state
+      screen_state.screen = this
+      screen_state.is_active = true
+      screen_state.on_start
+      return screen_state
 
     method change_screen( new_screen:Screen )->Screen
       new_screen.display = display
@@ -70,33 +70,33 @@ class Screen
 
     method exit_state
       local new_state : ScreenState
-      if (state.next_state)
-        new_state = state.next_state
-      elseIf (state.prior_state)
-        new_state = state.prior_state
+      if (screen_state.next_state)
+        new_state = screen_state.next_state
+      elseIf (screen_state.prior_state)
+        new_state = screen_state.prior_state
       else
-        println "ERROR: Screen/ScreenState.exit_state called with no next or prior state"
+        println "ERROR: Screen/ScreenState.exit_state called with no next or prior screen_state"
         new_state = ScreenState()
       endIf
 
       new_state.screen = this
       new_state.on_prepare
 
-      state.on_finish
-      state.is_active = false
+      screen_state.on_finish
+      screen_state.is_active = false
 
       new_state.is_active = true
 
-      if (state.next_state)
-        new_state.prior_state = state.prior_state
-        @state = new_state
-        state.on_start
-      elseIf (state.prior_state)
-        @state = new_state
-        state.on_resume
+      if (screen_state.next_state)
+        new_state.prior_state = screen_state.prior_state
+        @screen_state = new_state
+        screen_state.on_start
+      elseIf (screen_state.prior_state)
+        @screen_state = new_state
+        screen_state.on_resume
       else
-        @state = new_state
-        state.on_start
+        @screen_state = new_state
+        screen_state.on_start
       endIf
 
     method handle( e:KeyEvent )
@@ -222,16 +222,16 @@ class Screen
       noAction
 
     method push_state( new_state:ScreenState )
-      new_state.prior_state = state
-      state.is_active = false
-      state.on_suspend
-      @state = new_state
-      state.screen = this
-      state.is_active = true
-      state.on_start
+      new_state.prior_state = screen_state
+      screen_state.is_active = false
+      screen_state.on_suspend
+      @screen_state = new_state
+      screen_state.screen = this
+      screen_state.is_active = true
+      screen_state.on_start
 
     method queue_state( new_state:ScreenState, &insert )
-      state.queue_state( new_state, &=insert )
+      screen_state.queue_state( new_state, &=insert )
 
     method remove( ui:UI )
       if (ui_list) ui_list.remove( ui )
