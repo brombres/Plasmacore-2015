@@ -56,9 +56,11 @@ class TransitionInfo( t:Real64, color:Color, exit_vector:XY ) [compound]
       else         return @exit_vector * XY(-1,-1)
 
     method is_transitioning_in->Logical
+      # Second half of transition, into new screen or state
       return (t >= 0.5)
 
     method is_transitioning_out->Logical
+      # First half of transition, away from old screen or state
       return (t < 0.5)
 
     method eased_progress( fn_out=ProgressFn.QUADRATIC_OUT:ProgressFnType, fn_in=ProgressFn.QUADRATIC_IN:ProgressFnType, &invert_ease_in=true )->Real64
@@ -67,6 +69,10 @@ class TransitionInfo( t:Real64, color:Color, exit_vector:XY ) [compound]
       else                    return fn_in( 2*t - 1 )
 
     method linear_progress( &invert_ease_in=true )->Real64
+      # If .is_transitioning_out then returns 0.0 - 1.0
+      # If .is_transitioning_in  then returns:
+      #   1.0 - 0.0 (if invert_ease_in [default])
+      #   0.0 - 1.0 (if not invert_ease_in)
       if (t < 0.5)            return t * 2
       elseIf (invert_ease_in) return 2 - 2*t
       else                    return 2*t - 1
@@ -120,7 +126,9 @@ class BaseTransitionDisplayEffect : TransitionEffect
 
     method update->DisplayEffect
       progress = (progress + delta).clamped_high( 1.0 )
-      if (not fading_in)
+      if (fading_in)
+        if (progress == 1.0) Display.screen.state.on_transition_finished
+      else
         if (progress >= 0.5)
           fading_in = true
           on_fade_out_finished

@@ -17,6 +17,7 @@ class Screen
     lighting : Lighting
     # 3D lighting model
 
+    ui       : UI
     actions  : Action
 
     transition_info : TransitionInfo?
@@ -113,6 +114,7 @@ class Screen
       #    endIf
       #  endForEach
       #endIf
+      if (ui) ui.handle( e )
 
       after( e )
 
@@ -129,6 +131,7 @@ class Screen
       #  endForEach
       #endIf
 
+      if (ui) ui.handle( e )
       after( e )
 
     method handle( e:ScrollEvent )
@@ -144,6 +147,7 @@ class Screen
       #  endForEach
       #endIf
 
+      if (ui) ui.handle( e )
       after( e )
 
     method handle( e:TextEvent )
@@ -159,6 +163,7 @@ class Screen
       #  endForEach
       #endIf
 
+      if (ui) ui.handle( e )
       after( e )
 
     method handle_draw
@@ -168,6 +173,7 @@ class Screen
       #    if (layer.is_visible) layer.on_draw
       #  endForEach
       #endIf
+      if (ui) ui.draw
       after_draw
 
     method handle_resize
@@ -177,6 +183,7 @@ class Screen
       #    if (layer.is_visible) layer.on_resize
       #  endForEach
       #endIf
+      if (ui) ui.request_layout
       after_resize
 
     method handle_update
@@ -188,6 +195,7 @@ class Screen
       #    if (layer.is_visible) layer.on_update
       #  endForEach
       #endIf
+      if (ui) ui.update( Display.bounds )
       after_update
 
     method lighting->Lighting
@@ -216,6 +224,9 @@ class Screen
       Display.bounds.fill( info.color.with_alpha(info.eased_progress) )
 
     method on_transition_before_draw
+
+    method on_transition_finished
+      # This screen has finished being transitioned to
 
     method on_update
 

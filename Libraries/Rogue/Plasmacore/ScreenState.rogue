@@ -18,6 +18,7 @@ class ScreenState
     next_state            : ScreenState
     prior_state           : ScreenState
 
+    ui              : UI
     actions         : Action
     transition_info : TransitionInfo?
 
@@ -57,6 +58,7 @@ class ScreenState
       screen.handle( e )
       if (e.is_consumed) return
 
+      if (ui) ui.handle( e )
       after( e )
 
     method handle( e:PointerEvent )
@@ -66,6 +68,7 @@ class ScreenState
       screen.handle( e )
       if (e.is_consumed) return
 
+      if (ui) ui.handle( e )
       after( e )
 
     method handle( e:ScrollEvent )
@@ -75,6 +78,7 @@ class ScreenState
       screen.handle( e )
       if (e.is_consumed) return
 
+      if (ui) ui.handle( e )
       after( e )
 
     method handle( e:TextEvent )
@@ -84,14 +88,17 @@ class ScreenState
       screen.handle( e )
       if (e.is_consumed) return
 
+      if (ui) ui.handle( e )
       after( e )
 
     method handle_draw
       on_draw
       screen.handle_draw
+      if (ui) ui.draw
       after_draw
 
     method handle_resize
+      if (ui) ui.request_layout
       on_resize
 
       local cur_screen = screen
@@ -109,6 +116,7 @@ class ScreenState
       screen.needs_first_update = false
       screen.handle_update
 
+      if (ui) ui.update( Display.bounds )
       after_update
 
     method on( e:KeyEvent )
@@ -149,6 +157,10 @@ class ScreenState
 
     method on_transition_before_draw
       screen.on_transition_before_draw
+
+    method on_transition_finished
+      # This state has finished being transitioned to
+      screen.on_transition_finished
 
     method on_update
       noAction
