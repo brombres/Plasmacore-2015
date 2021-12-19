@@ -3,8 +3,6 @@ module Plasmacore
 
 class Screen
   PROPERTIES
-    screen_state                 = ScreenState(this)
-
     display               : Display
     is_active             : Logical
     needs_first_update    = true
@@ -18,8 +16,6 @@ class Screen
 
     ui_list  : UI[]
     actions  : Action
-
-    transition_info : TransitionInfo?
 
   METHODS
     method add( ui:UI )
@@ -50,7 +46,7 @@ class Screen
       new_state.on_prepare
       screen_state.on_finish
       screen_state.is_active = false
-      @screen_state = new_state
+      Display.screen_state = new_state
       screen_state.screen = this
       screen_state.is_active = true
       screen_state.on_start
@@ -89,13 +85,13 @@ class Screen
 
       if (screen_state.next_state)
         new_state.prior_state = screen_state.prior_state
-        @screen_state = new_state
+        Display.screen_state = new_state
         screen_state.on_start
       elseIf (screen_state.prior_state)
-        @screen_state = new_state
+        Display.screen_state = new_state
         screen_state.on_resume
       else
-        @screen_state = new_state
+        Display.screen_state = new_state
         screen_state.on_start
       endIf
 
@@ -210,7 +206,7 @@ class Screen
       noAction
 
     method on_transition_after_draw
-      local info = transition_info.value
+      local info = Display.transition_info.value
       Display.bounds.fill( info.color.with_alpha(info.eased_progress) )
 
     method on_transition_before_draw
@@ -225,7 +221,7 @@ class Screen
       new_state.prior_state = screen_state
       screen_state.is_active = false
       screen_state.on_suspend
-      @screen_state = new_state
+      Display.screen_state = new_state
       screen_state.screen = this
       screen_state.is_active = true
       screen_state.on_start
@@ -235,6 +231,9 @@ class Screen
 
     method remove( ui:UI )
       if (ui_list) ui_list.remove( ui )
+
+    method screen_state->ScreenState
+      return Display.screen_state
 
     method set_state( new_state:ScreenState )
       change_state( new_state )

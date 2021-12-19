@@ -41,7 +41,9 @@ class Display [singleton]
     effect        = NoEffect : DisplayEffect
 
     name               : String
-    screen               = default_screen_type.create_object<<Screen>> : Screen
+    screen             = default_screen_type.create_object<<Screen>> : Screen
+    screen_state       = ScreenState( screen )
+    transition_info    : TransitionInfo?
 
     window             : Window
 
@@ -115,7 +117,7 @@ class Display [singleton]
     method activate_screen_and_state
       if (not screen) screen = default_screen_type.create_object<<Screen>>
       screen.display = this
-      screen.screen_state.screen = screen
+      screen_state.screen = screen
 
       # On any new screens and states: call on_start, ensure on_update has been called once
       # before any later drawing, and repeat the process if the screen or screen state changes during
@@ -127,13 +129,13 @@ class Display [singleton]
           nextIteration
         endIf
 
-        if (not screen.screen_state.is_active)
-          screen.screen_state.is_active = true
-          screen.screen_state.on_start
+        if (not screen_state.is_active)
+          screen_state.is_active = true
+          screen_state.on_start
           nextIteration
         endIf
 
-        local cur_state = screen.screen_state
+        local cur_state = screen_state
         if (not cur_state.previous_display_size.exists or cur_state.previous_display_size.value != Display.size)
           # Will also call handle_resize on the screen
           effect.handle_resize
@@ -148,11 +150,11 @@ class Display [singleton]
           nextIteration
         endIf
 
-        if (screen.screen_state.needs_first_update)
+        if (screen_state.needs_first_update)
           # Will also update the screen
           effect = effect.update
           effect.handle_update
-          screen.screen_state.needs_first_update = false
+          screen_state.needs_first_update = false
           # set first_update=false AFTER .handle_update() to avoid an infinite loop if a new
           # screen's on_update() does a change_state() to a new screen state.
           nextIteration
@@ -1030,17 +1032,13 @@ class Display [singleton]
 
     method set_state( new_state:ScreenState )
       # Sets the screen state of this Display's current screen.
-      screen.@screen_state = new_state
+      screen_state = new_state
 
     method set_screen( @screen )
       screen.display = this
 
     method size->XY
       return render_target.size
-
-    method screen_state->ScreenState [macro]
-      # Obtains the screen state of this Display's current screen.
-      return this.screen.screen_state
 
     method transform->Matrix [macro]
       return this.render_target.transform

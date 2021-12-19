@@ -21,8 +21,6 @@ class ScreenState
     ui_list               : UI[]
     actions               : Action
 
-    transition_info       : TransitionInfo?
-
   METHODS
     method init( screen=null )
 
@@ -56,7 +54,7 @@ class ScreenState
       screen.dispatch_message( message )
 
     method exit_state
-      screen.@screen_state = this
+      Display.screen_state = this
       # This should already be the case but the error is hard to track down if it's not!
 
       screen.exit_state

@@ -7,25 +7,25 @@ class DisplayEffect
 
   METHODS
     method handle( e:KeyEvent )
-      Display.screen.screen_state.handle( e )
+      Display.screen_state.handle( e )
 
     method handle( e:PointerEvent )
-      Display.screen.screen_state.handle( e )
+      Display.screen_state.handle( e )
 
     method handle( e:ScrollEvent )
-      Display.screen.screen_state.handle( e )
+      Display.screen_state.handle( e )
 
     method handle( e:TextEvent )
-      Display.screen.screen_state.handle( e )
+      Display.screen_state.handle( e )
 
     method handle_draw
-      Display.screen.screen_state.handle_draw
+      Display.screen_state.handle_draw
 
     method handle_resize
-      Display.screen.screen_state.handle_resize
+      Display.screen_state.handle_resize
 
     method handle_update
-      Display.screen.screen_state.handle_update
+      Display.screen_state.handle_update
 
     method is_finished->Logical
       return true
@@ -109,14 +109,9 @@ class BaseTransitionDisplayEffect : TransitionEffect
       Display.effect += this
 
     method handle_draw
-      local info = TransitionInfo( progress, color, exit_vector )
-      Display.screen.transition_info = info
-      Display.screen.screen_state.transition_info = info
-      Display.screen.screen_state.on_transition_before_draw
-      Display.screen.screen_state.handle_draw
-      Display.screen.screen_state.on_transition_after_draw
-      Display.screen.transition_info = null
-      Display.screen.screen_state.transition_info = null
+      Display.screen_state.on_transition_before_draw
+      Display.screen_state.handle_draw
+      Display.screen_state.on_transition_after_draw
 
     method is_finished->Logical
       return (progress == 1.0)
@@ -126,8 +121,13 @@ class BaseTransitionDisplayEffect : TransitionEffect
 
     method update->DisplayEffect
       progress = (progress + delta).clamped_high( 1.0 )
+      Display.transition_info = TransitionInfo( progress, color, exit_vector )
+
       if (fading_in)
-        if (progress == 1.0) Display.screen.screen_state.on_transition_finished
+        if (progress == 1.0)
+          Display.screen_state.on_transition_finished
+          Display.transition_info = null
+        endIf
       else
         if (progress >= 0.5)
           fading_in = true
@@ -151,12 +151,12 @@ class TransitionTo : BaseTransitionDisplayEffect
       prior.init( duration, color, exit_vector )
 
     method handle_resize
-      Display.screen.screen_state.handle_resize
+      Display.screen_state.handle_resize
       if (to_screen) to_screen.screen_state.handle_resize
 
     method on_fade_out_finished
-      if (to_screen) Display.screen.screen_state.change_screen( to_screen )
-      else           Display.screen.screen_state.change_state( to_state )
+      if (to_screen) Display.screen_state.change_screen( to_screen )
+      else           Display.screen_state.change_state( to_state )
 
 endClass
 
@@ -166,12 +166,12 @@ class TransitionToPushState : TransitionTo
       prior.init( to_state, duration, color, exit_vector )
 
     method on_fade_out_finished
-      Display.screen.screen_state.push_state( to_state )
+      Display.screen_state.push_state( to_state )
 endClass
 
 class TransitionToExitState : BaseTransitionDisplayEffect
   METHODS
     method on_fade_out_finished
-      Display.screen.screen_state.exit_state
+      Display.screen_state.exit_state
 endClass
 
