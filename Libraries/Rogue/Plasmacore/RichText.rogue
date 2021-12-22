@@ -34,7 +34,7 @@ class RichText : BufferedPrintWriter<<print_buffer>>
       return this
 
     method add( fragment:RichTextFragmentStyle )->this
-      add( fragment as RichTextFragment )
+      add( fragment->(as RichTextFragment) )
       fragment.fn( this ) # apply each style as we're building this RichText
       return this
 
