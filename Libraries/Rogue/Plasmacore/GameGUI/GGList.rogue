@@ -116,7 +116,7 @@ class GGHorizontalList<<$ItemType>> : GGList<<$ItemType>>
       endIf
 
     method get( index:Int32 )->$ItemType
-      return (subcomponents[ index ] as $ItemType)
+      return subcomponents[ index ]->(as $ItemType)
 
     method handle( e:PointerEvent )
       GGComponentManager.pointer_position = e.position
@@ -317,7 +317,7 @@ class GGVerticalList<<$ItemType>> : GGList<<$ItemType>>
       endIf
 
     method get( index:Int32 )->$ItemType
-      return (subcomponents[ index ] as $ItemType)
+      return subcomponents[ index ]->(as $ItemType)
 
     method handle( e:PointerEvent )
       GGComponentManager.pointer_position = e.position
