@@ -248,7 +248,7 @@ class ScreenState<<$ScreenType>> : ScreenState
         throw Error( "$.screen is being accessed before the screen_state is fully configured.\n" ...
                      "If this is being accessed from init(), move the access to on_start() instead." (type_name) )
       endIf
-      return @screen as $ScreenType
+      return @screen->(as $ScreenType)
 endClass
 
 class ChangeScreenState( new_screen:Screen ) : ScreenState

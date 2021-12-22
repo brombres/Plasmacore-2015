@@ -433,7 +433,7 @@ class Message
       return bytes
 
     method value( name:String, default=UndefinedValue:Value )->Value
-      local json = string( name, null as String )
+      local json = string( name, null->(as String) )
       if (not json) return default
 
       return JSON.parse( json )

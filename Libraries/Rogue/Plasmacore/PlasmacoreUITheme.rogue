@@ -16,7 +16,7 @@ class PlasmacoreUITheme : UITheme [singleton]
       endIf
 
     method on_draw( component:UIText )
-      local font = component.font as PlasmacoreUIFont
+      local font = component.font->(as PlasmacoreUIFont)
       if (font)
         font.color = component.color
         font.draw( component.text_content, component )

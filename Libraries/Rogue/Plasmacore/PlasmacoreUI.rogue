@@ -39,7 +39,7 @@ class PlasmacoreUIFont : UIFont
   GLOBAL METHODS
     method create( font:Font )->PlasmacoreUIFont
       if (not font.ui_font) PlasmacoreUIFont( font, &link=true )
-      return font.ui_font as PlasmacoreUIFont
+      return font.ui_font->(as PlasmacoreUIFont)
 
   PROPERTIES
     font : Font

@@ -19,7 +19,7 @@ class CompositeImage : Image
       init( XY(w,h) )
 
     method init( other:CompositeImage )
-      init( other as Image )
+      init( other->(as Image) )
       images = images.cloned
       size = other.size
       original_size = other.original_size
