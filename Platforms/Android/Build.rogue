@@ -153,7 +153,7 @@ routine rogo_keystore
            |  keytool -genkey -v -keystore <filepath.keystore> -storepass <keystore-password> \
            |  -alias <key-alias> -keypass <key-password> -keyalg RSA -validity 36500
            |
-  local keystore_filepath = File.expand_filepath( Console.input( "Enter keystore filepath (can use ~): " ) )
+  local keystore_filepath = File.expand_path( Console.input( "Enter keystore filepath (can use ~): " ) )
   if (File.exists(keystore_filepath))
     throw Error( "Keystore $ already exits - if\nyou wish to overwrite it, manually delete and retry." (keystore_filepath) )
   endIf
@@ -198,12 +198,12 @@ endRoutine
 
 routine rogo_build_debug
   configure_local_properties
-  execute "sh gradlew assembleDebug"
+  execute "gradle assembleDebug"
 endRoutine
 
 routine rogo_build_release
   configure_local_properties
-  execute "sh gradlew assembleRelease"
+  execute "gradle assembleRelease"
 endRoutine
 
 routine rogo_debug
@@ -326,29 +326,20 @@ routine configure_local_properties
   if (File.exists(local_properties_filepath)) return
 
   # Attempt to locate Android SDK
-  local sdk_folder : String
+  local android_home : String
   contingent
-    sdk_folder = "~/Library/Android/sdk"
-    sufficient (File.is_folder(sdk_folder))
+    android_home = System.env["ANDROID_HOME"]
+    sufficient (android_home and File.is_folder(android_home))
 
-    sdk_folder = "/Library/Android/sdk"
-    sufficient (File.is_folder(sdk_folder))
-
-    sdk_folder = "~/Android/Sdk"
-    sufficient (File.is_folder(sdk_folder))
-
-    sdk_folder = "/usr/lib/android-sdk"
-    sufficient (File.is_folder(sdk_folder))
-
-    sdk_folder = "/usr/local/bin/android-sdk"
-    sufficient (File.is_folder(sdk_folder))
-
-    sdk_folder = null
+    android_home = null
     escapeContingent
 
   satisfied
-    sdk_folder = File.absolute_filepath( sdk_folder )
+    android_home = File.abs( android_home )
+
   endContingent
+
+  local sdk_folder = android_home
 
   local builder = StringBuilder()
   builder.println @|# Do NOT check this file into your version control system as it contains
@@ -361,10 +352,11 @@ routine configure_local_properties
   println "Creating local.properties with SDK location."
   File.save( local_properties_filepath, builder )
 
-  local mesg = "Cannot locate the Android SDK. Please install them and then edit the corresponding paths in 'local.properties'."
   if (not sdk_folder)
-    if (System.is_linux and not sdk_folder)
-      mesg += "\n\nYou can also download the Android SDK with:\nsudo apt install android-sdk"
+    local mesg = "Cannot locate the Android SDK. Please install them and then edit the "...
+                 "corresponding paths in 'Platforms/Android/local.properties'."
+    if (System.is_linux)
+      mesg += "\n\nYou can install the Android SDK with:\nsudo apt install android-sdk"
     endIf
     throw Error( mesg )
   endIf
