@@ -326,20 +326,24 @@ routine configure_local_properties
   if (File.exists(local_properties_filepath)) return
 
   # Attempt to locate Android SDK
-  local android_home : String
+  local sdk_folder : String
   contingent
-    android_home = System.env["ANDROID_HOME"]
-    sufficient (android_home and File.is_folder(android_home))
+    sdk_folder = System.env["ANDROID_HOME"]
+    sufficient (sdk_folder and File.is_folder(sdk_folder))
 
-    android_home = null
+    sdk_folder = "~/Library/Android/sdk"
+    sufficient (File.is_folder(sdk_folder))
+
+    sdk_folder = "/Library/Android/sdk"
+    sufficient (File.is_folder(sdk_folder))
+
+    sdk_folder = null
     escapeContingent
 
   satisfied
-    android_home = File.abs( android_home )
+    sdk_folder = File.abs( sdk_folder )
 
   endContingent
-
-  local sdk_folder = android_home
 
   local builder = StringBuilder()
   builder.println @|# Do NOT check this file into your version control system as it contains
