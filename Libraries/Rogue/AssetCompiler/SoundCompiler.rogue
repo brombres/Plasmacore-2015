@@ -335,7 +335,7 @@ class SoundCommand
     method include_sounds( pattern:String )
       if (pattern.contains('*') or pattern.contains('?'))
         forEach (filepath in scom.all_sounds)
-          if (File.matches_wildcard_pattern(filepath,pattern))
+          if (File.matches_wildcard_pattern(filepath,pattern) and not File.is_folder(filepath))
             scom.included_sounds.add( filepath )
           endIf
         endForEach
