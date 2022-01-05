@@ -99,12 +99,12 @@ class Image
       return size / original_size
 
     method scale_to_fill( other_bounds:Box )
-      scale = (other_bounds.size / size).max
+      scale = (other_bounds.size / original_size).max
       position = other_bounds.center.floor
       anchor = Anchor.CENTER
 
     method scale_to_fit( other_bounds:Box )
-      scale = (other_bounds.size / size).min
+      scale = (other_bounds.size / original_size).min
       position = other_bounds.center.floor
       anchor = Anchor.CENTER
 
