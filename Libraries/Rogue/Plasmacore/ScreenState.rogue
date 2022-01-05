@@ -42,13 +42,16 @@ class ScreenState
 
     method after_update
 
+    method broadcast_message( message:Value )
+      dispatch_message( message )
+
     method change_state( new_state:ScreenState )->ScreenState
       return screen.change_state( new_state )
 
     method change_screen( new_screen:Screen )->Screen
       return screen.change_screen( new_screen )
 
-    method dispatch_message<<$MessageType>>( message:$MessageType )
+    method dispatch_message( message:Value )
       on_message( message )
       if (ui_list) (forEach in ui_list).dispatch_message( message )
       screen.dispatch_message( message )
@@ -176,10 +179,7 @@ class ScreenState
     method on_finish
       noAction
 
-    method on_message<<$MessageType>>( message:$MessageType )
-      noAction
-
-    method on_message( message:String )
+    method on_message( message:Value )
       noAction
 
     method on_prepare

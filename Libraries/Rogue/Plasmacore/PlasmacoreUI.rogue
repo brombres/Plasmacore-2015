@@ -10,6 +10,9 @@ class PlasmacoreUI : UI
     method init( theme:UITheme )
       prior.init( theme )
 
+    method broadcast_message( message:Value )
+      Display.screen_state.broadcast_message( message )
+
     method default_theme->UITheme
       return PlasmacoreUITheme
 
