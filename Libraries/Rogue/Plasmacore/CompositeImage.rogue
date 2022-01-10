@@ -34,7 +34,7 @@ class CompositeImage : Image
       child.position = position
       images.add( child )
 
-    method draw( fn:Function(DrawableQuad) ) [override]
+    method begin_draw
       local handle = XYZ( (anchor.position * size), 0 )
 
       local has_rotation = not rotation.is_zero
@@ -46,12 +46,18 @@ class CompositeImage : Image
 
       Display.push_view_transform( Matrix.scale(XYZ(scale,1)) )
 
+
+    method draw( fn:Function(DrawableQuad) ) [override]
+      begin_draw
+
       if (images)
         forEach (image in images) image.draw
       endIf
-
       on_draw
 
+      end_draw
+
+    method end_draw
       Display.pop_view_transform
       Display.pop_view_transform
 
