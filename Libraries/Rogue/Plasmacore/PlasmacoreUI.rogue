@@ -155,3 +155,17 @@ class UIColorAttribute( value:Color ) : UIAttribute
 
     method set_color( value )
 endClass
+
+class UIImage : UIComponent
+  PROPERTIES
+    image : Image
+
+  METHODS
+    method init( image )
+
+    method on_draw
+      image.size = size
+      image.anchor = Anchor.TOP_LEFT
+      image.draw( display_position )
+endClass
+
