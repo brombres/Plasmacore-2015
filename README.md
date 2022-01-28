@@ -1,4 +1,4 @@
-# Plasmacore
+# Plasmacore 2015 Legacy Framework
 
 About     | &nbsp;
 ----------|-----------------------
@@ -6,6 +6,9 @@ Version   | 0.19
 Date      | January 28, 2022
 Platforms | macOS, Linux
 Targets   | macOS, iOS, Android, Linux, Web
+
+# Note
+Plasmacore 2015 (2015-2021) has been retired. A new [Plasmacore](https://github.com/AbePralle/Plasmacore) framework is being built from the ground up along with the new [Balefire Engine](https://github.com/AbePralle/Balefire).
 
 
 ## Requirements
@@ -25,7 +28,7 @@ Linux         |         | &#10003;|         | &#10003;&#42; | &#10003;
 
 To bootstrap a new Plasmacore-based project, install Rogue, open a Terminal in your new project folder, and copy and paste the following command:
 
-    curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/BuildCore.rogue && rogo
+    curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore-2015/master/BuildCore.rogue && rogo
 
 The command will fetch and run a Rogo build file that will handle the remainder of the installation.
 
