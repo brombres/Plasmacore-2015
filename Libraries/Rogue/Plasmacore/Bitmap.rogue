@@ -3,26 +3,26 @@ module Plasmacore
   uses Bitmap
 
 augment Bitmap
-  METHODS
-    method decode( bytes:Byte[] )->Logical
+  GLOBAL METHODS
+    method decode( bytes:Byte[] )->Bitmap
       <replace>
 $if (target("Console") or target("Linux") or target("Web"))
       # Use linked PNG/JPEG decoder
-      if (bytes.count < 4) return false
+      if (bytes.count < 4) return null
 
       if (bytes[0] == 0x89 and bytes[1] == 'P' and bytes[2] == 'N' and bytes[3] == 'G')
         local decoder = PNGDecoder()
-        return decoder.decode( bytes, this )?
+        return decoder.decode( bytes, this )
 
 $if (not target("Web"))
       elseIf (bytes[0] == 0xFF and bytes[1] == 0xD8)
         local decoder = JPEGDecoder()
-        return decoder.decode( bytes, this )?
+        return decoder.decode( bytes, this )
 $endIf
 
       endIf
 
-      return false
+      return null
 
 $else
       # Use native layer/OS PNG/JPEG decoder
@@ -31,13 +31,12 @@ $else
         RogueClassBitmap__Bitmap* Plasmacore_decode_image( RogueByte* bytes, RogueInt32 count );
       endNativeHeader
       local decoded = native( "Plasmacore_decode_image( $bytes->data->as_bytes, $bytes->count )" )->Bitmap
-      if (not decoded) return false
+      if (not decoded) return null
 
       # Adopt the decoded bitmap data
-      init( decoded.width, decoded.height, decoded.pixels )
-      swap_red_and_blue
-      is_premultiplied_alpha = true
-      return true
+      decoded.swap_red_and_blue
+      decoded.is_premultiplied_alpha = true
+      return decoded
 
 $endIf
 endAugment
