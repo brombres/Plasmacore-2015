@@ -19,7 +19,7 @@
 #$ LIBRARIES(Linux) = zlib
 #$ LIBRARIES(Linux) = sox
 
-$define DEFAULT_PLASMACORE "https://github.com/AbePralle/Plasmacore.git#master"
+$define DEFAULT_PLASMACORE "https://github.com/AbePralle/Plasmacore-2015.git#master"
 
 $include "AssetCompiler" [optional]
 
