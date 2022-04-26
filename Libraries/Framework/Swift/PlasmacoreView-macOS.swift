@@ -147,7 +147,7 @@ class PlasmacoreView: NSOpenGLView
   {
     let newFlags = event.modifierFlags.rawValue
     let modified = keyModifierFlags ^ newFlags
-    handleModifiedKey( modified:modified, mask:NSEvent.ModifierFlags.shift.rawValue, keycode:Keycode.CAPS_LOCK )
+    handleModifiedKey( modified:modified, mask:NSEvent.ModifierFlags.capsLock.rawValue, keycode:Keycode.CAPS_LOCK )
 
     handleModifiedKey( modified:modified, mask:NSEvent.ModifierFlags.shift.rawValue|2, keycode:Keycode.LEFT_SHIFT )
     handleModifiedKey( modified:modified, mask:NSEvent.ModifierFlags.shift.rawValue|4, keycode:Keycode.RIGHT_SHIFT )

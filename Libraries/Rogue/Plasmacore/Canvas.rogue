@@ -1,6 +1,5 @@
 module Plasmacore
 
-
 class Canvas : TextureImage
   PROPERTIES
     render_target : RenderTarget
