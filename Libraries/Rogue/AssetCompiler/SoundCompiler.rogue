@@ -4,7 +4,7 @@ routine launch_sound_compiler( platform:String )
   try
     local config_file = File( "Assets/Sounds/SoundConfig.txt" )
     if (not config_file.exists)
-      File.create_folder( config_file.path )
+      config_file.parent.create_folder
       local writer = PrintWriter(config_file.writer)
       writer.println @|# Default sound config file - customize as desired.
                       |#
@@ -41,15 +41,15 @@ routine launch_sound_compiler( platform:String )
     SoundCompiler( config_file, platform )
 
   catch (err:SoundCompileError)
-    if (System.environment["IDE"])
-      Console.error.println "$:$: error:$" (File.absolute_filepath(err.filepath),err.line,err.message)
+    if (System.env["IDE"])
+      Console.error.println "$:$: error:$" (File(err.filepath).abs,err.line,err.message)
     else
       println err
     endIf
     System.exit 1
 
   catch (err:Error)
-    if (System.environment["IDE"])
+    if (System.env["IDE"])
       Console.error.println "SoundCompiler:0: error:$" (err.message)
     else
       println err
@@ -74,7 +74,7 @@ class SoundCompileError : Error
       filepath = "SoundCompiler"
 
     method to->String
-      local builder = StringBuilder()
+      local builder = String()
 
       local w = Console.width.or_smaller( 79 )
       local bar = "=" * w
@@ -87,7 +87,7 @@ class SoundCompileError : Error
       builder.println
       builder.println message.word_wrapped( w )
       builder.println bar
-      return builder->String
+      return builder
 endClass
 
 
@@ -95,7 +95,7 @@ class SoundCompiler
   PROPERTIES
     file             : File
     platform         : String
-    commands         = Table<<String,SoundCommand[]>>()
+    commands         = [String:SoundCommand[]]
     attributes       = @[]
     settings         = @{}
     even_odd         = true
@@ -126,7 +126,7 @@ class SoundCompiler
       endIf
 
     method copy_sound( from_filepath:String, to_filepath:String, attr:Value )
-      local cur_ext = File.extension( from_filepath )
+      local cur_ext = File( from_filepath ).extension
       local new_ext = cur_ext
       local format : String
       if (attr//format)
@@ -143,32 +143,31 @@ class SoundCompiler
         to_filepath = to_filepath.leftmost( -(cur_ext.count+1) ) + ("." + new_ext)
       endIf
 
-      if (not File.exists(to_filepath) or File.timestamp(to_filepath) < File.timestamp(from_filepath))
-        File.create_folder( File.folder(to_filepath) )
-
+      if (not File(to_filepath).exists or File(to_filepath).timestamp_ms < File(from_filepath).timestamp_ms)
+        File(to_filepath).parent.create_folder
 
         print   "  Writing "
         println to_filepath
         ++files_written
 
         if (format and cur_ext != new_ext)
-          local buffer = StringBuilder()
+          local buffer = String()
           if (System.os == "macOS")
             which (format)
               case "ima4": buffer.print( "afconvert -f caff -d 'ima4' " )
               others:      buffer.print( "sox " )
             endWhich
-            buffer.print( from_filepath ).print( " " ).print( to_filepath )
+            buffer.[ print(from_filepath), print(" "), print(to_filepath) ]
           else
             buffer.print( "sox " )
-            buffer.print( from_filepath ).print( " " ).print( to_filepath )
+            buffer.[ print(from_filepath), print(" "), print(to_filepath) ]
           endIf
 
-          local cmd = buffer->String
+          local cmd = buffer
           println "> " + cmd
           System.run( cmd )
         else
-          File.copy( from_filepath, to_filepath )
+          File( from_filepath ).copy_to( to_filepath )
         endIf
 
       endIf
@@ -200,7 +199,7 @@ class SoundCompiler
           if (after.count) throw SoundCompileError( SoundCommand(this,file.filepath,index+1,line), "Syntax error after ']'." )
           category = line.after_first( '[' ).before_first( ']' ).trimmed
         else
-          ensure commands[ category ]
+          ensure<<commands[category]>>
           commands[ category ].add( SoundCommand(this,file.filepath,index+1,line) )
         endIf
       endForEach
@@ -209,7 +208,7 @@ class SoundCompiler
       local result = @{}
 
       forEach (def in attributes)
-        if (File.matches_wildcard_pattern(filepath,def//pattern->String))
+        if (FilePattern(def//pattern->String).matches(filepath))
           forEach (attr in def//attributes)
             result[ attr//name ] = attr//value
           endForEach
@@ -228,7 +227,7 @@ class SoundCommand
     src_line     : Int32
     content      : String
     reader       : Scanner
-    buffer       = StringBuilder()
+    buffer       = String()
 
   METHODS
     method init( scom, src_filepath, src_line, content )
@@ -236,18 +235,18 @@ class SoundCommand
 
     method collect_files( filepath:String )->String[]
       local pattern = filepath
-      if (File.exists(filepath))
+      if (File(filepath).exists)
         pattern = "**"
       else
-        while (filepath.contains('*') or filepath.contains('?')) filepath = File.folder( filepath )
-        if (not File.exists(filepath)) throw error( ''No such file or folder "$".'' (filepath) )
+        while (filepath.contains('*') or filepath.contains('?')) filepath = File( filepath ).folder
+        if (not File(filepath).exists) throw error( ''No such file or folder "$".'' (filepath) )
       endIf
 
       local file_list = String[]
 
-      if (File.is_folder(filepath))
-        forEach (f in File.listing(filepath,"**",&ignore_hidden))
-          if (File.matches_wildcard_pattern(f,pattern)) file_list.add( f )
+      if (File(filepath).is_folder)
+        forEach (f in File(filepath).listing("**",&ignore_hidden))
+          if (FilePattern(pattern).matches(f)) file_list.add( f )
         endForEach
       else
         file_list.add( filepath )
@@ -255,7 +254,7 @@ class SoundCommand
 
       local filtered_list = String[]
       forEach (f in file_list)
-        if (not File.is_folder(f)) filtered_list.add( f )
+        if (not File(f).is_folder) filtered_list.add( f )
       endForEach
 
       return filtered_list
@@ -323,7 +322,7 @@ class SoundCommand
       endWhich
 
     method include_sounds
-      if (not scom.all_sounds) scom.all_sounds = File.listing( "Assets/Sounds", "**", &ignore_hidden )
+      if (not scom.all_sounds) scom.all_sounds = File( "Assets/Sounds" ).listing( "**", &ignore_hidden )
 
       local pattern = parse_string( "Folder or file pattern expected." )
       if (pattern == ".")
@@ -335,7 +334,7 @@ class SoundCommand
     method include_sounds( pattern:String )
       if (pattern.contains('*') or pattern.contains('?'))
         forEach (filepath in scom.all_sounds)
-          if (File.matches_wildcard_pattern(filepath,pattern) and not File.is_folder(filepath))
+          if (FilePattern(pattern).matches(filepath) and not File(filepath).is_folder)
             scom.included_sounds.add( filepath )
           endIf
         endForEach
@@ -365,7 +364,7 @@ class SoundCommand
         throw error( ''Syntax error - expected "$", found [end of line].'' (text) )
       endIf
 
-    method parse_args->@{}
+    method parse_args->Value
       local args = @{}
       while (has_another)
         local arg = parse_name_value
@@ -393,7 +392,7 @@ class SoundCommand
         while (reader.has_another)
           ch = reader.read
           which (ch)
-            case quote_type: return buffer->String
+            case quote_type: return buffer.cloned
             case '\\'
               if (reader.has_another) buffer.print( reader.read )
             others
@@ -413,9 +412,9 @@ class SoundCommand
         endWhile
         if (buffer.count == 0) throw error( expected )
       endIf
-      return buffer->String
+      return buffer.cloned
 
-    method require_arg( args:@{}, name:String  )
+    method require_arg( args:Value, name:String  )
       if (not args.contains(name)) throw error( "Missing required argument '$'." (name) )
 
     method to->String

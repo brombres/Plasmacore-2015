@@ -5,7 +5,7 @@ routine launch_image_compiler( platform:String )
   try
     local config_file = File( "Assets/Images/ImageConfig.txt" )
     if (not config_file.exists)
-      File.create_folder( config_file.path )
+      config_file.parent.create_folder
       local writer = PrintWriter(config_file.writer)
       writer.println @|# Default image config file - customize as desired.
                       |#
@@ -65,15 +65,15 @@ routine launch_image_compiler( platform:String )
     ImageCompiler( config_file, platform )
 
   catch (err:ImageCompileError)
-    if (System.environment["IDE"])
-      Console.error.println "$:$: error:$" (File.absolute_filepath(err.filepath),err.line,err.message)
+    if (System.env["IDE"])
+      Console.error.println "$:$: error:$" (File(err.filepath).abs,err.line,err.message)
     else
       println err
     endIf
     System.exit 1
 
   catch (err:Error)
-    if (System.environment["IDE"])
+    if (System.env["IDE"])
       Console.error.println "ImageCompiler:0: error:$" (err.message)
     else
       println err
@@ -84,7 +84,7 @@ routine launch_image_compiler( platform:String )
 endRoutine
 
 
-class BitmapCache : Table<<String,Bitmap>> [singleton]
+class BitmapCache : [String:Bitmap] [singleton]
   METHODS
     method get( name:String )->Bitmap
       local bitmap = prior.get( name )
@@ -114,7 +114,7 @@ class ImageCompileError : Error
       filepath = "ImageCompiler"
 
     method to->String
-      local builder = StringBuilder()
+      local builder = String()
 
       local w = Console.width.or_smaller( 79 )
       local bar = "=" * w
@@ -127,7 +127,7 @@ class ImageCompileError : Error
       builder.println
       builder.println message.word_wrapped( w )
       builder.println bar
-      return builder->String
+      return builder
 endClass
 
 class ImageCompiler
@@ -135,7 +135,7 @@ class ImageCompiler
     file              : File
     file_timestamp    : Real64
     platform          : String
-    commands          = Table<<String,ImageCommand[]>>()
+    commands          = [String:ImageCommand[]]
     attributes        = @[]
     settings          = @{}
     image_sheet_size  = 2048
@@ -150,7 +150,7 @@ class ImageCompiler
   METHODS
     method init( file, platform )
       println "Compiling $ images..." (platform)
-      file_timestamp = file.timestamp
+      file_timestamp = file.timestamp_ms
       group_manifests = @[]
       newest_manifest_timestamp = 0.0
 
@@ -166,11 +166,11 @@ class ImageCompiler
 
     method write_image_index
       local index_folder = asset_folder( platform, "Images/" )
-      File.create_folder( index_folder )
+      File( index_folder ).create_folder
 
       local index_filepath = index_folder + "ImageIndex.json"
 
-      if (not File.exists(index_filepath) or File.timestamp(index_filepath) < newest_manifest_timestamp)
+      if (not File(index_filepath).exists or File(index_filepath).timestamp_ms < newest_manifest_timestamp)
         ++files_written
         println "  Writing " + index_filepath
 
@@ -184,7 +184,7 @@ class ImageCompiler
           endForEach
         endForEach
 
-        index.compressed.save( File(index_filepath) )
+        JSON.save( index.compressed, File(index_filepath) )
       endIf
 
     method execute_global_commands
@@ -214,7 +214,7 @@ class ImageCompiler
           if (after.count) throw ImageCompileError( ImageCommand(this,file.filepath,index+1,line), "Syntax error after ']'." )
           category = line.after_first( '[' ).before_first( ']' ).trimmed
         else
-          ensure commands[ category ]
+          ensure<<commands[category]>>
           commands[ category ].add( ImageCommand(this,file.filepath,index+1,line) )
         endIf
       endForEach
@@ -229,7 +229,7 @@ class ImageCommand
     src_line     : Int32
     content      : String
     reader       : Scanner
-    buffer       = StringBuilder()
+    buffer       = String()
 
   METHODS
     method init( icom, src_filepath, src_line, content )
@@ -237,18 +237,18 @@ class ImageCommand
 
     method collect_files( filepath:String )->String[]
       local pattern = filepath
-      if (File.exists(filepath))
+      if (File(filepath).exists)
         pattern = "**"
       else
-        while (filepath.contains('*') or filepath.contains('?')) filepath = File.folder( filepath )
-        if (not File.exists(filepath)) throw error( ''No such file or folder "$".'' (filepath) )
+        while (filepath.contains('*') or filepath.contains('?')) filepath = File( filepath ).folder
+        if (not File(filepath).exists) throw error( ''No such file or folder "$".'' (filepath) )
       endIf
 
       local file_list = String[]
 
-      if (File.is_folder(filepath))
-        forEach (f in File.listing(filepath,"**",&ignore_hidden))
-          if (File.matches_wildcard_pattern(f,pattern)) file_list.add( f )
+      if (File(filepath).is_folder)
+        forEach (f in File(filepath).listing("**",&ignore_hidden))
+          if (FilePattern(pattern).matches(f)) file_list.add( f )
         endForEach
       else
         file_list.add( filepath )
@@ -256,7 +256,7 @@ class ImageCommand
 
       local filtered_list = String[]
       forEach (f in file_list)
-        if (not File.is_folder(f)) filtered_list.add( f )
+        if (not File(f).is_folder) filtered_list.add( f )
       endForEach
 
       return filtered_list
@@ -303,29 +303,30 @@ class ImageCommand
       else
         buffer.print( to_unicode(value) )
       endIf
-      return buffer->String
+      return buffer.cloned
 
     method execute
       if (consume("@"))
         local pattern = parse_string( "Filename or file pattern expected after \"@\"." )
         pattern = "Assets/Images/" + pattern
         local info = @{ pattern:pattern, attributes:[] }
-        local characters : StringBuilder
+        local characters : String
         while (has_another)
           local name = parse_string( "Attribute or [end of line] expected." )
           consume_whitespace
           if (consume(':'))
             local value = parse_string( "Value expected." )
             if (name == "varfont")
-              ensure characters
+              ensure<<characters>>
               characters.print( value )
               local attribute = @{ name:name }
               info//attributes.add( attribute )
             elseIf (name == "characters")
-              ensure characters
+              ensure<<characters>>
               characters.print( value )
             elseIf (name == "unicode")
-              (ensure characters).print( parse_unicode(value) )
+              ensure<<characters>>
+              characters.print( parse_unicode(value) )
             else
               local attribute = @{ name:name }
               attribute//value = value
@@ -333,7 +334,7 @@ class ImageCommand
             endIf
 
           elseIf (name == "ascii")
-            ensure characters
+            ensure<<characters>>
             forEach (ascii_code in 32..126) characters.print( Character(ascii_code) )
 
           else
@@ -344,7 +345,7 @@ class ImageCommand
 
         if (characters)
           forEach (attr in info//attributes)
-            if (attr//name == "varfont") attr//value = characters->String
+            if (attr//name == "varfont") attr//value = characters
           endForEach
         endIf
         icom.attributes.add( info )
@@ -354,11 +355,11 @@ class ImageCommand
       local cmd = parse_string( "Command expected." )
       which (cmd)
         case "group"
-          if (not icom.all_images) icom.all_images = File.listing( "Assets/Images", "**", &ignore_hidden )
+          if (not icom.all_images) icom.all_images = File( "Assets/Images" ).listing( "**", &ignore_hidden )
           compile_group
 
         case "include"
-          if (not icom.all_images) icom.all_images = File.listing( "Assets/Images", "**", &ignore_hidden )
+          if (not icom.all_images) icom.all_images = File( "Assets/Images" ).listing( "**", &ignore_hidden )
           include_standalone
 
         case "create"
@@ -395,7 +396,7 @@ class ImageCommand
         group_name = "Assets/Images/" + group_name
         if (group_name.contains("*") or group_name.contains('?'))
           forEach (filepath in icom.all_images)
-            if (File.matches_wildcard_pattern(filepath,group_name))
+            if (FilePattern(group_name).matches(filepath))
               compile_group( filepath )
             endIf
           endForEach
@@ -406,25 +407,25 @@ class ImageCommand
 
     method compile_group( group_name:String )
       local pattern = group_name
-      group_name = File.before_wildcard_pattern( pattern.after_first("Assets/") )
+      group_name = pattern.after_first("Assets/").before_first('*').before_first('?')
       local output_filename = group_name.replacing('/','-')
 
       local dest_folder = asset_folder( icom.platform, "Images" )
-      File.create_folder( dest_folder )
+      File( dest_folder ).create_folder
 
-      local oldest_existing_timestamp = 0.0
-      forEach (filepath in File.listing(dest_folder,"$*.png" (output_filename)))
-        local timestamp = File.timestamp( filepath )
-        if (oldest_existing_timestamp == 0.0 or oldest_existing_timestamp > timestamp)
+      local oldest_existing_timestamp = 0 : Int64
+      forEach (filepath in File(dest_folder).listing("$*.png" (output_filename)))
+        local timestamp = File( filepath ).timestamp_ms
+        if (oldest_existing_timestamp == 0 or oldest_existing_timestamp > timestamp)
           oldest_existing_timestamp = timestamp
         endIf
       endForEach
 
       local manifest_folder = asset_folder( icom.platform, "Images" )
-      File.create_folder( manifest_folder )
+      File( manifest_folder ).create_folder
       local manifest_filepath = "$/$.json" (manifest_folder,output_filename)
       local manifest_timestamp = 0.0
-      if (File.exists(manifest_filepath)) manifest_timestamp = File.timestamp( manifest_filepath )
+      if (File(manifest_filepath).exists) manifest_timestamp = File( manifest_filepath ).timestamp_ms
       oldest_existing_timestamp = oldest_existing_timestamp.or_smaller( manifest_timestamp )
 
       #local args = parse_args
@@ -433,12 +434,12 @@ class ImageCommand
       contingent
         #necessary (icom.file_timestamp < oldest_existing_timestamp)
         forEach (filepath in files)
-          necessary (File.timestamp(filepath) < oldest_existing_timestamp)
+          necessary (File(filepath).timestamp_ms < oldest_existing_timestamp)
         endForEach
 
         # No changes to group.  Load up cached group manifest so it can be written out
         # with the platform manifest
-        icom.group_manifests.add( JSON.load_table( manifest_filepath ).decompressed )
+        icom.group_manifests.add( JSON.load( File(manifest_filepath) ).decompressed )
         icom.newest_manifest_timestamp = icom.newest_manifest_timestamp.or_larger( manifest_timestamp )
 
         return  # no changes to group
@@ -448,7 +449,7 @@ class ImageCommand
 
       local assets = Asset[]
       forEach (filepath in files)
-        local ext = File.extension(filepath).to_lowercase
+        local ext = File(filepath).extension.to_lowercase
 
         if (ext == "png" or ext == "jpeg" or ext == "jpg")
           assets.add( create_asset_object(filepath) )
@@ -467,20 +468,12 @@ class ImageCommand
 
       local textures = manifest.ensure_list( "textures" )
       forEach (sheet at index in image_sheets)
-        sheet.filename = "$-$.png" (output_filename,index.right_justified(2,'0'))
+        sheet.filename = "$-$.png" (output_filename,index.format("02"))
         local sheet_filepath = asset_folder( icom.platform, "Images/"+sheet.filename )
         ++icom.files_written
         print "  Writing "
         print sheet_filepath
         print " "
-        #{
-        if (icom.even_odd)
-          forEach (1..(50 - sheet.filename.count)) print "."
-        else
-          forEach (1..(50 - sheet.filename.count)) print " "
-        endIf
-        icom.even_odd = not icom.even_odd
-        }#
         forEach (1..(50 - sheet.filename.count)) print ' '
         println " [$x$]" (sheet.width,sheet.height)
 
@@ -490,7 +483,7 @@ class ImageCommand
           size:[sheet.width,sheet.height]
         } )
 
-        File.save( sheet_filepath, sheet.render.to_png_bytes )
+        File( sheet_filepath ).save( sheet.render.to_png_bytes )
 
       endForEach
 
@@ -508,13 +501,13 @@ class ImageCommand
       manifest_timestamp = System.time
       icom.newest_manifest_timestamp = icom.newest_manifest_timestamp.or_larger( manifest_timestamp )
 
-      manifest.compressed.save( File(manifest_filepath) )
+      JSON.save( manifest.compressed, File(manifest_filepath) )
 
     method perform_layout( assets:Asset[] )->ImageSheet[]
       local placements = Placement[]
       (forEach in assets).collect_placements( placements )
 
-      local max_w = which{ icom.settings//image_sheet_size->Int32 || 2048 }.to_power_of_two
+      local max_w = which{ icom.settings//image_sheet_size->Int32 || 2048 }.to_power_of_2
       local max_h = max_w
 
       local sheets = ImageSheet[]
@@ -523,7 +516,7 @@ class ImageCommand
         if (not sheet)
           local w = placements.first.width
           local h = placements.first.height
-          local min_size = w.to_power_of_two.or_larger( h.to_power_of_two )
+          local min_size = w.to_power_of_2.or_larger( h.to_power_of_2 )
           throw error( "$ ($x$) is too large to fit on a $x$ image sheet.  Use the 'set image_sheet_size WxH' directive " ...
                   "to increase the group's maximum image sheet size to $x$ or greater." ...
                   (placements.first.asset.filepath,w,h,max_w,max_h,min_size,min_size) )
@@ -532,7 +525,7 @@ class ImageCommand
         sheets.add( sheet )
       endWhile
 
-      require sheets.count
+      if (sheets.count == 0) throw Error( "sheets.count == 0" )
 
       # Try reducing the size of the last sheet by redoing the layout
       local last_sheet = sheets.remove_last
@@ -570,7 +563,7 @@ class ImageCommand
       return sheets
 
     method perform_layout( placements:Placement[], max_width:Int32, max_height:Int32 )->ImageSheet
-      InsertionSort<<Placement>>.sort( placements,
+      placements.sort(
         function(a:Placement,b:Placement)->Logical
           # 'a' should come before 'b' when:
           if (a.height > b.height) return true
@@ -628,7 +621,7 @@ class ImageCommand
     method get_attributes( filepath:String )->Value
       local attributes = @{}
       forEach (attr in icom.attributes)
-        if (File.matches_wildcard_pattern(filepath,attr//pattern->String))
+        if (FilePattern(attr//pattern->String).matches(filepath))
           forEach (a in attr//attributes)
             if (a//value) attributes[ a//name ]         = a//value
             else          attributes[ a//name->String ] = true
@@ -663,9 +656,9 @@ class ImageCommand
       if (image_name.begins_with("Images/")) image_name = "Assets/" + image_name
       if (not image_name.begins_with("Assets/Images/")) image_name = "Assets/Images/" + image_name
 
-      local folder_name = File.folder( image_name )
-      if (not File.is_folder( folder_name ))
-        File.create_folder( folder_name )
+      local folder_name = File( image_name ).folder
+      if (not File( folder_name ).is_folder)
+        File( folder_name ).create_folder
       endIf
 
       local font_name = require_arg( args, "font" )->String
@@ -682,7 +675,7 @@ class ImageCommand
       if (args.contains("ascii"))
         buffer.clear
         forEach (ascii_code in 32..126) buffer.print( Character(ascii_code) )
-        args//characters = buffer->String
+        args//characters = buffer.cloned
       endIf
 
       local unicode = Int32[]
@@ -711,11 +704,11 @@ class ImageCommand
       local attributes = get_attributes( image_name )
       buffer.clear
       buffer.print( Character(forEach in unicode) )
-      attributes//varfont = buffer->String
+      attributes//varfont = buffer.cloned
       if (args//italic) attributes//italic = true
       set_attributes( image_name, attributes )
 
-      if (File.exists(image_name)) return
+      if (File(image_name).exists) return
 
       # Clear image filename cache
       icom.all_images = null
@@ -724,18 +717,6 @@ class ImageCommand
 
       local font_face = FreeTypeFace( this, font_name, height )
       local characters = font_face.render( unicode )
-
-      #{
-      # Needs a better rendering algorithm that blends opacity while retaining white color
-      if (args//bold)
-        forEach (bmp at index in characters)
-          local new_bmp = Bitmap( bmp.width+1, bmp.height )
-          bmp.blit( new_bmp, XY(0,0) )
-          bmp.blit( new_bmp, XY(1,0), &blend )
-          characters[index] = new_bmp
-        endForEach
-      endIf
-      }#
 
       if (args//italic)
         forEach (bmp at index in characters)
@@ -762,7 +743,7 @@ class ImageCommand
         forEach (ch at index in characters)
           if (ch.width != max_w)
             local new_ch = Bitmap( max_w, ch.height )
-            ch.blit( new_ch, XY((max_w-ch.width)/2,0).floor )
+            ch.blit( new_ch, XY((max_w-ch.width)/2,0) )
             characters[ index ] = new_ch
           endIf
         endForEach
@@ -777,7 +758,7 @@ class ImageCommand
           if (ch.width != max_w)
             if (unicode[index] == ' ' or unicode[index]->Character.is_number)
               local new_ch = Bitmap( max_w, ch.height )
-              ch.blit( new_ch, XY((max_w-ch.width)/2,0).floor )
+              ch.blit( new_ch, XY((max_w-ch.width)/2,0) )
               characters[ index ] = new_ch
             endIf
           endIf
@@ -798,7 +779,7 @@ class ImageCommand
         src_name = "Assets/Images/" + src_name
         if (src_name.contains("*") or src_name.contains('?'))
           forEach (filepath in icom.all_images)
-            if (File.matches_wildcard_pattern(filepath,src_name))
+            if (FilePattern(src_name).matches(filepath))
               add_standalone_images( filepath )
             endIf
           endForEach
@@ -808,29 +789,29 @@ class ImageCommand
       endIf
 
     method add_standalone_images( src_name:String )
-      if (File.is_folder(src_name))
-        include_standalone( forEach in File.listing(src_name,"**") )
+      if (File(src_name).is_folder)
+        include_standalone( forEach in File(src_name).listing("**") )
       else
         include_standalone( src_name )
       endIf
 
 
     method include_standalone( src_name:String )
-      if (not File.exists(src_name)) return
-      local ext = File.extension(src_name).to_lowercase
+      if (not File(src_name).exists) return
+      local ext = File(src_name).extension.to_lowercase
       if (not (ext == "png" or ext == "jpeg" or ext == "jpg")) return
 
       local dest_name = asset_folder( icom.platform, src_name.after_first("Assets/") )
       local info_name = dest_name.leftmost( -ext.count ) + "json"
 
       contingent
-        sufficient (not File.exists(dest_name))
-        sufficient (File.timestamp(src_name) > File.timestamp(dest_name))
-        sufficient (not File.exists(info_name))
-        sufficient (File.timestamp(src_name) > File.timestamp(info_name))
+        sufficient (not File(dest_name).exists)
+        sufficient (File(src_name).timestamp_ms > File(dest_name).timestamp_ms)
+        sufficient (not File(info_name).exists)
+        sufficient (File(src_name).timestamp_ms > File(info_name).timestamp_ms)
 
         # Don't need to process file. Just load info for index.
-        icom.standalone_images.add( JSON.load_table(info_name) )
+        icom.standalone_images.add( JSON.load(info_name) )
         return
 
       endContingent
@@ -846,8 +827,8 @@ class ImageCommand
 
       if (attributes//resize)
         local tx_size = Convert.parse_dimensions( this, attributes//resize )
-        width  = tx_size//width->Int32
-        height = tx_size//height->Int32
+        width  = tx_size.x
+        height = tx_size.y
         bitmap = bitmap.resized( width, height )
         size_changed = true
         display_width = width
@@ -856,16 +837,16 @@ class ImageCommand
 
       if (attributes//resample)
         local tx_size = Convert.parse_dimensions( this, attributes//resample )
-        width  = tx_size//width->Int32
-        height = tx_size//height->Int32
+        width  = tx_size.x
+        height = tx_size.y
         bitmap = bitmap.resized( width, height )
         size_changed = true
       endIf
 
       if (attributes//display_size)
         local tx_size = Convert.parse_dimensions( this, attributes//display_size )
-        display_width  = tx_size//width->Int32
-        display_height = tx_size//height->Int32
+        display_width  = tx_size.x
+        display_height = tx_size.y
       endIf
 
       local display_scale = this.icom.settings//display_scale
@@ -884,7 +865,7 @@ class ImageCommand
       if (size_changed)
         save_bitmap( bitmap, dest_name )
       else
-        File.copy( src_name, dest_name )
+        File( src_name ).copy_to( dest_name )
       endIf
 
       local name = src_name.after_first( "Assets/Images/" )
@@ -898,11 +879,11 @@ class ImageCommand
       }
 
       icom.newest_manifest_timestamp = System.time
-      info.save( File(info_name) )
+      JSON.save( info, File(info_name) )
 
       icom.standalone_images.add( info )
 
-    method copy_image( args:@{} )
+    method copy_image( args:Value )
       require_arg( args, "from" )
       require_arg( args, "to" )
       local from_filepath = args//from->String
@@ -913,12 +894,13 @@ class ImageCommand
       if (not to_filepath.begins_with("Assets/Images/"))   to_filepath = "Assets/Images/" + to_filepath
       local files = collect_files( from_filepath )
       forEach (src_filepath in files)
-        local from_folder = File.before_wildcard_pattern( from_filepath )
-        local dest_filepath = to_filepath + src_filepath.after_first( from_folder )
+        local from_folder = from_filepath.before_first('*').before_first('?')
+        local tail = src_filepath.after_first( from_folder )
+        local dest_filepath = which{ tail=="":to_filepath || to_filepath/tail }
         local ext = src_filepath.after_last( "." ).to_lowercase
 
         contingent
-          necessary  (not File.is_folder(src_filepath))
+          necessary  (not File(src_filepath).is_folder)
           necessary  (ext == "png" or ext == "jpeg" or ext == "jpg")
 
           # Clone image attributes
@@ -926,10 +908,10 @@ class ImageCommand
             set_attributes( dest_filepath, get_attributes(src_filepath) )
           endIf
 
-          sufficient (not File.exists(dest_filepath))
+          sufficient (not File(dest_filepath).exists)
 
-          local dest_timestamp = File.timestamp( dest_filepath )
-          local src_timestamp = File.timestamp( src_filepath )
+          local dest_timestamp = File( dest_filepath ).timestamp_ms
+          local src_timestamp = File( src_filepath ).timestamp_ms
           necessary (src_timestamp > dest_timestamp)
 
         satisfied
@@ -941,7 +923,7 @@ class ImageCommand
     method copy_image( from_filepath:String, to_filepath:String, args:Value )
       local attributes = @{}
       forEach (attr in icom.attributes)
-        if (File.matches_wildcard_pattern(from_filepath,attr//pattern->String))
+        if (FilePattern(attr//pattern->String).matches(from_filepath))
           forEach (a in attr//attributes)
             if (a//value) attributes[ a//name ]         = a//value
             else          attributes[ a//name->String ] = true
@@ -969,14 +951,14 @@ class ImageCommand
             to_size   = Convert.parse_dimensions( this, resize_dims.last )
             if (not args//scale)
               # Derive scale from resize args
-              scale = ((to_size.min / from_size.min) + (to_size.max / from_size.max)) / 2
+              scale = ((to_size.min->Real64 / from_size.min) + (to_size.max->Real64 / from_size.max)) / 2
             endIf
         endWhich
       endIf
 
       if (scale == 1.0 and not fixed_resize)
         BitmapCache.invalidate( to_filepath )
-        File.copy( from_filepath, to_filepath )
+        File( from_filepath ).copy_to( to_filepath )
       else
         local bitmap = BitmapCache[ from_filepath ]
         local w = bitmap.width
@@ -997,8 +979,8 @@ class ImageCommand
 
         elseIf (attributes//split)
           local size = Convert.parse_dimensions( this, attributes//split )
-          local tiles_wide = size//width->Int32
-          local tiles_high = size//height->Int32
+          local tiles_wide = size.x
+          local tiles_high = size.y
           if (tiles_wide * tiles_high == 0)
             throw error( ''Illegal 'split' size of $x$ for "$".'' (tiles_wide,tiles_high,from_filepath) )
           endIf
@@ -1033,17 +1015,17 @@ class ImageCommand
         endIf
       endIf
 
-    method adjust_image( args:@{} )
+    method adjust_image( args:Value )
       local filepath = args//image->String
       if (filepath.begins_with("Images/")) filepath = "Assets/" + filepath
       if (not filepath.begins_with("Assets/Images/")) filepath = "Assets/Images/" + filepath
       local files = collect_files( filepath )
       forEach (src_filepath in files)
-        local from_folder = File.before_wildcard_pattern( filepath )
+        local from_folder = filepath.before_first('*').before_first('?')
         local ext = src_filepath.after_last( "." ).to_lowercase
 
         contingent
-          necessary  (not File.is_folder(src_filepath))
+          necessary  (not File(src_filepath).is_folder)
           necessary  (ext == "png" or ext == "jpeg" or ext == "jpg")
 
         satisfied
@@ -1055,7 +1037,7 @@ class ImageCommand
     method adjust_image( filepath:String, args:Value )
       local attributes = @{}
       forEach (attr in icom.attributes)
-        if (File.matches_wildcard_pattern(filepath,attr//pattern->String))
+        if (FilePattern(attr//pattern->String).matches(filepath))
           forEach (a in attr//attributes)
             if (a//value) attributes[ a//name ]         = a//value
             else          attributes[ a//name->String ] = true
@@ -1125,8 +1107,8 @@ class ImageCommand
 
         elseIf (attributes//split)
           local size = Convert.parse_dimensions( this, attributes//split )
-          local tiles_wide = size//width->Int32
-          local tiles_high = size//height->Int32
+          local tiles_wide = size.x
+          local tiles_high = size.y
           if (tiles_wide * tiles_high == 0)
             throw error( ''Illegal 'split' size of $x$ for "$".'' (tiles_wide,tiles_high,filepath) )
           endIf
@@ -1156,7 +1138,7 @@ class ImageCommand
         elseIf (crop)
           if (bitmap.size == to_size) return
           local result = Bitmap( to_size )
-          bitmap.blit( result, ((to_size - bitmap.size)/2).floor )
+          bitmap.blit( result, ((to_size - bitmap.size)/2) )
           println save_message
           println "  [$x$] -> [$x$]" (w,h,result.width,result.height)
           save_bitmap( result, filepath )
@@ -1184,11 +1166,11 @@ class ImageCommand
 
       BitmapCache.invalidate( to_filepath )
 
-      File.create_folder( File.folder(to_filepath) )
+      File(to_filepath).parent.create_folder
       if (is_png)
-        File.save( to_filepath, bitmap.to_png_bytes )
+        File( to_filepath ).save( bitmap.to_png_bytes )
       else
-        File.save( to_filepath, bitmap.to_jpeg_bytes )
+        File( to_filepath ).save( bitmap.to_jpeg_bytes )
       endIf
 
 
@@ -1210,7 +1192,7 @@ class ImageCommand
         throw error( ''Syntax error - expected "$", found [end of line].'' (text) )
       endIf
 
-    method parse_args->@{}
+    method parse_args->Value
       local args = @{}
       while (has_another)
         local arg = parse_name_value
@@ -1262,7 +1244,7 @@ class ImageCommand
         while (reader.has_another)
           ch = reader.read
           which (ch)
-            case quote_type: return buffer->String
+            case quote_type: return buffer.cloned
             case '\\'
               if (reader.has_another) buffer.print( reader.read )
             others
@@ -1277,7 +1259,7 @@ class ImageCommand
         while (reader.has_another)
           ch = reader.read
           which (ch)
-            case ']': return buffer.print( ']' )->String
+            case ']': return buffer.[ print(']') ].cloned
             case '\\'
               if (reader.has_another) buffer.print( reader.read )
             others
@@ -1298,7 +1280,7 @@ class ImageCommand
         endWhile
         if (buffer.count == 0) throw error( expected )
       endIf
-      return buffer->String
+      return buffer.cloned
 
     method require_arg( args:Value, name:String  )->Value
       if (not args.contains(name)) throw error( "Missing required argument '$'." (name) )
@@ -1322,7 +1304,7 @@ class Convert
       return tiles
 
     method tiles_to_bitmap( cmd:ImageCommand, tiles:Bitmap[], tiles_wide:Int32, tiles_high:Int32 )->Bitmap
-      require (tiles.count == tiles_wide * tiles_high)
+      #require (tiles.count == tiles_wide * tiles_high)
       local w = tiles.first.width
       local h = tiles.first.height
       local bitmap = Bitmap( w*tiles_wide, h*tiles_high )
@@ -1350,7 +1332,7 @@ class Convert
       return characters
 
     method pack_varfont_characters( cmd:ImageCommand, characters:Bitmap[] )->Bitmap
-      require characters.count
+      #require characters.count
       local total_w = 0
       total_w += (forEach in characters).width.clamped_low(1)
       local bitmap = Bitmap( total_w, characters.first.height + 1 )
@@ -1366,17 +1348,17 @@ class Convert
       endForEach
       return bitmap
 
-    method parse_dimensions( cmd:ImageCommand, text:String )->Value
+    method parse_dimensions( cmd:ImageCommand, text:String )->XY
       local dims = text.split( "x" )
       if (dims.count == 1)
         local size = dims.first->Int32
-        return @{ width:size, height:size }
+        return XY(size,size)
       else
-        return @{ width:dims[0]->Int32, height:dims[1]->Int32 }
+        return XY(dims[0]->Int32,dims[1]->Int32)
       endIf
 
     method parse_scale( cmd:ImageCommand, text:String )->Real64
-      if (text.count == 0) return 1.0
+      if (not String.exists(text)) return 1.0
       if (not text.contains('/')) return text->Real64
       local parts = text.split( "/" )
       return parts[0]->Real64 / parts[1]->Real64
@@ -1400,8 +1382,8 @@ class Asset
         # Split into tiles
         type = "Image[]"
         local size = Convert.parse_dimensions( cmd, attributes//split )
-        local tiles_wide = size//width->Int32
-        local tiles_high = size//height->Int32
+        local tiles_wide = size.x
+        local tiles_high = size.y
         if (tiles_wide * tiles_high == 0)
           throw cmd.error( ''Illegal 'split' size of $x$ for "$".'' (tiles_wide,tiles_high,filepath) )
         endIf
@@ -1419,7 +1401,7 @@ class Asset
 
       endIf
 
-    method collect_image_info( image_list:@[] )
+    method collect_image_info( image_list:Value )
       local entry = @{ type:type, name:filepath.after_first("Assets/Images/") }
 
       which (type)
@@ -1459,12 +1441,12 @@ class Asset
                 (filepath.after_first("Assets/Images/"),placements.count,characters.count) )
             endIf
           else
-            local buffer = StringBuilder()
+            local buffer = String()
             buffer.print( (forEach in 32..126)->Character )
             if (placements.count != 95)
               buffer.print( (forEach in 160..255)->Character )
             endIf
-            characters = buffer->String
+            characters = buffer
 
             if (characters.count != placements.count)
               throw cmd.error( ''Font strip "$" contains $ characters but the default varfont character mapping specifies $.''...
@@ -1508,8 +1490,8 @@ class Placement
 
       if (attributes//resize)
         local tx_size = Convert.parse_dimensions( asset.cmd, attributes//resize )
-        width  = tx_size//width->Int32
-        height = tx_size//height->Int32
+        width  = tx_size.x
+        height = tx_size.y
         bitmap = bitmap.resized( width, height )
         display_width = width
         display_height = height
@@ -1517,15 +1499,15 @@ class Placement
 
       if (attributes//resample)
         local tx_size = Convert.parse_dimensions( asset.cmd, attributes//resample )
-        width  = tx_size//width->Int32
-        height = tx_size//height->Int32
+        width  = tx_size.x
+        height = tx_size.y
         bitmap = bitmap.resized( width, height )
       endIf
 
       if (attributes//display_size)
         local tx_size = Convert.parse_dimensions( asset.cmd, attributes//display_size )
-        display_width  = tx_size//width->Int32
-        display_height = tx_size//height->Int32
+        display_width  = tx_size.x
+        display_height = tx_size.y
       endIf
 
       local display_scale = asset.cmd.icom.settings//display_scale
@@ -1535,7 +1517,7 @@ class Placement
         display_height = display_height * scale
       endIf
 
-    method collect_image_info( info:@{} )->@{}
+    method collect_image_info( info:Value )->Value
       info//display_size = @[ display_width, display_height ]
       info//texture =
       @{
@@ -1585,17 +1567,14 @@ class ImageSheet
 endClass
 
 class FreeTypeFace
-  DEPENDENCIES
+  NATIVE
     # Must include png.h before ft2build.h to fix an order-of-include issue with png and setjmp on Linux
-    nativeHeader
-      #include <png.h>
-      #include <ft2build.h>
-      #include FT_FREETYPE_H
-    endNativeHeader
+    nativeHeader...
+     @|#include <png.h>
+      |#include <ft2build.h>
+      |#include FT_FREETYPE_H
 
-    nativeCode
-      FT_Library Plasmacore_freetype_library;
-    endNativeCode
+    nativeCode @|FT_Library Plasmacore_freetype_library;
 
   PROPERTIES
     pixel_height : Int32
@@ -1607,9 +1586,9 @@ class FreeTypeFace
       ft_height = pixel_height
 
       local filepath = "Assets/Fonts/" + name
-      if (not File.exists(filepath)) filepath = "/Library/Fonts/" + name
-      if (not File.exists(filepath)) filepath = "/System/Library/Fonts/" + name
-      if (not File.exists(filepath)) throw ImageCompileError( cmd, "Unable to find font: " + name )
+      if (not File(filepath).exists) filepath = "/Library/Fonts/" + name
+      if (not File(filepath).exists) filepath = "/System/Library/Fonts/" + name
+      if (not File(filepath).exists) throw ImageCompileError( cmd, "Unable to find font: " + name )
 
       if (not native("Plasmacore_freetype_library")->Logical)
         # Initialize FreeType library
@@ -1619,7 +1598,7 @@ class FreeTypeFace
         on_exit( () => native "FT_Done_FreeType( Plasmacore_freetype_library );" )
       endIf
 
-      if (native("FT_New_Face( Plasmacore_freetype_library, (char*)$filepath->utf8, 0, &$this->ft_face )")->Int32)
+      if (native("FT_New_Face( Plasmacore_freetype_library, (char*)$filepath->data->as_utf8, 0, &$this->ft_face )")->Int32)
         throw ImageCompileError( cmd, "Error loading $." (name) )
       endIf
 

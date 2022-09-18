@@ -2,6 +2,10 @@ $include "AssetCompiler/ImageCompiler.rogue"
 $include "AssetCompiler/DataCompiler.rogue"
 $include "AssetCompiler/SoundCompiler.rogue"
 
+uses Bitmap
+uses Bitmap/IO
+uses Codec/ValueCompressor
+
 routine launch_asset_compiler( platform:String ) [essential]
   launch_image_compiler( platform )
   launch_sound_compiler( platform )
@@ -15,7 +19,7 @@ routine asset_folder( platform:String, subfolder:String )->String
   else
     result = "Build/$/Assets/" (platform)
   endIf
-  File.create_folder( result )
+  File( result ).create_folder
   result += subfolder
   return result
 endRoutine
@@ -24,14 +28,14 @@ class CommentStripper
   PROPERTIES
     reader        : StringReader
     lines         = String[]
-    buffer        = StringBuilder()
+    buffer        = String()
     comment_level : Int32
 
   METHODS
     method process( text:String )->String[]
       reader = text.reader
       while (reader.has_another) scan_next
-      if (buffer.count) lines.add( buffer->String )
+      if (buffer.count) lines.add( buffer.cloned )
       return lines
 
     method scan_next
@@ -75,7 +79,7 @@ class CommentStripper
 
     method write( ch:Character )->this
       if (ch == '\n')
-        lines.add( buffer->String )
+        lines.add( buffer.cloned )
         buffer.clear
       elseIf (comment_level == 0)
         buffer.print( ch )
