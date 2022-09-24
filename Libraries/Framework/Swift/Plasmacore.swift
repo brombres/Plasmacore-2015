@@ -116,6 +116,16 @@ class Plasmacore
     if (is_configured) { return self }
     is_configured = true
 
+    #if os(iOS)
+      NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(handleInterruption),
+        name:     AVAudioSession.interruptionNotification,
+        object: nil
+      )
+
+    #endif
+
     instanceSetMessageListener( type: "", listener:
       {
         (m:PlasmacoreMessage) in
@@ -186,6 +196,33 @@ class Plasmacore
     RogueInterface_configure();
     return self
   }
+
+#if os(iOS)
+  @objc func handleInterruption( notification:Notification )
+  {
+    guard let value = (notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? NSNumber)?.uintValue,
+          let interruptionType = AVAudioSession.InterruptionType( rawValue:value )
+    else
+    {
+        print("notification.userInfo?[AVAudioSessionInterruptionTypeKey]", notification.userInfo?[AVAudioSessionInterruptionTypeKey] ?? "(unknown)")
+      return
+    }
+
+    switch interruptionType
+    {
+      case .began:
+        print("Interruption began")
+        PlasmacoreMessage( type:"Application.on_pause_music" ).send()
+      default:
+        print("Interruption ended")
+        if let optionValue = (notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? NSNumber)?.uintValue,
+           AVAudioSession.InterruptionOptions(rawValue: optionValue) == .shouldResume
+        {
+          PlasmacoreMessage( type:"Application.on_resume_music" ).send()
+        }
+    }
+  }
+#endif // os(OSX)
 
   func addResource( resource:AnyObject? )->Int
   {
