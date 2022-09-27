@@ -894,9 +894,15 @@ class ImageCommand
       if (not to_filepath.begins_with("Assets/Images/"))   to_filepath = "Assets/Images/" + to_filepath
       local files = collect_files( from_filepath )
       forEach (src_filepath in files)
-        local from_folder = from_filepath.before_first('*').before_first('?')
+        local from_folder = from_filepath.before_first('*').before_first('?').before_last('/') + '/'
         local tail = src_filepath.after_first( from_folder )
-        local dest_filepath = which{ tail=="":to_filepath || to_filepath/tail }
+        local dest_filepath = to_filepath
+        contingent
+          sufficient (tail == "")
+          sufficient (File(src_filepath).filename == File(to_filepath).filename)
+          sufficient (File(to_filepath).exists and not File(to_filepath).is_folder)
+          dest_filepath = to_filepath/tail
+        endContingent
         local ext = src_filepath.after_last( "." ).to_lowercase
 
         contingent
