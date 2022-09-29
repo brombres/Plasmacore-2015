@@ -26,23 +26,29 @@ class MeshBuilder
       ensure uvs( vertex_capacity )
       ensure colors( vertex_capacity )
 
-    method add( position:XY, color=Color.WHITE:Color )->this
+    method add( position:XY, color=Color.WHITE:Color )
       positions.add( position )
       colors.add( color )
-      return this
 
-    method add( position:XY, uv:XY, color=Color.WHITE:Color )->this
+    method add( position:XY, uv:XY, color=Color.WHITE:Color )
       positions.add( position )
       uvs.add( uv )
       colors.add( color )
-      return this
 
-    method clear( &cw, &ccw )->this
+    method add( bounds:Box, uv:Box, color=Color.WHITE:Color )
+      add( bounds.position,    uv.position,    color )
+      add( bounds.top_right,   uv.top_right,   color )
+      add( bounds.bottom_left, uv.bottom_left, color )
+
+      add( bounds.top_right,    uv.top_right,    color )
+      add( bounds.bottom_right, uv.bottom_right, color )
+      add( bounds.bottom_left,  uv.bottom_left,  color )
+
+    method clear( &cw, &ccw )
       positions.clear
       uvs.clear
       colors.clear
       is_clockwise = (cw or not ccw)
-      return this
 
     method fill( texture:Texture, render_mode=null:RenderMode, shader=null:Shader )
       render_mode = ?:{ render_mode || this.render_mode || texture.default_render_mode }
