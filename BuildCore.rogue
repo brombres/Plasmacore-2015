@@ -89,7 +89,7 @@ augment Build
     File(folder).create_folder
 
   method launch_asset_compiler
-    local m_launch_asset_compiler = <<Global>>.find_global_method( "launch_asset_compiler" )
+    local m_launch_asset_compiler = <<Routine>>.find_global_method( "launch_asset_compiler" )
     if (m_launch_asset_compiler)
       # This won't be available until depz has downloaded the Plasmacore repo.
       # Which is always has by this point, but using introspection to get things
