@@ -1,52 +1,21 @@
 # To run this build file, install Rogue from github.com/AbePralle/Rogue and type "rogo" at the command line.
 
-# Rogo is a "build your own build system" facilitator. At its core Rogo just recompiles build files if
-# needed and then runs the build executable while forwarding any command line arguments. This file contains
-# a default framework which uses introspection to turn command line arguments into parameterized routine calls.
-
-# Example: to handle the command "rogo abc xyz 5", define "routine rogo_abc_xyz( n:Int32 )".
-
-# "rogo_default" will run in the absence of any other command line argument.
-
-# The following "comment directives" can be used in this file to control how RogueC compiles it and to
-# manage automatic dependency installation and linking.
-
-# Each of the following should be on a line beginning with the characters #$ (preceding whitespace is fine).
-# Sample args are given.
-
-#   ROGUEC       = roguec       # Path to roguec compiler to compile this file with
-#   ROGUEC_ARGS  = --whatever   # Additional options to pass to RogueC
-#   CPP          = g++ -Wall -std=gnu++11 -fno-strict-aliasing -Wno-invalid-offsetof   # C++ compiler path and/or invocation
-#   CPP_ARGS     = -a -b -c          # Additional C++ args
-#   LINK         = true              # Links following LIBRARIES with this Build file
-#   LINK         = -lalpha -lbeta    # Links following LIBRARIES and includes these additional flags
-#   LINK         = false             # Linking turned off for following LIBRARIES - info can still be obtained from #$LIBRARY_FLAGS()
-#   LINK(macOS)  = ...               # Options applying only to System.os=="macOS" (use with any OS and any comment directive)
-#   LIBRARIES    = libalpha
-#   LIBRARIES    = libbeta(library-name)
-#   LIBRARIES    = libfreetype6-dev(freetype2)
-#   DEPENDENCIES = Library/Rogue/**/*.rogue
-#
-#   LIBRARIES    = name(package)
-#   LIBRARIES    = name(package:<package> install:<install-cmd> link:<link-flags>)
-#
-# The following macro is replaced within this file (Build.rogue) - the libraries should also be declared in #$ LIBRARIES:
-#
-#   $LIBRARY_FLAGS(lib1,lib2)                              # sample macro
-#     ->
-#   -Ipath/to/lib1/include -Lpath/to/lib1/library -I ...   # sample replacement
-
 #$ LIBRARIES(macOS) = brew
-# LIBRARIES(macOS) = gradle  - INACTIVE: brew-installed gradle is currently not working with Android Studio projects.
+#$ LIBRARIES(macOS) = gradle
+# INACTIVE: brew-installed gradle is currently not working with Android Studio projects.
 
 #$ LIBRARIES(Linux) = gradle
-#$ LIBRARIES(Linux) = ninja-build(package:ninja which:ninja)
+#$ LIBRARIES(Linux) = ninja(install:ninja-build)
 
-#$ LINK                 = true
-#$ LIBRARIES(macOS)     = libpng libjpeg zlib
-#$ LIBRARIES(Linux-apt) = libpng-dev libjpeg-dev
+#$ LINK_LIBS            = true
+#$ LIBRARIES(macOS)     = libjpeg
+#$ LIBRARIES(macOS)     = libpng
+#$ LIBRARIES(macOS)     = zlib(flags:-lz)
+#$ LIBRARIES(Linux-apt) = libjpeg(install:libjpeg-dev)
+#$ LIBRARIES(Linux-apt) = libpng(install:libpng-dev)
 
 uses Bitmap
+uses DateTime
 
 # description()s are optional - Rogo uses introspection to determine which commands are available.
 # 'rogo help default' displays the description for "default", etc.
@@ -86,7 +55,7 @@ class Keystore [singleton]
             rogo_keystore
           case "e"
             local content = ""
-            if (File.exists("BuildLocal.rogue")) content = String( File("BuildLocal.rogue") ) + "\n"
+            if (File("BuildLocal.rogue").exists) content = String( File("BuildLocal.rogue") ) + "\n"
             else                                 println "Creating Platforms/Android/BuildLocal.rogue"
 
             if (not content.contains("augment Keystore"))
@@ -100,7 +69,7 @@ class Keystore [singleton]
                           |#      key_alias         = "<key-alias>"
                           |#      key_password      = "<key-password>"
                           |#endAugment
-              File.save( "BuildLocal.rogue", content )
+              File("BuildLocal.rogue").save( content )
             endIf
 
             println @|Edit keystore filepath and passwords in Platforms/Android/BuildLocal.rogue, then
@@ -113,8 +82,8 @@ class Keystore [singleton]
 endClass
 
 routine rogo_clean
-  File.delete( "app/build" )
-  File.delete( "plasmacore/build" )
+  File( "app/build" ).delete
+  File( "plasmacore/build" ).delete
 endRoutine
 
 routine rogo_default
@@ -124,13 +93,13 @@ endRoutine
 description( "icon", "Changes the icon used for by Android." )
 routine rogo_icon( new_icon_png:String )
   if (not String.exists(new_icon_png)) throw Error( "PNG filename expected." )
-  if (not File.exists(new_icon_png)) new_icon_png = "../../" + new_icon_png
+  if (not File(new_icon_png).exists) new_icon_png = "../../" + new_icon_png
   local new_icon = Bitmap( File(new_icon_png) )
   local files = Files( "app/src/main/res", "*/*.png" )
   forEach (filepath in files)
     println filepath
     local icon = Bitmap( File(filepath) )
-    File.save( filepath, new_icon.cloned.resize( icon.size ).to_png_bytes )
+    File( filepath ).save( new_icon.cloned.[ resize(icon.size) ].to_png_bytes )
   endForEach
 endRoutine
 
@@ -153,8 +122,8 @@ routine rogo_keystore
            |  keytool -genkey -v -keystore <filepath.keystore> -storepass <keystore-password> \
            |  -alias <key-alias> -keypass <key-password> -keyalg RSA -validity 36500
            |
-  local keystore_filepath = File.expand_path( Console.input( "Enter keystore filepath (can use ~): " ) )
-  if (File.exists(keystore_filepath))
+  local keystore_filepath = File( Console.input( "Enter keystore filepath (can use ~): " ) ).resolved.filepath
+  if (File(keystore_filepath).exists)
     throw Error( "Keystore $ already exits - if\nyou wish to overwrite it, manually delete and retry." (keystore_filepath) )
   endIf
 
@@ -162,15 +131,15 @@ routine rogo_keystore
   local key_alias    = Console.input( "Enter key alias (default: 'appsign'): " )
   if (key_alias == "") key_alias = "appsign"
   local key_password = Console.input( "Enter key password: " )
-  local keystore_folder = File.folder( keystore_filepath )
-  if (not File.exists(keystore_folder))
+  local keystore_folder = File( keystore_filepath ).folder
+  if (not File(keystore_folder).exists)
     println "Creating folder " + keystore_folder
-    File.create_folder( keystore_folder )
+    File( keystore_folder ).create_folder
   endIf
   execute "keytool -genkey -v -keystore $ -storepass $ -alias $ -keypass $ -keyalg RSA -validity 36500" ...
-          (esc(keystore_filepath),keystore_password,key_alias,key_password)
+    (File(keystore_filepath).esc,keystore_password,key_alias,key_password)
   local build_local = ""
-  if (File.exists("BuildLocal.rogue"))
+  if (File("BuildLocal.rogue").exists)
     println "Appending Keystore info to Platforms/Android/BuildLocal.rogue"
     build_local = String( File("BuildLocal.rogue") ) + "\n"
   else
@@ -184,16 +153,12 @@ routine rogo_keystore
   build_local += ''      key_alias         = "$"\n'' (key_alias)
   build_local += ''      key_password      = "$"\n'' (key_password)
   build_local += ''endAugment\n''
-  File.save( "BuildLocal.rogue", build_local )
+  File( "BuildLocal.rogue" ).save( build_local )
 
   Keystore.keystore_filepath = keystore_filepath
   Keystore.keystore_password = keystore_password
   Keystore.key_alias         = key_alias
   Keystore.key_password      = key_password
-endRoutine
-
-routine esc( filepath:String )->String
-  return File.shell_escaped( filepath )
 endRoutine
 
 routine rogo_build_debug
@@ -208,7 +173,7 @@ endRoutine
 
 routine rogo_debug
   rogo_build_debug
-  if (not Process.run("adb version",&inherit_environment).success)
+  if (not Process.run("adb version",&env).success)
     throw Error( "You must install the Android command line tool 'adb' and add it to your path." )
   endIf
   local package = String(File("app/build.gradle")).extract_string(''*\napplicationId "$"\n*'')
@@ -229,15 +194,15 @@ routine rogo_debug
 
   local ps_info : String?
   loop 5
-    ps_info = Process.run( "adb shell ps", &inherit_environment, &writable )->String.split( '\n' ).find($.contains(package))
+    ps_info = Process.run( "adb shell ps", &env, &writable )->String.split( '\n' ).find( (f) with (package) => f.contains(package) )
     if (ps_info.exists) escapeLoop
   endLoop
-  require ps_info.exists
+  assert ps_info.exists
   local pid = ps_info.value.from_first(' ').trimmed.before_first(' ')  # second value is PID
 
   println "Logging process " + pid
   println ps_info
-  local process = Process( "adb logcat", &readable, &writable, &inherit_environment )
+  local process = Process( "adb logcat", &readable, &writable, &env )
   local reader = LineReader( process.output_reader )
   while (not process.is_finished)
     forEach (line in reader)
@@ -270,24 +235,24 @@ routine rogo_release
 
   rogo_build_release
 
-  if (not Process.run("aapt v",&inherit_environment).success)
+  if (not Process.run("aapt v",&env).success)
     throw Error( "You must install the Android command line tool 'aapt' and add it to your path." )
   endIf
 
   local result = Process.run( "aapt dump badging app/build/outputs/apk/release/app-release-unsigned.apk", &env )
-  require result.success
+  assert result.success
   local path = "app/build/outputs/apk/release"
   local aligned_apk = path + "app-release-unsigned-aligned.apk"
-  File.delete( aligned_apk )
+  File( aligned_apk ).delete
   if (not execute("zipalign -p 4 $/app-release-unsigned.apk $"(path,aligned_apk), &suppress_error))
     throw Error( "Ensure that 'zipalign' is the system path and can be run from the command line." )
   endIf
 
   local strings = result->String.extract_strings( "* name='$' versionCode='$' versionName='$'*" )
   local signed_apk = "$/$-v$.apk" (path,strings[0].after_any('.'),strings[1])
-  File.delete( signed_apk )
+  File( signed_apk ).delete
 
-  local cmd = "apksigner sign --ks $ --v1-signing-enabled true --v2-signing-enabled true" (esc(Keystore.keystore_filepath))
+  local cmd = "apksigner sign --ks $ --v1-signing-enabled true --v2-signing-enabled true" (File(Keystore.keystore_filepath).esc)
   if (Keystore.keystore_password) cmd += " --ks-pass pass:"  + Keystore.keystore_password
   if (Keystore.key_alias)         cmd += " --ks-key-alias "  + Keystore.key_alias
   if (Keystore.key_password)      cmd += " --key-pass pass:" + Keystore.key_password
@@ -308,7 +273,7 @@ routine rogo_release
 endRoutine
 
 routine uninstall( package:String )
-  local output = Process.run( "adb shell pm list packages", &inherit_environment, &writable )->String
+  local output = Process.run( "adb shell pm list packages", &env, &writable )->String
   forEach (line in LineReader(output))
     if (line.after_first("package:").trimmed == package)
       execute( "adb uninstall $" (package) )
@@ -323,38 +288,38 @@ endRoutine
 
 routine configure_local_properties
   local local_properties_filepath = "local.properties"
-  if (File.exists(local_properties_filepath)) return
+  if (File(local_properties_filepath).exists) return
 
   # Attempt to locate Android SDK
   local sdk_folder : String
   contingent
     sdk_folder = System.env["ANDROID_HOME"]
-    sufficient (sdk_folder and File.is_folder(sdk_folder))
+    sufficient (sdk_folder and File(sdk_folder).is_folder)
 
     sdk_folder = "~/Library/Android/sdk"
-    sufficient (File.is_folder(sdk_folder))
+    sufficient (File(sdk_folder).is_folder)
 
     sdk_folder = "/Library/Android/sdk"
-    sufficient (File.is_folder(sdk_folder))
+    sufficient (File(sdk_folder).is_folder)
 
     sdk_folder = null
     escapeContingent
 
   satisfied
-    sdk_folder = File.abs( sdk_folder )
+    sdk_folder = File( sdk_folder ).abs.filepath
 
   endContingent
 
-  local builder = StringBuilder()
+  local builder = String()
   builder.println @|# Do NOT check this file into your version control system as it contains
                    |# information specific to your local configuration.
                    |#
                    |# Location of the Android SDK. This is only used by Gradle and Android Studio.
-  builder.println( "# " + DateTime.now )
+  builder.println( "# " + Date.today )
   if (sdk_folder) builder.println"sdk.dir=$" (sdk_folder)
   else            builder.println"#sdk.dir=<folder>  # Specify the correct folder and uncomment this line"
   println "Creating local.properties with SDK location."
-  File.save( local_properties_filepath, builder )
+  File( local_properties_filepath ).save( builder )
 
   if (not sdk_folder)
     local mesg = "Cannot locate the Android SDK. Please install them and then edit the "...
@@ -368,7 +333,8 @@ endRoutine
 
 routine execute( commands:String, &suppress_error )->Logical
   forEach (cmd in LineReader(commands))
-    print( "> " ).println( cmd )
+    print( "> " )
+    println( cmd )
     if (System.run(cmd) != 0)
       if (suppress_error) return false
       else                throw Error( "Build failed." )
@@ -377,9 +343,56 @@ routine execute( commands:String, &suppress_error )->Logical
   return true
 endRoutine
 
-#------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Introspection-based Launcher Framework
-#------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Rogo is a "build your own build system" facilitator. At its core Rogo just
+# recompiles build files if needed and then runs the build executable while
+# forwarding any command line arguments. This file contains a default framework
+# which uses introspection to turn command line arguments into parameterized
+# routine calls.
+
+# Example: to handle the command "rogo abc xyz 5", define
+# "routine rogo_abc_xyz( n:Int32 )".
+
+# "rogo_default" will run in the absence of any other command line argument.
+
+# The following "comment directives" can be used in this file to control how
+# RogueC compiles it and to manage automatic dependency installation and
+# linking.
+
+# Each of the following should be on a line beginning with the characters #$
+# (preceding whitespace is fine). Sample args are given.
+
+#   ROGUEC       = roguec       # Path to roguec to compile this file with
+#   ROGUEC_ARGS  = --whatever   # Additional options to pass to RogueC
+#   CC           = gcc -Wall -fno-strict-aliasing
+#   CC_ARGS      = -a -b -c          # Additional C args
+#   LINK         = -lalpha -lbeta    # Link this build file with these options
+#   LINK(macOS)  = ...               # Options applying only to
+#                                    # System.os=="macOS" (use with any OS and
+#                                    # any comment directive)
+#   LINK_LIBS    = true              # Links following LIBRARIES with this Build
+#                                    # file (otherwise just installs them)
+#   LINK_LIBS    = false             # Linking turned off for following
+#                                    # LIBRARIES - info can still be obtained
+#                                    # from $LIBRARY_FLAGS or $LIBRARIES(libname,...)
+#   LIBRARIES    = libalpha
+#   LIBRARIES    = libbeta(library-name)
+#   LIBRARIES    = libfreetype6-dev(freetype2)
+#   DEPENDENCIES = Library/Rogue/**/*.rogue
+#
+#   LIBRARIES    = name(package)
+#   LIBRARIES    = name(package:<package> install:<install-cmd>
+#                  link:<link-flags> which:<which-name>)
+#
+# The following macro is replaced within this file (Build.rogue) - the libraries
+# should normally also be declared in #$ LIBRARIES:
+#
+#   $LIBRARY_FLAGS(lib1,lib2)                              # sample macro
+#     ->
+#   -Ipath/to/lib1/include -Lpath/to/lib1/library -I ...   # sample replacement
+
 routine syntax( command:String, text:String )
   Build.rogo_syntax[ command ] = text
 endRoutine
@@ -388,9 +401,9 @@ routine description( command:String, text:String )
   Build.rogo_descriptions[ command ] = text
 endRoutine
 
-routine help( command:String, description=null:String, syntax=null:String )
-  if (description) Global.description( command, description )
-  if (syntax)      Global.syntax( command, syntax )
+routine help( command:String, description_text=null:String, syntax_text=null:String )
+  if (description_text) description( command, description_text )
+  if (syntax_text)      syntax( command, syntax_text )
 endRoutine
 
 try
@@ -402,14 +415,14 @@ endTry
 
 class Build [singleton]
   PROPERTIES
-    rogo_syntax         = StringTable<<String>>()
-    rogo_descriptions   = StringTable<<String>>()
-    rogo_prefix         = ?:{ $moduleName.count:$moduleName "::" || "" } + "rogo_" : String
+    rogo_syntax         = [String:String]
+    rogo_descriptions   = [String:String]
+    rogo_prefix         = "rogo_"
     rogo_command        = "default"
     rogo_args           = @[]
     rogo_error          : Error
 
-    LOCAL_DEFS_FILE     = "Local.mk"
+    LOCAL_SETTINGS_FILE = "Local.settings"
 
   METHODS
     method launch
@@ -421,27 +434,27 @@ class Build [singleton]
 
     method dispatch_command
       local m = find_command( rogo_command )
-      require m || "no such routine rogo_$()" (rogo_command)
+      if (not m) throw Error( "No such routine rogo_$()" (rogo_command) )
 
       local args = @[]
       forEach (arg in rogo_args)
         which (arg)
           case "true":  args.add( true )
           case "false": args.add( false )
-          case "null":  args.add( NullValue )
+          case "null":  args.add( null )
           others:       args.add( arg )
         endWhich
       endForEach
-      if (m.parameter_count == 1 and args.count > 1) args = @[ args ] # Wrap args in a ValueList.
       m( args )
 
     method find_command( name:String )->MethodInfo
-      return <<Global>>.find_global_method( rogo_prefix + name )
+      return <<Routine>>.find_global_method( rogo_prefix + name )
 
     method on_error
-      Console.error.println "=" * 79
+      local w = Console.width.or_smaller( 80 )
+      Console.error.println "=" * w
       Console.error.println rogo_error
-      Console.error.println "=" * 79
+      Console.error.println "=" * w
       on_exit
       System.exit 1
 
@@ -449,9 +462,10 @@ class Build [singleton]
       noAction
 
     method on_command_not_found
-      println "=" * 79
+      local w = Console.width.or_smaller( 80 )
+      println "=" * w
       println "ERROR: No such command '$'." (rogo_args.first)
-      println "=" * 79
+      println "=" * w
       println
       rogo_command = "help"
       rogo_args.clear
@@ -471,7 +485,7 @@ class Build [singleton]
           rogo_args.clear
 
           while (parts.count)
-            local cmd = _join( parts )
+            local cmd = parts.join("_")
             if (find_command(cmd))
               rogo_command = cmd
               on_command_found
@@ -488,12 +502,12 @@ class Build [singleton]
       endBlock
 
     method read_defs
-      read_defs( LOCAL_DEFS_FILE )
+      read_defs( LOCAL_SETTINGS_FILE )
 
     method read_defs( defs_filepath:String )
-      # Attempt to read defs from Local.mk
+      # Attempt to read defs from Local.settings
       local overrides = String[]
-      if (File.exists(defs_filepath))
+      if (File(defs_filepath).exists)
         forEach (line in LineReader(File(defs_filepath)))
           if (line.contains("="))
             local name  = line.before_first('=').trimmed
@@ -504,7 +518,7 @@ class Build [singleton]
             local p = <<Build>>.find_property( name )
             if (p)
               overrides.add( "$ = $" (name,value) )
-              <<Build>>.set_property( this, p, Value(value) )
+              p.set_value( this, value )
             endIf
           endIf
         endForEach
@@ -518,6 +532,8 @@ endClass
 
 
 routine rogo_help( command="":String )
+  # SYNTAX: rogo help [command]
+  # Displays help for a specified command or else all build commands.
   command = Build._join( Build.rogo_args )
   if (command.count)
     local syntax = get_syntax( command )
@@ -530,9 +546,11 @@ routine rogo_help( command="":String )
     endIf
     local description = get_description( command )
     if (description)
+      local max_w = Console.width - 2
       println "DESCRIPTION"
-      forEach (line in LineReader(description.word_wrapped(76)))
-        print( "  " ).println( line )
+      forEach (line in LineReader(description.word_wrapped(max_w)))
+        print( "  " )
+        println( line )
       endForEach
       println
       success = true
@@ -540,34 +558,60 @@ routine rogo_help( command="":String )
     if (success)
       return
     else
-      println "=" * 79
+      local w = Console.width.or_smaller( 80 )
+      println "=" * w
       println "ERROR: No such command '$'." (command)
-      println "=" * 79
+      println "=" * w
       println
     endIf
   endIf
 
   println "USAGE"
-  local lines = String[]
-  forEach (m in <<Global>>.global_methods)
+  local entries = CommandInfo[]
+  local max_len = 0
+  forEach (m in <<Routine>>.global_methods)
     if (m.name.begins_with(Build.rogo_prefix))
-      lines.add( "  " + get_syntax(m.name.after_first(Build.rogo_prefix)) )
+      local name = m.name.after_first( Build.rogo_prefix )
+      local entry = CommandInfo( name, get_syntax(name), get_description(name) )
+      max_len .= or_larger( entry.syntax.count )
+      entries.add entry
     endIf
   endForEach
-  lines.sort( (a,b)=>(a<b) )
-  println (forEach in lines)
+
+  entries.sort( $1.name < $2.name )
+  max_len += 2
+
+  local max_w = Console.width
+  forEach (entry in entries)
+    print "  " + entry.syntax
+    if (entry.@description)
+      local description = entry.@description
+      loop (max_len - entry.syntax.count) print ' '
+      contingent
+        sufficient (max_len + description.count <= max_w)
+        if (description.contains(". "))
+          description = description.before_first( ". " ) + "."
+          sufficient (max_len + description.count <= max_w)
+        endIf
+        necessary (max_len + 10 <= max_w)
+        description = description.unright( (description.count - (max_w - max_len))+3 ) + "..."
+      satisfied
+        print description
+      endContingent
+    endIf
+    println
+  endForEach
   println
 endRoutine
-
 
 routine get_syntax( m_name:String )->String
   if (Build.rogo_syntax.contains(m_name))
     return "rogo " + Build.rogo_syntax[ m_name ]
   else
-    local m = <<Global>>.find_global_method( Build.rogo_prefix + m_name )
+    local m = <<Routine>>.find_global_method( Build.rogo_prefix + m_name )
     if (not m) return null
     local line = "rogo $" (m_name.replacing('_',' '))
-    line += " <$>" (m.parameter_name(forEach in 0..<m.parameter_count))
+    line += " <$>" ((forEach in m.parameters).name)
     return line
   endIf
 endRoutine
@@ -580,3 +624,5 @@ routine get_description( m_name:String )->String
     return null
   endIf
 endRoutine
+
+class CommandInfo( name:String, syntax:String, description:String );
