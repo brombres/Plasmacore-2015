@@ -117,18 +117,17 @@ class PlasmacoreMessage
     return [UInt8]()
   }
 
-  func getDictionary( name:String, default_value:String="" )->[String:AnyObject]?
+  func getDictionary( name:String, default_value:String="" )->[String:Any]
   {
     let jsonString = getString(name: name, default_value: default_value)
     if let data = jsonString.data(using: String.Encoding.utf8) {
         do {
-            return try JSONSerialization.jsonObject(with: data, options: []) as? [String:AnyObject]
+            return try JSONSerialization.jsonObject(with: data, options: []) as? [String:Any] ?? [:]
         } catch let error as NSError {
             print(error)
         }
     }
-    return nil
-
+    return [:]
   }
 
   func getInt32( name:String, default_value:Int=0 )->Int
@@ -349,6 +348,27 @@ class PlasmacoreMessage
     entries[ name ] = position
     writeByte( DataType.BYTE )  // type
     writeString( value )
+    return self
+  }
+
+  @discardableResult
+  func set( name:String, value:[String:Any] )->PlasmacoreMessage
+  {
+    do
+    {
+      if let json = String( data:try JSONSerialization.data( withJSONObject:value ), encoding:.ascii )
+      {
+        set( name:name, value:json )
+        return self
+      }
+    }
+    catch
+    {
+      print( error.localizedDescription );
+    }
+
+    set( name:name, value:"{\"error\":\"Error encoding Swift dictionary as JSON.\"}" )
+
     return self
   }
 
