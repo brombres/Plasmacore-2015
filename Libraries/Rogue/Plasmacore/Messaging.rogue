@@ -272,11 +272,14 @@ class Message
       return keys.locate(name).exists
 
     method recycle
+      #{
+      REMOVING due to corruption bug
       if (MessageManager.message_pool.contains( this ))
         println "**** Message already exists in pool!!!! ****"
       endIf
       data.limit_capacity( 1024 )  # Don't let occassional huge messages sit on unused memory
       MessageManager.message_pool.add( this )
+      }#
 
     method reply->Message
       if (@reply) return @reply
