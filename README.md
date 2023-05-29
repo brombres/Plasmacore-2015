@@ -10,7 +10,7 @@ Targets   | macOS, iOS, Android, Linux, Web
 
 ## Requirements
 - The Rogue language must be installed separately from:
-    - [https://github.com/AbePralle/Rogue](https://github.com/AbePralle/Rogue)
+    - [https://github.com/brombres/Rogue](https://github.com/brombres/Rogue)
 - macOS & iOS targets require Xcode.
 
 ### Compile Target Support
@@ -25,14 +25,14 @@ Linux         |         | &#10003;|         | &#10003;&#42; | &#10003;
 
 To bootstrap a new Plasmacore-based project, install Rogue, open a Terminal in your new project folder, and copy and paste the following command:
 
-    curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/BuildCore.rogue && rogo
+    curl -O https://raw.githubusercontent.com/brombres/Plasmacore/master/BuildCore.rogue && rogo
 
 The command will fetch and run a Rogo build file that will handle the remainder of the installation.
 
 
 ## Documentation and Resources
 
-There is some Rogue documentation here: [https://github.com/AbePralle/Rogue/wiki](https://github.com/AbePralle/Rogue/wiki)
+There is some Rogue documentation here: [https://github.com/brombres/Rogue/wiki](https://github.com/brombres/Rogue/wiki)
 
 There is no Plasmacore documentation yet.  You can manually browse the `Libraries/Rogue/Plasmacore` files.
 

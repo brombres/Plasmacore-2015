@@ -1,4 +1,4 @@
-# To run this build file, install Rogue from github.com/AbePralle/Rogue then cd
+# To run this build file, install Rogue from github.com/brombres/Rogue then cd
 # to this folder and type "rogo" at the command line.
 
 #$ DEPENDENCIES     = Libraries/Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue
@@ -22,7 +22,7 @@
 #$ LIBRARIES(Linux) = zlib
 #$ LIBRARIES(Linux) = sox
 
-$define DEFAULT_PLASMACORE "https://github.com/AbePralle/Plasmacore-2015.git#master"
+$define DEFAULT_PLASMACORE "https://github.com/brombres/Plasmacore-2015.git#master"
 
 $include "AssetCompiler" [optional]
 
