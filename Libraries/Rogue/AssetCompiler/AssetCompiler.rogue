@@ -2,8 +2,8 @@ $include "AssetCompiler/ImageCompiler.rogue"
 $include "AssetCompiler/DataCompiler.rogue"
 $include "AssetCompiler/SoundCompiler.rogue"
 
-uses Bitmap
-uses Bitmap/IO
+uses Graphics
+uses Graphics/BitmapIO
 uses Codec/ValueCompressor
 
 routine launch_asset_compiler( platform:String ) [essential]

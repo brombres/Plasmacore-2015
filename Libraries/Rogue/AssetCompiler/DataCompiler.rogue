@@ -1,4 +1,4 @@
-uses Bitmap
+uses Graphics
 
 routine launch_data_compiler( platform:String )
   try

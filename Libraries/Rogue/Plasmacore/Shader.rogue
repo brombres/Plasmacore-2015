@@ -4,7 +4,7 @@ module Plasmacore
 class Shader
   DEFINITIONS
 
-    $if target("iOS") or target("Android") or target("Web")
+$if target("iOS") or target("Android") or target("Web")
     GLSL_VERSION = ""
 
     # An empty last line is required on HIGH_PRECISION and MEDIUM_PRECISION.

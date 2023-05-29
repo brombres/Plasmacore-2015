@@ -372,6 +372,27 @@ class PlasmacoreMessage
     return self
   }
 
+  @discardableResult
+  func set( name:String, value:[[String:Any]] )->PlasmacoreMessage
+  {
+    do
+    {
+      if let json = String( data:try JSONSerialization.data( withJSONObject:value ), encoding:.ascii )
+      {
+        set( name:name, value:json )
+        return self
+      }
+    }
+    catch
+    {
+      print( error.localizedDescription );
+    }
+
+    set( name:name, value:"{\"error\":\"Error encoding Swift list as JSON.\"}" )
+
+    return self
+  }
+
   //---------------------------------------------------------------------------
   // PRIVATE
   //---------------------------------------------------------------------------
