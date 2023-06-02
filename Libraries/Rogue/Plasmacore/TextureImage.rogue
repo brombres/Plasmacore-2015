@@ -81,28 +81,27 @@ class TextureImage : Image
     method draw( fn:Function(DrawableQuad) ) [override]
       if (not prepare) return
 
-      local handle = XYZ( (anchor.position * size), 0 )
       localize z
+
+      local handle = XYZ( (anchor.position * size), 0 )
 
       local pos = position
       local has_rotation = not rotation.is_zero
       if (has_rotation)
-        Display.push_object_transform( Quaternion(rotation)->Matrix( handle, XYZ(pos,z)) )
+        Display.push_object_transform( Quaternion(rotation)->Matrix( handle, XYZ(pos,Display.z+z)) )
       else
-        Display.push_object_transform( Matrix.translate(XYZ(pos,z)-handle) )
+        Display.push_object_transform( Matrix.translate(XYZ(pos,Display.z+z)-handle) )
       endIf
 
       local transform = Display.transform
 
-      z += Display.z
-
       local w = size.x
       local h = size.y
       local quad = Quad<<XYZW>>(
-        transform * XYZ( 0, 0, z ),
-        transform * XYZ( w, 0, z ),
-        transform * XYZ( w, h, z ),
-        transform * XYZ( 0, h, z ) )
+        transform * XYZ( 0, 0, 0 ),
+        transform * XYZ( w, 0, 0 ),
+        transform * XYZ( w, h, 0 ),
+        transform * XYZ( 0, h, 0 ) )
 
       local _uv = Quad( uv1, XY(uv2.x,uv1.y), uv2, XY(uv1.x,uv2.y) )
       if (hflip) _uv = Quad( _uv.b, _uv.a, _uv.d, _uv.c )
@@ -110,6 +109,7 @@ class TextureImage : Image
 
       fn( DrawableQuad(quad,color.with_opacity(opacity),@texture,_uv,render_mode,shader) )
 
+      if (has_rotation) Display.pop_object_transform
       Display.pop_object_transform
 
     method is_opaque->Logical
