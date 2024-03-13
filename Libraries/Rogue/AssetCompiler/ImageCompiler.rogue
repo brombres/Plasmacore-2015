@@ -532,7 +532,7 @@ class ImageCommand
 
       loop
         # Determine order of attempting w/2,h and w,h/2
-        local scale_1 = XY(0.5,1)
+        local scale_1 = IntXY(0.5,1)
         if (last_sheet.height >= last_sheet.width) scale_1 = scale_1.yx
         local scale_2 = scale_1.yx
 
@@ -726,7 +726,7 @@ class ImageCommand
           local x = 0
           local y = (bmp.height - 5) + (bmp.height % 5) / 2
           while (y >= 0)
-            bmp.blit( Box(0,y,bmp.width,5), new_bmp, XY(x,y) )
+            bmp.blit( IntBox(0,y,bmp.width,5), new_bmp, IntXY(x,y) )
             ++x
             y -= 5
           endWhile
@@ -743,7 +743,7 @@ class ImageCommand
         forEach (ch at index in characters)
           if (ch.width != max_w)
             local new_ch = Bitmap( max_w, ch.height )
-            ch.blit( new_ch, XY((max_w-ch.width)/2,0) )
+            ch.blit( new_ch, IntXY((max_w-ch.width)/2,0) )
             characters[ index ] = new_ch
           endIf
         endForEach
@@ -758,7 +758,7 @@ class ImageCommand
           if (ch.width != max_w)
             if (unicode[index] == ' ' or unicode[index]->Character.is_number)
               local new_ch = Bitmap( max_w, ch.height )
-              ch.blit( new_ch, XY((max_w-ch.width)/2,0) )
+              ch.blit( new_ch, IntXY((max_w-ch.width)/2,0) )
               characters[ index ] = new_ch
             endIf
           endIf
@@ -943,8 +943,8 @@ class ImageCommand
 
       local resize = false
       local fixed_resize = false
-      local from_size : XY
-      local to_size   : XY
+      local from_size : IntXY
+      local to_size   : IntXY
       if (args//resize)
         local resize_dims = args//resize->String.split( "->" )
         which (resize_dims.count)
@@ -1063,8 +1063,8 @@ class ImageCommand
       local resize = false
       local fixed_resize = false
       local crop = false
-      local from_size : XY
-      local to_size   : XY
+      local from_size : IntXY
+      local to_size   : IntXY
       if (args//resize)
         local resize_dims = args//resize->String.split( "->" )
         which (resize_dims.count)
@@ -1119,7 +1119,7 @@ class ImageCommand
             throw error( ''Illegal 'split' size of $x$ for "$".'' (tiles_wide,tiles_high,filepath) )
           endIf
           if (fixed_resize)
-            if (to_size == bitmap.size / XY(tiles_wide,tiles_high)) return
+            if (to_size == bitmap.size / IntXY(tiles_wide,tiles_high)) return
           endIf
           local tiles = Convert.bitmap_to_tiles( this, bitmap, tiles_wide, tiles_high )
           println save_message
@@ -1156,7 +1156,7 @@ class ImageCommand
             if (w == from_size.min and h == from_size.max)     new_w = to_size.min; new_h = to_size.max
             elseIf (w == from_size.max and h == from_size.min) new_w = to_size.max; new_h = to_size.min
           endIf
-          if (bitmap.size == XY(new_w,new_h)) return
+          if (bitmap.size == IntXY(new_w,new_h)) return
           bitmap = bitmap.resized( new_w, new_h )
           println save_message
           println "  [$x$] -> [$x$]" (w,h,bitmap.width,bitmap.height)
@@ -1304,7 +1304,7 @@ class Convert
       local h = bitmap.height / tiles_high
       forEach (j in 0..<tiles_high)
         forEach (i in 0..<tiles_wide)
-          tiles.add( Bitmap(bitmap,Box(i*w,j*h,w,h)) )
+          tiles.add( Bitmap(bitmap,IntBox(i*w,j*h,w,h)) )
         endForEach
       endForEach
       return tiles
@@ -1316,7 +1316,7 @@ class Convert
       local bitmap = Bitmap( w*tiles_wide, h*tiles_high )
       forEach (j in 0..<tiles_high)
         forEach (i in 0..<tiles_wide)
-          tiles[ j*tiles_wide + i ].blit( bitmap, XY(i*w,j*h) )
+          tiles[ j*tiles_wide + i ].blit( bitmap, IntXY(i*w,j*h) )
         endForEach
       endForEach
       return bitmap
@@ -1331,7 +1331,7 @@ class Convert
         local color = bitmap.get( x1, 0 )
         local x_limit = x1 + 1
         while (x_limit < w and bitmap.get(x_limit,0) == color) ++x_limit
-        characters.add( Bitmap(bitmap,Box(x1,1,x_limit-x1,char_height)) )
+        characters.add( Bitmap(bitmap,IntBox(x1,1,x_limit-x1,char_height)) )
         x1 = x_limit
       endWhile
 
@@ -1346,21 +1346,21 @@ class Convert
       local x = 0
       forEach (ch in characters)
         local w = ch.width.clamped_low(1)
-        bitmap.fill( Box(x,0,w,1), color )
-        ch.blit( bitmap, XY(x,1) )
+        bitmap.fill( IntBox(x,0,w,1), color )
+        ch.blit( bitmap, IntXY(x,1) )
         if (color == Color.RED) color = 0xFF00FF00
         else                    color = Color.RED
         x += w
       endForEach
       return bitmap
 
-    method parse_dimensions( cmd:ImageCommand, text:String )->XY
+    method parse_dimensions( cmd:ImageCommand, text:String )->IntXY
       local dims = text.split( "x" )
       if (dims.count == 1)
         local size = dims.first->Int32
-        return XY(size,size)
+        return IntXY(size,size)
       else
-        return XY(dims[0]->Int32,dims[1]->Int32)
+        return IntXY(dims[0]->Int32,dims[1]->Int32)
       endIf
 
     method parse_scale( cmd:ImageCommand, text:String )->Real64
@@ -1534,17 +1534,17 @@ class Placement
       return info
 
     method render( to_bitmap:Bitmap )
-      local pos  = XY( x, y )
-      local size = XY( bitmap.width, bitmap.height )
+      local pos  = IntXY( x, y )
+      local size = IntXY( bitmap.width, bitmap.height )
 
       bitmap.blit( to_bitmap, pos )
 
       # Extend each edge 1 pixel to prevent rendering artifacts
-      to_bitmap.blit( Box(pos,size.x,1),                to_bitmap, pos - XY(0,1) )  # top
-      to_bitmap.blit( Box(pos+XY(0,size.y-1),size.x,1), to_bitmap, pos + size.yv )  # bottom
+      to_bitmap.blit( IntBox(pos,size.x,1),                to_bitmap, pos - IntXY(0,1) )  # top
+      to_bitmap.blit( IntBox(pos+IntXY(0,size.y-1),size.x,1), to_bitmap, pos + size.yv )  # bottom
 
-      to_bitmap.blit( Box(pos-XY(0,1),1,size.y+2),         to_bitmap, pos-XY(1,1) )         # left
-      to_bitmap.blit( Box(pos+size.xv-XY(1,1),1,size.y+2), to_bitmap, pos+size.xv-XY(0,1) ) # right
+      to_bitmap.blit( IntBox(pos-IntXY(0,1),1,size.y+2),         to_bitmap, pos-IntXY(1,1) )         # left
+      to_bitmap.blit( IntBox(pos+size.xv-IntXY(1,1),1,size.y+2), to_bitmap, pos+size.xv-IntXY(0,1) ) # right
 endClass
 
 
@@ -1567,8 +1567,8 @@ class ImageSheet
       (forEach in placements).render( bitmap )
       return bitmap
 
-    method size->XY
-      return XY( width, height )
+    method size->IntXY
+      return IntXY( width, height )
 
 endClass
 
@@ -1687,7 +1687,7 @@ class FreeTypeFace
             endForEach
             if (advance_x > w)
               local padded_bmp = Bitmap( advance_x, pixel_height, Color(0x00FFffFF) )
-              bmp.blit( padded_bmp, XY(-offset_x,0) )
+              bmp.blit( padded_bmp, IntXY(-offset_x,0) )
               bitmaps.add( padded_bmp )
             else
               bitmaps.add( bmp )

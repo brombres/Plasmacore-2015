@@ -36,8 +36,8 @@ class RenderTarget
     view_transforms       = Matrix[]
     object_transforms     = Matrix[]
 
-    transform_modified        : Logical
-    view_transform_modified   : Logical
+    transform_modified       : Logical
+    view_transform_modified  : Logical
     world_transform_modified : Logical
 
     is_offscreen          : Logical
